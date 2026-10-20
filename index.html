@@ -269,12 +269,15 @@ body.level20-polish.reduced-motion :is(.btn,.icon-button,.sort-buttons>button):i
 @media(prefers-reduced-motion:reduce){.faucet-shortcut,.faucet-shortcut-bubbles i{animation:none!important}.faucet-shortcut-bubbles{display:none!important}}
 
 /* Faucet next reward mirrors the player hint above its existing row; no HUD resize. */
-#level-hud .faucet-mini{position:relative}
-@media(max-width:700px){#level-hud .faucet-mini{top:4px}}
+#level-hud .faucet-mini{position:relative;top:2px}
+@media(max-width:700px){#level-hud .faucet-mini{top:6px}}
 #level-hud #faucet-next-reward{position:absolute;top:-12px;left:0;max-width:100%;height:11px;padding:0;border:0;border-radius:2px;background:none;color:#b9d8cf;font-size:9px;font-weight:650;line-height:11px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #level-hud #faucet-next-reward:not(:disabled):hover{text-decoration:underline;text-underline-offset:2px}
 #level-hud #faucet-next-reward:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
-/* Cumulative faucet-only cosmetic unlocks; no layout, claim, XP or payout changes. */
+/* Keep the cumulative fraction and remaining claims together below the label/percentage. */
+.faucet-mini-caption{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px}.faucet-mini-caption>.faucet-level-link{justify-self:start}.faucet-claims-group{grid-column:1/-1;grid-row:2;display:flex;flex-wrap:wrap;gap:2px 8px;min-width:0}.faucet-fraction{white-space:nowrap}.faucet-remaining{color:var(--muted);font-weight:400;overflow-wrap:anywhere}
+@media(max-width:400px){.faucet-progress-box .faucet-claims-group{font-size:9px}}
+/* Cumulative faucet-only cosmetic unlocks; no claim, XP or payout changes. */
 .faucet-style-2 .faucet-level-link{outline:1px solid var(--green);outline-offset:0;border-radius:3px;text-decoration:none}
 .faucet-style-2 .faucet-level-link:focus-visible{outline:2px solid var(--gold);outline-offset:-1px}
 .faucet-style-3 .faucet-mini-caption>span:nth-child(2){font-weight:800}
@@ -2149,6 +2152,7 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
   ].map(function (entry) { return Object.freeze(entry); }));
   var COSTS = [100, 150, 250, 375, 500, 750, 1000, 1300, 1700, 2500, 3000, 3500, 4000, 4500, 5000, 6200, 7500, 8900, 10000, 15000, 17500, 20000, 22500, 25000];
   var EXTENDED_COSTS = [30000, 35000, 40000, 45000, 60000, 80000, 87500, 90000, 95000];
+  // Thresholds are TOTAL successful lifetime claims, never claims spent per tier.
   // Explicit working transition interpretation, not player XP: 30->31 through
   // 39->40 cost 3100..4000; 40->41 through 49->50 use the next ten values.
   // "5.9" means 5.9K in that range. Level 50 is terminal, not a free transition.
@@ -2668,8 +2672,10 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
   function faucetView(p, now, settings) {
     var f = p.faucet, table = settings.table, required = table[f.level - 1], remaining = Math.max(0, f.nextClaimAt - now);
     var maxLevel = f.level === MAX_FAUCET_LEVEL, configurationMissing = !maxLevel && required === null;
-    var shownClaims = maxLevel ? 0 : configurationMissing ? null : Math.min(f.claims, required);
-    var percent = maxLevel ? 100 : configurationMissing ? 0 : Number((shownClaims / required * 100).toFixed(2));
+    // Legacy saves retain their per-tier counter for raw cloud compatibility.
+    // Their truthful lifetime total is the progress numerator; queries never migrate it.
+    var shownClaims = f.totalClaims, remainingClaims = maxLevel || configurationMissing ? null : Math.max(0, required - shownClaims);
+    var percent = maxLevel ? 100 : configurationMissing ? 0 : Number((Math.min(100, shownClaims / required * 100)).toFixed(2));
     var active = dailyClock(f, faucetDay(now)), daily = active.daily, runs = qualifiedRuns(f, daily.dayKey);
     var complete = runs >= TASK_REQUIRED, taskRate = complete ? 100 : settings.incompleteRate, tier = claimTier(daily.claims);
     var reward = (f.level + 1) * (taskRate / 10) * (tier.percent / 20), carry = coinCarry(f);
@@ -2679,7 +2685,7 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
     var lifetimeKnown = own(f, 'earnedLifetimeHundredths') && f.lifetimeEarningsKnown === true;
     return {
       unlocked: p.level >= 25, level: f.level, claims: f.claims, totalClaims: f.totalClaims,
-      requiredClaims: required, shownClaims: shownClaims, percent: percent, percentText: configurationMissing ? 'TBD' : percentText(percent),
+      requiredClaims: required, shownClaims: shownClaims, remainingClaims: remainingClaims, percent: percent, percentText: configurationMissing ? 'TBD' : percentText(percent),
       coins: coinBalance(p), coinsHalf: p.coinsHalf, coinRemainderHundredths: carry, pendingCoinHundredths: carry,
       baseRewardHalf: f.level + 1, baseRewardCoins: (f.level + 1) / 2,
       // rewardHalf is an accrued-amount compatibility alias, NOT wallet credit.
@@ -2693,7 +2699,7 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
       ready: p.level >= 25 && remaining === 0 && !active.clockRollback,
       claimable: p.level>=25 && remaining===0 && !active.clockRollback && claimHasCapacity(p,now,reward,awardedXp,baseCooldownMs*effects.cooldownMultiplier,daily), configurationMissing: configurationMissing,
       missingClaimLevels: table.reduce(function (out, requirement, index) { if (requirement === null && index + 1 < MAX_FAUCET_LEVEL) out.push(index + 1); return out; }, []),
-      maxLevel: maxLevel, terminal: maxLevel, claimsArePerLevel: true,
+      maxLevel: maxLevel, terminal: maxLevel, claimsArePerLevel: false,
       claimsToday: daily.claims, earnedTodayHundredths: daily.earnedHundredths, earnedTodayCoins: daily.earnedHundredths / 100,
       dailyRuns: runs, taskRequired: TASK_REQUIRED, taskComplete: complete, taskRatePercent: taskRate,
       incompleteDailyRatePercent: settings.incompleteRate, claimTierPercent: tier.percent, effectiveRatePercent: taskRate * tier.percent / 100,
@@ -2751,14 +2757,15 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
     draft.coinsHalf += creditedHalf; f.coinRemainderHundredths = carryTotal % 50;
     f.daily = {dayKey: info.dayKey, claims: info.claimsToday + 1, earnedHundredths: info.earnedTodayHundredths + reward};
     f.lifetimeEarningsKnown = info.lifetimeEarningsKnown; f.earnedLifetimeHundredths = earnedLifetime;
-    f.claims++; f.totalClaims++; f.lastClaimAt = now; f.nextClaimAt = next;
+    f.totalClaims++; f.claims = f.totalClaims; f.lastClaimAt = now; f.nextClaimAt = next;
     // Exactly one reduction per WAIT, not one reduction per replacement bottle.
     if (info.cooldownMultiplier === 0.5) f.cooldownPotionApplied = true;
     else delete f.cooldownPotionApplied;
     if (settings.potion.active && POT.hasEffect(settings.potion.active,'cooldown')) rememberCooldown(f, settings.potion.active.uid);
-    // Costs are per CURRENT level. Missing costs hold the tier and retain all claims.
-    while (f.level < MAX_FAUCET_LEVEL && table[f.level - 1] !== null && f.claims >= table[f.level - 1]) {
-      f.claims -= table[f.level - 1]; f.level++;
+    // Only a successful claim settles earned cumulative thresholds. No startup
+    // awards, subtraction or downgrade; unknown thresholds hold, duplicates advance safely.
+    while (f.level < MAX_FAUCET_LEVEL && table[f.level - 1] !== null && f.totalClaims >= table[f.level - 1]) {
+      f.level++;
     }
     commit(p, draft);
     var xpSummary = summary(draft, fromLevel, earnedXp, settings.playerTable);
@@ -3377,7 +3384,7 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
   // pointInfo returns plain text for textContent; render escapes every insertion.
   var MAX_LEVEL = 50;
   var METRICS = {
-    claims: {button: 'Claims required', title: 'Required claims to advance', axis: 'Claims'},
+    claims: {button: 'Total claims required', title: 'Total lifetime claims to advance', axis: 'Lifetime claims'},
     coins: {button: 'Coins per claim', title: 'Coins per claim', axis: 'Coins per claim'},
     cooldown: {button: 'Cooldown (seconds)', title: 'Cooldown (seconds)', axis: 'Seconds between claims'}
   };
@@ -3425,7 +3432,7 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
     var prefix = 'Faucet level ' + row.level;
     if (metric === 'claims') {
       if (row.terminal) return prefix + ': terminal maximum level. No next level or claims requirement.';
-      return prefix + ' → ' + (row.level + 1) + ': ' + (row.requiredClaims === null ? 'claims requirement TBD (not configured)' : number(row.requiredClaims) + ' claims required') + '. The requirement belongs to current level ' + row.level + ' before advancing.';
+      return prefix + ' → ' + (row.level + 1) + ': ' + (row.requiredClaims === null ? 'total successful lifetime claims requirement TBD (not configured)' : number(row.requiredClaims) + ' total successful lifetime claims required') + '. Cumulative total, not additional claims at this level.';
     }
     var value = metric === 'coins' ? number(row.coins) + (row.coins === 1 ? ' coin per claim' : ' coins per claim') : number(row.cooldown) + ' seconds (' + clock(row.cooldown) + ') between claims';
     return prefix + ': ' + value + '.' + (row.terminal ? ' Terminal maximum level; faucet cap 50.' : '');
@@ -3502,10 +3509,10 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
   function dataTable(rows, metric, number) {
     var html = '<details class="faucet-graph-data"><summary>All 50 faucet levels · accessible data table</summary>' +
       '<div class="faucet-graph-table-wrap" role="region" aria-label="All 50 faucet levels" tabindex="0" style="max-width:100%;overflow-x:auto"><table class="faucet-graph-table">' +
-      '<caption>Faucet data: requirements belong to the current faucet level before advancing; level 50 is terminal. TBD is not zero.</caption>' +
-      '<thead><tr><th scope="col">Current faucet level</th><th scope="col">Claims to advance</th><th scope="col">Coins per claim</th><th scope="col">Cooldown (seconds; m:ss)</th></tr></thead><tbody>';
+      '<caption>Faucet data: cumulative successful lifetime claims required to advance from each current faucet level; level 50 is terminal. TBD is not zero.</caption>' +
+      '<thead><tr><th scope="col">Current faucet level</th><th scope="col">Total lifetime claims to advance</th><th scope="col">Coins per claim</th><th scope="col">Cooldown (seconds; m:ss)</th></tr></thead><tbody>';
     rows.forEach(function (row) {
-      var requirement = row.terminal ? 'MAX — terminal; no next level' : row.requiredClaims === null ? 'TBD — not configured' : number(row.requiredClaims) + ' claims → level ' + (row.level + 1);
+      var requirement = row.terminal ? 'MAX — terminal; no next level' : row.requiredClaims === null ? 'TBD — not configured' : number(row.requiredClaims) + ' total claims → level ' + (row.level + 1);
       html += '<tr><th scope="row"><button type="button" class="faucet-graph-table-level" data-level-action="graph-point" data-level="' + row.level + '" aria-controls="faucet-graph-point" aria-label="' + escape(describe(row, metric, number)) + '">' + row.level + '</button></th>' +
         '<td>' + escape(requirement) + '</td><td>' + escape(number(row.coins) + (row.coins === 1 ? ' coin' : ' coins')) + '</td><td>' + escape(number(row.cooldown) + ' seconds (' + clock(row.cooldown) + ')') + '</td></tr>';
     });
@@ -3521,13 +3528,13 @@ body.reduced-motion .potions-scope *{scroll-behavior:auto!important;animation:no
       html += '<button type="button" class="btn ghost small faucet-graph-metric" data-level-action="graph-metric" data-metric="' + name + '" aria-pressed="' + (metric === name) + '">' + escape(METRICS[name].button) + '</button>';
     });
     html += '</div><p class="faucet-graph-unit"><strong>' + escape(METRICS[metric].title) + '</strong></p>' + renderChart(rows, metric, number) +
-      '<ul class="faucet-graph-legend" aria-label="Graph legend"><li>Teal points: ' + escape(metric === 'claims' ? 'known claims requirements' : metric === 'coins' ? 'coins per claim' : 'cooldown in seconds') + '.</li>' +
+      '<ul class="faucet-graph-legend" aria-label="Graph legend"><li>Teal points: ' + escape(metric === 'claims' ? 'known cumulative lifetime claims thresholds' : metric === 'coins' ? 'coins per claim' : 'cooldown in seconds') + '.</li>' +
       (metric === 'claims' ? '<li>Hollow gold / TBD: requirement not configured. Gaps are not zero and are not joined; these markers are non-numeric.</li>' : '') +
-      '<li>Gold cap 50: terminal faucet level; no next tier' + (metric === 'claims' ? ' or claims cost' : '') + '.</li></ul>' +
+      '<li>Gold cap 50: terminal faucet level; no next tier' + (metric === 'claims' ? ' or claims threshold' : '') + '.</li></ul>' +
       '<p class="faucet-graph-guide">Tap a point, use a keyboard point link, or choose a level in the data table for exact values.</p>' +
       '<p class="faucet-graph-point-info" id="faucet-graph-point" role="status" aria-live="polite" aria-atomic="true">' + escape(describe(rows[0], metric, number)) + '</p>' +
       dataTable(rows, metric, number) +
-      '<figcaption class="faucet-graph-caption">Claims requirements belong to the current faucet level before advancing, not the destination level. Working interpretation of the latest ambiguous ranges: each range contains ten transitions — 30→31 through 39→40, then 40→41 through 49→50; the bare 5.9 means 5.9K. The supplied table is authoritative. Faucet cap 50 is terminal, with no next level or invented claims cost.</figcaption></figure>';
+      '<figcaption class="faucet-graph-caption">Each threshold is the total number of successful lifetime claims needed to advance from the current faucet level, not extra claims to earn at that tier. Progress is cumulative and never resets when a level is reached. The supplied table is authoritative; unconfigured thresholds remain TBD. Each latest range describes ten transitions — 30→31 through 39→40, then 40→41 through 49→50; the bare 5.9 means 5.9K. Equal thresholds share the same cumulative total. Faucet cap 50 is terminal, with no next level or invented claims threshold.</figcaption></figure>';
     return html;
   }
   return {render: render, pointInfo: pointInfo};
@@ -3610,7 +3617,7 @@ function awardXp(result){
  xpGain.dataset.xpGain=String(xpGainAmount);xpGain.textContent='+'+String(xpGainAmount)+' XP';
  return true;
 }
-function init(context){api=context;const hud=$('#level-hud');if(!hud||!P()){clearXpGain();xpHud=null;clearInterval(timer);timer=null;return}if(hud!==xpHud||!hud.querySelector('#player-xp-fill')){clearXpGain();xpHud?.querySelector('.xp-shine')?.remove();xpHud=hud;hud.innerHTML='<button class="level-badge" data-level-action="details" aria-label="View player levels"><span id="player-level-label">Level 1</span></button><div class="xp-main"><button id="player-next-reward" data-level-action="next-reward" data-next-level="2" type="button"></button><div class="xp-caption"><span id="player-xp-fraction">0 / 100 XP</span><span id="player-xp-percent">0%</span></div><div class="xp-track" id="player-xp-progress" role="progressbar" aria-label="Player level experience" aria-valuemin="0" aria-valuemax="100"><span id="player-xp-fill"></span></div><small id="player-xp-cap"></small><button id="player-exp-interest" data-level-action="interest-details" type="button" hidden></button></div><span class="player-coins" id="player-coins" hidden></span><button class="faucet-hud-button" id="faucet-hud-button" data-level-action="faucet" title="Unlocks at player level 25">Faucet · Lv25</button><div class="faucet-mini" id="faucet-mini" hidden><button type="button" id="faucet-next-reward" data-level-action="faucet-preview" data-level="" hidden></button><div class="faucet-mini-caption"><button type="button" class="faucet-level-link" id="faucet-mini-level" data-level-action="faucet-levels" aria-label="Preview faucet levels"></button><span id="faucet-mini-fraction"></span><span id="faucet-mini-percent"></span></div><div class="faucet-claim-track" role="progressbar" aria-label="Faucet claim progress" id="faucet-mini-progress" aria-valuemin="0" aria-valuemax="100"><span id="faucet-mini-fill"></span></div></div>';}clearInterval(timer);timer=setInterval(refreshClock,200);refresh()}
+function init(context){api=context;const hud=$('#level-hud');if(!hud||!P()){clearXpGain();xpHud=null;clearInterval(timer);timer=null;return}if(hud!==xpHud||!hud.querySelector('#player-xp-fill')){clearXpGain();xpHud?.querySelector('.xp-shine')?.remove();xpHud=hud;hud.innerHTML='<button class="level-badge" data-level-action="details" aria-label="View player levels"><span id="player-level-label">Level 1</span></button><div class="xp-main"><button id="player-next-reward" data-level-action="next-reward" data-next-level="2" type="button"></button><div class="xp-caption"><span id="player-xp-fraction">0 / 100 XP</span><span id="player-xp-percent">0%</span></div><div class="xp-track" id="player-xp-progress" role="progressbar" aria-label="Player level experience" aria-valuemin="0" aria-valuemax="100"><span id="player-xp-fill"></span></div><small id="player-xp-cap"></small><button id="player-exp-interest" data-level-action="interest-details" type="button" hidden></button></div><span class="player-coins" id="player-coins" hidden></span><button class="faucet-hud-button" id="faucet-hud-button" data-level-action="faucet" title="Unlocks at player level 25">Faucet · Lv25</button><div class="faucet-mini" id="faucet-mini" hidden><button type="button" id="faucet-next-reward" data-level-action="faucet-preview" data-level="" hidden></button><div class="faucet-mini-caption"><button type="button" class="faucet-level-link" id="faucet-mini-level" data-level-action="faucet-levels" aria-label="Preview faucet levels"></button><span class="faucet-claims-group"><span class="faucet-fraction" id="faucet-mini-fraction"></span><span class="faucet-remaining" id="faucet-mini-remaining" hidden></span></span><span id="faucet-mini-percent"></span></div><div class="faucet-claim-track" role="progressbar" aria-label="Faucet claim progress" id="faucet-mini-progress" aria-valuemin="0" aria-valuemax="100"><span id="faucet-mini-fill"></span></div></div>';}clearInterval(timer);timer=setInterval(refreshClock,200);refresh()}
 function refresh(){if(!api||!P()||!$('#level-hud')){clearXpGain();xpHud?.querySelector('.xp-shine')?.remove();return}const p=progress(),v=P().progress(p,xpConfig()),buff=P().buffs(p.level);$('#player-level-label').textContent='Level '+number(p.level);paintNextReward(p);paintInterest(p);$('#player-xp-fraction').textContent=v.maxLevel?'MAX LEVEL':number(v.configurationMissing?p.xp:v.shownXp)+' / '+(v.required===null?'?':number(v.required))+' XP';$('#player-xp-percent').textContent=v.maxLevel?'100%':v.percentText;$('#player-xp-progress').setAttribute('aria-valuenow',String(v.maxLevel?100:v.percent));$('#player-xp-progress').setAttribute('aria-valuetext',v.maxLevel?'Maximum player level':v.configurationMissing?'Next XP cost not specified; '+number(p.xp)+' XP banked':number(v.shownXp)+' of '+number(v.required)+' XP, '+v.percentText);const fill=$('#player-xp-fill');fill.style.width=(v.maxLevel?100:v.percent)+'%';const palette=['#7e9e9b','#64b5d9','#7bd4b5','#e4c977','#eb9a6b','#df83b7','#a68af0','#76e2ed'],count=Math.min(palette.length,1+Math.floor(p.level/2));fill.style.background='linear-gradient(90deg,'+palette.slice(0,count).concat(palette[count-1]).join(',')+')';fill.style.filter='saturate('+(.6+p.level/playerMax()*1.4)+') hue-rotate('+((p.level-1)*1.8)+'deg)';fill.style.boxShadow=p.level>=7?'0 0 '+Math.min(28,5+p.level/4)+'px '+palette[(p.level-1)%palette.length]+'66':'none';document.body.classList.toggle('enhanced-ui',!!buff.enhancedUI);$('#level-hud').classList.toggle('enhanced-levels-ui',!!buff.enhancedLevelsUI);$('#level-hud').dataset.level=String(p.level);syncXpEffects(p);$('#player-xp-cap').textContent=v.configurationMissing?'Next XP cost awaiting confirmation · all XP saved':v.banked>0?'+'+number(v.banked)+' XP banked · cap '+number(v.cap):v.capped&&!v.maxLevel?'Level cap '+number(v.cap)+' · clear its Ante requirement':'';$('#player-xp-cap').title=$('#player-xp-cap').textContent;const f=info();paintFaucetMini(f,buff.faucet);const button=$('#faucet-hud-button');button.disabled=!buff.faucet;button.hidden=!buff.faucet;document.body.classList.toggle('has-faucet',buff.faucet);button.textContent=!buff.faucet?'Faucet · Lv25':f.ready?'Claim Free Coins':time(f.remainingMs);button.title=!buff.faucet?'Unlocks at player level 25':f.ready?'Solve the claim challenges for free in-game coins':'Next claim in '+time(f.remainingMs);$('#player-coins').hidden=!buff.faucet;$('#player-coins').textContent=faucetCoinNumber(f.coins)+((p.coinsHalf||0)===2?' coin':' coins');if($('#faucet-live-countdown'))$('#faucet-live-countdown').textContent=time(f.remainingMs);const begin=$('#faucet-begin');if(begin)begin.disabled=!claimable(f);refreshDetails(p,buff);refreshClock()}
 const interestNote='Compound Interest replaces ordinary flat passive XP at Level 20: current XP bank ×0.01%, maximum2 actual XP/sec. At Level26: ×0.015%, maximum3 actual XP/sec. Active physical Exp Jokers multiply the rate BEFORE the hard cap. Level15, manual22 and Exp Potion do not multiply interest. Knowledge separately earns1 XP/sec times Exp Jokers only. Visible game only; no offline/hidden/reload catch-up; long gaps skipped.';
 function paintInterest(p){
@@ -3666,7 +3673,9 @@ function refreshDetails(p,buff){
   if(page!==null)$('#dialog-body [data-level-action="roadmap-page"][data-page="'+page+'"]')?.focus({preventScroll:true});
  }else if(detail)detail.querySelector('.levels-summary').innerHTML=levelsSummary(p);
 }
-function faucetPercent(f){return f.maxLevel?100:f.requiredClaims===null?0:Math.min(100,Math.max(0,f.claims/f.requiredClaims*100))}
+function faucetPercent(f){return f.maxLevel?100:f.requiredClaims===null?0:Math.min(100,Math.max(0,f.totalClaims/f.requiredClaims*100))}
+function faucetFraction(f){return f.maxLevel?'MAX':number(f.totalClaims)+' / '+(f.requiredClaims===null?'?':number(f.requiredClaims))+' claims'}
+function faucetRemaining(f){const n=f.remainingClaims;return n===null?'':n+' '+(n===1?'claim':'claims')+' to the next level!'}
 function faucetPercentText(f){return !f.maxLevel&&f.requiredClaims===null?'TBD':(f.level>=6?faucetPercent(f).toFixed(2):String(Math.round(faucetPercent(f)*100)/100))+'%'}
 function faucetMotionOff(){return api.motionEnabled?api.motionEnabled()===false:document.body.matches('.reduced-motion,.motion-off')}
 function faucetStyleClasses(f){return [2,3,4,5,6,7].filter(level=>f.level>=level).map(level=>'faucet-style-'+level).join(' ')}
@@ -3678,24 +3687,24 @@ function paintFaucetNext(f,unlocked){
  else{const p=progress(),next=P().faucetInfo({...p,faucet:{...p.faucet,level:f.level+1,claims:0}},Date.now(),api.faucetConfig?.()||{});hint.dataset.level=String(next.level);hint.textContent='Next '+next.level+': '+faucetCoinNumber(next.baseRewardCoins)+' CPC (Coins Per Claim), '+time(next.baseCooldownMs)+' CD';hint.title='Next Faucet Level '+next.level+': '+faucetCoinNumber(next.baseRewardCoins)+' Coins Per Claim (CPC), '+time(next.baseCooldownMs)+' Cooldown (CD); base values before daily rates and potion effects. Click to preview.'}
  hint.setAttribute('aria-label',hint.title);
 }
-function paintFaucetMini(f,unlocked){const box=$('#faucet-mini');if(!box)return;box.hidden=!unlocked;syncFaucetStyle(box,f);document.querySelectorAll('.faucet-progress-box').forEach(el=>syncFaucetStyle(el,f));paintFaucetNext(f,unlocked);$('#faucet-mini-level').textContent='Faucet Lv'+number(f.level);$('#faucet-mini-fraction').textContent=f.maxLevel?'MAX':number(f.requiredClaims===null?f.claims:Math.min(f.claims,f.requiredClaims))+' / '+(f.requiredClaims===null?'?':number(f.requiredClaims))+' claims';$('#faucet-mini-percent').textContent=faucetPercentText(f);$('#faucet-mini-fill').style.width=faucetPercent(f)+'%';$('#faucet-mini-fill').style.filter='hue-rotate('+f.level*3+'deg) saturate('+(1+f.level/faucetMax())+')';$('#faucet-mini-progress').setAttribute('aria-valuenow',String(faucetPercent(f)))}
-function faucetBar(f){return '<div class="faucet-progress-box '+faucetStyleClasses(f)+(faucetMotionOff()?' faucet-motion-off':'')+'" data-faucet-level="'+f.level+'"><div class="faucet-mini-caption"><button type="button" class="faucet-level-link" data-level-action="faucet-levels" aria-label="Preview faucet levels">Faucet Level '+number(f.level)+' / '+number(faucetMax())+'</button><span>'+ (f.maxLevel?'MAX':number(f.claims)+' / '+(f.requiredClaims===null?'?':number(f.requiredClaims))+' claims')+'</span><span>'+faucetPercentText(f)+'</span></div><div class="faucet-claim-track" role="progressbar" aria-label="Faucet claims" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+faucetPercent(f)+'"><span style="width:'+faucetPercent(f)+'%"></span></div><small>Faucet claims, not player XP.</small></div>'}
+function paintFaucetMini(f,unlocked){const box=$('#faucet-mini');if(!box)return;box.hidden=!unlocked;syncFaucetStyle(box,f);document.querySelectorAll('.faucet-progress-box').forEach(el=>syncFaucetStyle(el,f));paintFaucetNext(f,unlocked);$('#faucet-mini-level').textContent='Faucet Lv'+number(f.level);$('#faucet-mini-fraction').textContent=faucetFraction(f);const remaining=$('#faucet-mini-remaining');remaining.textContent=faucetRemaining(f);remaining.hidden=f.remainingClaims===null;$('#faucet-mini-percent').textContent=faucetPercentText(f);$('#faucet-mini-fill').style.width=faucetPercent(f)+'%';$('#faucet-mini-fill').style.filter='hue-rotate('+f.level*3+'deg) saturate('+(1+f.level/faucetMax())+')';$('#faucet-mini-progress').setAttribute('aria-valuenow',String(faucetPercent(f)))}
+function faucetBar(f){return '<div class="faucet-progress-box '+faucetStyleClasses(f)+(faucetMotionOff()?' faucet-motion-off':'')+'" data-faucet-level="'+f.level+'"><div class="faucet-mini-caption"><button type="button" class="faucet-level-link" data-level-action="faucet-levels" aria-label="Preview faucet levels">Faucet Level '+number(f.level)+' / '+number(faucetMax())+'</button><span class="faucet-claims-group"><span class="faucet-fraction">'+faucetFraction(f)+'</span><span class="faucet-remaining"'+(f.remainingClaims===null?' hidden':'')+'>'+faucetRemaining(f)+'</span></span><span>'+faucetPercentText(f)+'</span></div><div class="faucet-claim-track" role="progressbar" aria-label="Faucet claims" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+faucetPercent(f)+'"><span style="width:'+faucetPercent(f)+'%"></span></div><small>Cumulative successful lifetime claims, not player XP.</small></div>'}
 // Read-only projections use the payout model on a copy, never a claim or a save mutation.
 function showFaucetLevels(selected){
  if(!api||!P())return;if(!P().buffs(progress().level).faucet){api.notify?.('Faucet levels unlock at Player Level 25.');return}
  const p=progress(),now=Date.now(),config=api.faucetConfig?.()||{},f=P().faucetInfo(p,now,config),max=faucetMax();
  const level=selected===undefined?f.level:selected;if(!Number.isSafeInteger(level)||level<1||level>max)return;
  const view=n=>P().faucetInfo({...p,faucet:{...p.faucet,level:n,claims:n===f.level?p.faucet.claims:0}},now,config),chosen=view(level),next=level<max?view(level+1):null;
- const terms=v=>v.maxLevel?'Maximum faucet level — no next level or claims requirement.':v.requiredClaims===null?'Claims at Level '+number(v.level)+' to advance: awaiting confirmation.':'Claims at Level '+number(v.level)+' to reach Level '+number(v.level+1)+': '+number(v.requiredClaims)+'.';
+ const terms=v=>v.maxLevel?'Maximum faucet level — no next level or claims requirement.':'Total successful lifetime claims to reach Faucet Level '+number(v.level+1)+': '+(v.requiredClaims===null?'awaiting confirmation.':number(v.requiredClaims)+'.');
  const appearance={2:'Green border around the faucet level; its underline is removed.',3:'Bold claims counter.',4:'Livelier colours inside the claim bar.',5:'Thin green border around the claim bar.',6:'Bold claim percentage shown to 2 decimal places.',7:'Animated claim bar with a white inner glow and a soft green aura.'};
  const reward=v=>'<p><strong>'+faucetCoinNumber(v.baseRewardCoins)+' base coins per claim</strong><br>Base cooldown: <strong>'+time(v.baseCooldownMs)+'</strong></p><small>'+escape(terms(v))+'</small><small class="faucet-style-unlock">'+escape(appearance[v.level]?'Appearance unlock: '+appearance[v.level]+' Earlier faucet appearance upgrades stay active.':v.level>7?'All Faucet Level 2–7 appearance upgrades stay active.':'Classic Faucet appearance.')+'</small>';
  const options=Array.from({length:max},(_,i)=>{const n=i+1;return '<option value="'+n+'"'+(n===level?' selected':'')+'>Faucet Level '+number(n)+(n===f.level?' — Current':n<f.level?' — Completed':' — Preview')+'</option>'}).join('');
  attempt=null;
- api.openModal('Faucet Levels','<div id="faucet-level-preview" class="levels-detail--enhanced" data-preview-level="'+level+'" data-current-level="'+f.level+'"><p class="levels-kicker">Your current faucet progress</p>'+faucetBar(f)+'<p>Preview only — viewing levels does not claim coins, spend anything or unlock rewards. Faucet levels use claims, not player XP.</p><label class="faucet-preview-selector" for="faucet-preview-select">Preview Faucet Level<select id="faucet-preview-select">'+options+'</select></label><div class="faucet-preview-controls"><button type="button" class="btn" id="faucet-preview-prev" data-level-action="faucet-preview" data-level="'+(level>1?level-1:'')+'"'+(level===1?' disabled':'')+'>← Previous</button><button type="button" class="btn" id="faucet-preview-next" data-level-action="faucet-preview" data-level="'+(level<max?level+1:'')+'"'+(level===max?' disabled':'')+'>Next →</button></div><div class="levels-reward-grid"><section class="levels-reward levels-reward-current" id="faucet-preview-reward" data-level="'+level+'"><span class="levels-kicker">'+(level===f.level?'Current':level<f.level?'Completed':'Locked reward preview')+'</span><h3>Faucet Level '+number(level)+'</h3>'+reward(chosen)+'</section><section class="levels-reward levels-reward-next"><span class="levels-kicker">'+(next?'Next reward':'Maximum level')+'</span>'+(next?'<h3>Faucet Level '+number(next.level)+'</h3>'+reward(next)+'<button type="button" class="btn" data-level-action="faucet-preview" data-level="'+next.level+'">Preview Level '+number(next.level)+' →</button>':'<h3>Level '+number(max)+' is the cap</h3><p>No next faucet level.</p>')+'</section></div><p class="muted">Base rewards are before daily task and claim-tier rates. Potions may shorten the cooldown. Your existing claim countdown is unchanged.</p><div class="sheet-actions"><button type="button" class="btn" data-level-action="faucet">Back to Faucet</button></div></div>');
+ api.openModal('Faucet Levels','<div id="faucet-level-preview" class="levels-detail--enhanced" data-preview-level="'+level+'" data-current-level="'+f.level+'"><p class="levels-kicker">Your current faucet progress</p>'+faucetBar(f)+'<p>Preview only — viewing levels does not claim coins, spend anything or unlock rewards. Faucet levels use cumulative successful lifetime claims, not player XP.</p><label class="faucet-preview-selector" for="faucet-preview-select">Preview Faucet Level<select id="faucet-preview-select">'+options+'</select></label><div class="faucet-preview-controls"><button type="button" class="btn" id="faucet-preview-prev" data-level-action="faucet-preview" data-level="'+(level>1?level-1:'')+'"'+(level===1?' disabled':'')+'>← Previous</button><button type="button" class="btn" id="faucet-preview-next" data-level-action="faucet-preview" data-level="'+(level<max?level+1:'')+'"'+(level===max?' disabled':'')+'>Next →</button></div><div class="levels-reward-grid"><section class="levels-reward levels-reward-current" id="faucet-preview-reward" data-level="'+level+'"><span class="levels-kicker">'+(level===f.level?'Current':level<f.level?'Completed':'Locked reward preview')+'</span><h3>Faucet Level '+number(level)+'</h3>'+reward(chosen)+'</section><section class="levels-reward levels-reward-next"><span class="levels-kicker">'+(next?'Next reward':'Maximum level')+'</span>'+(next?'<h3>Faucet Level '+number(next.level)+'</h3>'+reward(next)+'<button type="button" class="btn" data-level-action="faucet-preview" data-level="'+next.level+'">Preview Level '+number(next.level)+' →</button>':'<h3>Level '+number(max)+' is the cap</h3><p>No next faucet level.</p>')+'</section></div><p class="muted">Base rewards are before daily task and claim-tier rates. Potions may shorten the cooldown. Your existing claim countdown is unchanged.</p><div class="sheet-actions"><button type="button" class="btn" data-level-action="faucet">Back to Faucet</button></div></div>');
 }
 function faucetCoinNumber(n){return Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:2}):'0'}
 function faucetActivity(f){const done=!!f.taskComplete,runs=Math.min(5,Math.max(0,f.dailyRuns||0)),rate=Number.isFinite(f.effectiveRatePercent)?f.effectiveRatePercent:100,tier=f.claimTierPercent||100,labels=['0–79','80–99','100–119','120–149','150+'],tiers=[100,80,60,40,20],next=tiers[tiers.indexOf(tier)+1],remaining=Number.isFinite(f.remainingAtTier)?f.remainingAtTier:null;return '<section class="faucet-activity" data-reset-at="'+(f.resetAt||0)+'" aria-label="Daily faucet activity"><h3>Faucet rate</h3><strong class="faucet-activity-rate">'+faucetCoinNumber(rate)+'%</strong><div class="faucet-activity-task"><strong>'+(done?'✓ Daily task done · full task rate unlocked':'Daily task · reach Ante 4 in 5 different runs')+'</strong><progress aria-label="Today’s Ante 4 runs" value="'+runs+'" max="5"></progress><small>'+runs+' / 5 qualifying runs today. '+(done?'Daily claim tiers still apply.':'Current task rate: '+faucetCoinNumber(f.taskRatePercent??100)+'%. Complete all 5 for 100%.')+'</small></div><p>Today: <strong>'+faucetCoinNumber(f.claimsToday||0)+' claims</strong>. '+(remaining!==null&&next?'Next '+remaining+' claims at the '+tier+'% daily tier, then '+next+'%.':'Lowest daily claim tier until midnight.')+'</p><div class="faucet-rate-tiers" aria-label="Daily claim reward tiers">'+tiers.map((r,i)=>'<div class="faucet-rate-tier '+(r===tier?'is-active':'')+'" data-tier="'+r+'"><strong>'+r+'%</strong><small>'+labels[i]+' claims</small></div>').join('')+'</div><small>Final rate = task rate × daily claim tier. Every successful claim also gives +<span class="faucet-claim-xp">'+number(f.awardedXp??f.awardXp??10)+' XP</span>. Only fictional in-game coins—no cash value.</small><div class="faucet-activity-stats"><div class="faucet-activity-stat"><span>Earned today · coins</span><strong>'+faucetCoinNumber(f.earnedTodayCoins||0)+'</strong></div><div class="faucet-activity-stat"><span>Total claims</span><strong>'+faucetCoinNumber(f.totalClaims||0)+'</strong></div></div><p class="faucet-activity-reset">Daily reset: midnight · Atlantic/Canary. Fractional coins are saved, never discarded.</p></section>'}
-function faucetDescription(f){return faucetActivity(f)+faucetBar(f)+'<p>Reward '+faucetCoinNumber(f.rewardCoins??f.rewardHalf/2)+' in-game coins + <strong class="faucet-claim-xp">'+number(f.awardedXp??f.awardXp??10)+' XP</strong> · new claim cooldown <span class="faucet-new-cooldown">'+time(f.cooldownMs)+'</span>'+'.</p><p>Coin balance: '+faucetCoinNumber(f.coins)+'. '+(f.maxLevel?'Maximum faucet level '+number(faucetMax())+'. No further tier.':f.requiredClaims===null?'This claim threshold is awaiting confirmation; all claims are saved.':'Successful claims also advance your faucet level.')+'</p><button class="btn ghost small" data-level-action="faucet-graph">Faucet graph & data</button><p class="build-note">Coins have no cash value. This local challenge is not secure anti-bot verification.</p>'}
+function faucetDescription(f){return faucetActivity(f)+faucetBar(f)+'<p>Reward '+faucetCoinNumber(f.rewardCoins??f.rewardHalf/2)+' in-game coins + <strong class="faucet-claim-xp">'+number(f.awardedXp??f.awardXp??10)+' XP</strong> · new claim cooldown <span class="faucet-new-cooldown">'+time(f.cooldownMs)+'</span>'+'.</p><p>Coin balance: '+faucetCoinNumber(f.coins)+'. '+(f.maxLevel?'Maximum faucet level '+number(faucetMax())+'. No further tier.':f.requiredClaims===null?'This claim threshold is awaiting confirmation; all claims are saved.':'Successful lifetime claims count cumulatively toward your faucet level; they never reset on a level-up.')+'</p><button class="btn ghost small" data-level-action="faucet-graph">Faucet graph & data</button><p class="build-note">Coins have no cash value. This local challenge is not secure anti-bot verification.</p>'}
 function surveyPanel(){return root.BOApp?.surveys?.render?.()||''}
 function faucetHTML(){
  if(!P().buffs(progress().level).faucet)return '<section class="panel faucet-page"><h2>Coin Faucet</h2><p>Unlocks at actual player Level25.</p></section>';
@@ -3708,7 +3717,7 @@ function renderCaptcha(){if(!attempt)return;const f=info(),math=attempt.kind==='
 function fail(){attempt=null;api.closeModal();api.notify('Incorrect answer—claim closed. No coins or cooldown used.')}
 function checkCaptcha(){if(!attempt||attempt.stage!=='captcha')return;const answer=$('#faucet-captcha-input')?.value.trim().toUpperCase(),expected=attempt.kind==='math'?String(attempt.a+attempt.b):attempt.code;if(answer!==expected){fail();return}attempt.stage='quiz';const item=quiz[randomInt(quiz.length)],answers=shuffled(item[1].map((text,i)=>({text,correct:i===item[2]})));attempt.answers=answers;api.openModal('Free coins · Balatro question','<p>'+escape(item[0])+'</p><div class="faucet-answers">'+answers.map((a,i)=>'<button class="btn ghost" data-level-action="quiz-answer" data-choice="'+i+'">'+escape(a.text)+'</button>').join('')+'</div><p class="build-note">One answer. A wrong answer closes the claim.</p>')}
 function canMutateProgress(){try{api.assertCurrent?.();return true}catch(error){api.notify?.(error.message||'Your save changed in another tab. Reload before claiming or spending.');return false}}
-function answerQuiz(choice){if(!canMutateProgress())return;if(!attempt||attempt.stage!=='quiz')return;if(!attempt.answers[choice]?.correct){fail();return}attempt.stage='claimed';const result=P().claimFaucet(progress(),Date.now(),{...(api.faucetConfig?.()||{}),passedCaptcha:true,passedQuiz:true});attempt=null;if(!result.ok){api.closeModal();api.notify(result.reason||'Claim is not ready.');refresh();return}api.save();api.onFaucetClaim?.(result);api.closeModal();root.BOAudio?.sfx('coin');api.notify('Claimed '+faucetCoinNumber(result.rewardCoins??(result.rewardHalf??result.coinsAwardedHalf??0)/2)+' in-game coins + '+number(result.awardedXp??10)+' XP!');refresh()}
+function answerQuiz(choice){if(!canMutateProgress())return;if(!attempt||attempt.stage!=='quiz')return;if(!attempt.answers[choice]?.correct){fail();return}attempt.stage='claimed';const result=P().claimFaucet(progress(),Date.now(),{...(api.faucetConfig?.()||{}),passedCaptcha:true,passedQuiz:true});attempt=null;if(!result.ok){api.closeModal();api.notify(result.reason||'Claim is not ready.');refresh();return}if(api.save()===false){api.closeModal();api.notify('Claim could not be saved. Reload to check your progress before claiming again.');refresh();return}api.onFaucetClaim?.(result);api.closeModal();root.BOAudio?.sfx('coin');api.notify('Claimed '+faucetCoinNumber(result.rewardCoins??(result.rewardHalf??result.coinsAwardedHalf??0)/2)+' in-game coins + '+number(result.awardedXp??10)+' XP!');refresh()}
 function graphRows(){return P().faucetCosts?.(api.faucetConfig?.()||{})||[]}
 function showGraph(metric='claims'){if(progress().level<25){api.openModal('Faucet graph locked','<p>Reach Player Level 25 to unlock the faucet graph.</p>'+graphButton());return}attempt=null;graphMetric=['claims','coins','cooldown'].includes(metric)?metric:'claims';const graph=root.BOFaucetGraph;if(!graph){api.openModal('Faucet graph','<p>The faucet graph module is missing.</p>');return}api.openModal('Faucet level graph · not player XP',graph.render({rows:graphRows(),metric:graphMetric,format:number}))}
 function showGraphPoint(level){const el=$('#faucet-graph-point');if(el&&root.BOFaucetGraph)el.textContent=root.BOFaucetGraph.pointInfo(graphRows(),level,graphMetric,number)}
@@ -3756,9 +3765,9 @@ return {kinds,normalize,add,owned,complete,milestones};
   const LOOKAHEAD = 0.15, TICK_MS = 50, FX_LIMIT = 16, MUSIC_LIMIT = 36;
   const PENTATONIC = [0, 2, 4, 7, 9, 12, 14];
   const SFX_NAMES = new Set(['select', 'deselect', 'deal', 'discard', 'play', 'chip',
-    'mult', 'xmult', 'joker', 'coin', 'purchase', 'pack', 'win', 'lose', 'error', 'click']);
+    'mult', 'xmult', 'joker', 'coin', 'purchase', 'pack', 'win', 'lose', 'error', 'click', 'xp']);
   const COALESCE = { deal: 0.018, chip: 0.027, mult: 0.035, xmult: 0.075,
-    joker: 0.05, win: 0.25, lose: 0.25, pack: 0.12, purchase: 0.08 };
+    joker: 0.05, win: 0.25, lose: 0.25, pack: 0.12, purchase: 0.08, xp: 0.4 };
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   const number = (n, fallback) => {
     try { const v = Number(n); return Number.isFinite(v) ? v : fallback; }
@@ -4154,7 +4163,7 @@ return {kinds,normalize,add,owned,complete,milestones};
     const rawPitch = number(options && options.pitch, 0);
     const step = PENTATONIC[clamp(Math.floor(rawPitch), 0, PENTATONIC.length - 1)];
     const bend = clamp(rawPitch, -6, 6), n = name;
-    const v = voice(graph, 'fx', at, 0, ['chip', 'mult', 'xmult', 'joker', 'coin', 'win', 'pack'].includes(n) ? 0.28 : 0.05);
+    const v = voice(graph, 'fx', at, 0, ['chip', 'mult', 'xmult', 'joker', 'coin', 'win', 'pack', 'xp'].includes(n) ? 0.28 : 0.05);
     const note = (offset, midi, duration, level, shape, cutoff) => tone(graph, v, at + offset,
       midi, duration, level * intensity, shape || 'sine', cutoff || 2100, 0.004, 0.3);
     const tap = (offset, midi, level, duration) => note(offset, midi, duration || 0.07, level, 'triangle', 1700);
@@ -4165,6 +4174,12 @@ return {kinds,normalize,add,owned,complete,milestones};
     if (n === 'select') { tap(0, 72, 0.19, 0.075); note(0, 51, 0.055, 0.09); }
     else if (n === 'deselect') { tap(0, 65, 0.16, 0.065); note(0, 47, 0.05, 0.07); }
     else if (n === 'click') tap(0, 67, 0.16, 0.048);
+    else if (n === 'xp') {
+      // Original tiny C–E–A glass rise: soft attacks and a quiet octave shimmer.
+      // Fixed pitch (never the amount/tick count); 400-ms coalescing outlasts every
+      // dry note, so rapid compound-interest awards cannot stack sharp voices.
+      bell(0, 72, 0.15, 0.14); bell(0.055, 76, 0.13, 0.16); bell(0.115, 81, 0.11, 0.20);
+    }
     else if (n === 'deal') { paper(0, 0.105, 0.20, 1550 + bend * 60); tap(0.019, 48 + bend, 0.11, 0.055); }
     else if (n === 'discard') { paper(0, 0.17, 0.22, 1000); paper(0.035, 0.11, 0.10, 2100); tap(0.045, 45, 0.09); }
     else if (n === 'play') { paper(0, 0.09, 0.15, 1300); tap(0.025, 48, 0.18, 0.11); bell(0.035, 60, 0.09, 0.18); }
@@ -4408,7 +4423,8 @@ return {kinds,normalize,add,owned,complete,milestones};
           track.play(offlineGraph, event, at, c);
         }
       }
-      const demo = [
+      // Optional explicit SFX preview; the existing demo and music API stay unchanged.
+      const demo = overrides && Array.isArray(overrides.effects) ? overrides.effects : [
         [0.32, 'select'], [0.63, 'deselect'], [0.92, 'deal'], [1.05, 'deal'], [1.18, 'deal'],
         [1.64, 'play'], [2.08, 'chip', 0], [2.27, 'chip', 1], [2.46, 'chip', 2],
         [2.65, 'chip', 3], [2.84, 'chip', 4], [3.03, 'chip', 99],
@@ -4416,7 +4432,8 @@ return {kinds,normalize,add,owned,complete,milestones};
         [5.82, 'purchase'], [6.5, 'discard'], [7.05, 'pack'], [8.1, 'win'],
         [10.2, 'click'], [10.65, 'error'], [11.2, 'lose']
       ];
-      for (const [at, name, pitch] of demo) if (offlinePrefs.sound && !offlinePrefs.muted && at < seconds - 0.1) {
+      for (const [at, name, pitch] of demo) if (offlinePrefs.sound && !offlinePrefs.muted &&
+        Number.isFinite(at) && at >= 0 && SFX_NAMES.has(name) && at < seconds - 0.1) {
         effect(offlineGraph, name, at, { pitch: pitch || 0, intensity: 0.82 });
       }
       return Promise.resolve(offlineContext.startRendering()).then(buffer => {
@@ -7168,6 +7185,8 @@ let cloudClient=null,cloudRestoring=false,cloudBusy=false,cloudPending=null,clou
 let cloudReload=()=>window.location.reload();
 const SU=window.BOSurveysUI;
 let economyLedgerError='',economyCanonicalSignature=null,economyResetSignature=null,economyMayCreate=true,lastProfileWriteRaw=null,lastRunWriteRaw=null;
+// Explicit award receipts only: startup/recovery/normalization are not XP events.
+const xpAwardsSeen=new WeakSet();let pendingXpAwards=[],xpAudioReady=false,progressSaveCommitted=false;
 function economySignature(value){return value===undefined?null:JSON.stringify(SU.normalizeEconomy(value))}
 function interestSignature(value){return EI&&Object.prototype.hasOwnProperty.call(value||{},'expInterest')?JSON.stringify(EI.normalize(value.expInterest)):null}
 function readEconomicProfile(){const raw=localStorage.getItem(PROFILE);if(raw===null)return {raw,value:null};const value=JSON.parse(raw);if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Profile save needs attention; its stored data has not been overwritten.');if(Object.prototype.hasOwnProperty.call(value,'economy'))SU.normalizeEconomy(value.economy);interestSignature(value);return {raw,value}}
@@ -7192,7 +7211,7 @@ function commitEconomy(change,context){
  // Economy receipt, coins and purchased inventory are durable in ONE write.
  // A failed optional run mirror cannot give away a bottle or reverse a charge.
  Object.assign(profile,next);economyCanonicalSignature=economySignature(profile.economy);interestCanonicalSignature=nextInterestSignature;recoveredInterestSignature=null;economyMayCreate=false;
- if(result.xpResult){queueLevelUp(result.xpResult);if(run){if(run.playerLevel!==profile.progression.level)E.setPlayerLevel(run,profile.progression.level);syncRunPotionState(Date.now());}}
+ if(result.xpResult){queueLevelUp(result.xpResult,true);if(run){if(run.playerLevel!==profile.progression.level)E.setPlayerLevel(run,profile.progression.level);syncRunPotionState(Date.now());}}
  if(run&&(result.xpResult||beforePotions!==JSON.stringify(profile.potions))){if(!result.xpResult&&beforePotions!==JSON.stringify(profile.potions))syncRunPotionState(Date.now());mirrorPotionProfile();if(!store(SAVE,run))result.mirrorSaved=false;}
  return result;
 }
@@ -7402,7 +7421,23 @@ function trackUnlocked(id){return id==='poker_lounge'||id==='casino_lounge'&&pla
 function effectiveAudioPrefs(){return {...prefs,music:!!prefs.music&&playerBuffs().music,track:trackUnlocked(prefs.track)?prefs.track:'poker_lounge'}}
 function coinUnlockIds(){return [...new Set((profile.progression?.unlockedJokers||[]).filter(id=>E.jokers.some(j=>j.id===id&&j.requiresCoinUnlock)))].sort()}
 function newRunId(){return window.crypto?.randomUUID?'run-'+window.crypto.randomUUID():'run-'+Date.now()+'-'+(profile.runs+1)}
-function queueLevelUp(result){if(!surveyViewActive())window.BOLevelUI?.awardXp?.(result);if(!result||result.toLevel<=result.fromLevel)return;if(!pendingLevelCelebration)pendingLevelCelebration={fromLevel:result.fromLevel,toLevel:result.toLevel};else pendingLevelCelebration.toLevel=Math.max(pendingLevelCelebration.toLevel,result.toLevel)}
+function presentLevelUp(result){if(!surveyViewActive())window.BOLevelUI?.awardXp?.(result);if(!result||result.toLevel<=result.fromLevel)return;if(!pendingLevelCelebration)pendingLevelCelebration={fromLevel:result.fromLevel,toLevel:result.toLevel};else pendingLevelCelebration.toLevel=Math.max(pendingLevelCelebration.toLevel,result.toLevel)}
+function xpAudioAllowed(){return xpAudioReady&&!cloudRestoring&&!saveReadBlocked&&!document.hidden&&writerGuard?.status().writable!==false}
+function presentXpAward(result){
+ // Audio belongs to a real visible award, not to whether the gameplay HUD is mounted.
+ // Motion synchronously cancels old SFX when scoring starts; schedule this new
+ // durable chime after that cancellation, never in a timer or a replay backlog.
+ // Recheck visibility/restore guards; sfx enforces preferences and trusted unlock.
+ if(xpAudioAllowed())queueMicrotask(()=>{if(xpAudioAllowed())window.BOAudio?.sfx('xp')});
+ presentLevelUp(result);
+}
+function queueLevelUp(result,committed=false){
+ if(result&&typeof result==='object'&&Number.isFinite(result.awardedXp)&&result.awardedXp>0&&!result.duplicate&&result.ok!==false){
+  if(xpAwardsSeen.has(result))return;xpAwardsSeen.add(result);
+  if(committed)presentXpAward(result);else pendingXpAwards.push({result,progression:profile.progression});
+ }else presentLevelUp(result);
+}
+function settleXpAwards(committed){const awards=pendingXpAwards;pendingXpAwards=[];if(committed)for(const award of awards)if(award.progression===profile.progression)presentXpAward(award.result)}
 function refreshProgressPresentation(){if(surveyViewActive())return;syncLevel20Polish();window.BOAudio?.configure(effectiveAudioPrefs());window.BOLevelUI?.refresh();potions?.refresh();window.BOLevelUI?.applyTheme(prefs);syncAudioButton();updatePassiveButton();if($('#theme-select'))$('#theme-select').disabled=!playerBuffs().themes;document.querySelectorAll('#music-track option').forEach(option=>{option.disabled=!trackUnlocked(option.value)});if(pendingLevelCelebration&&window.BOLevelUI){window.BOLevelUI.celebrate(pendingLevelCelebration);pendingLevelCelebration=null}decorateMoney($('#level-hud'));decorateMoney($('#dialog-body'));decorateMoney($('#level-celebration'))}
 function syncProgression(){if(!PG)return;syncPotionClock();if(LEVEL_RULES.gateMode&&profile.progression.gateMode!==LEVEL_RULES.gateMode){const from=playerLevel();PG.setGateMode(profile.progression,LEVEL_RULES.gateMode,playerXpConfig());queueLevelUp({fromLevel:from,toLevel:playerLevel()})}if(run){if(!run._uiId)run._uiId=newRunId();if(E.setPlayerLevel&&(!run.progressionEnabled||run.playerLevel!==playerLevel())){capturePassiveJoker();E.setPlayerLevel(run,playerLevel());capturePassiveJoker();}if(E.setCoinUnlocks&&JSON.stringify(run.coinUnlocks||[])!==JSON.stringify(coinUnlockIds()))E.setCoinUnlocks(run,coinUnlockIds());if(run.progressEvents?.length){const previousCursor=profile.progression.cursors[run._uiId]||0;const result=PG.applyEvents(profile.progression,run._uiId,run.progressEvents,playerXpConfig(),Date.now());if(window.BOStats)window.BOStats.recordEvents(profile,run._uiId,run.progressEvents,previousCursor,profile.progression.cursors[run._uiId]||previousCursor);queueLevelUp(result);if(E.setPlayerLevel&&run.playerLevel!==playerLevel()){capturePassiveJoker();E.setPlayerLevel(run,playerLevel());capturePassiveJoker();}}}refreshProgressPresentation()}
 function toast(text){$('#toast').textContent=text;decorateMoney($('#toast'));$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3200)}
@@ -7415,7 +7450,10 @@ const supportedAchievements=new Set(['ante_up','ante_upper','heads_up','card_pla
 if((E?.stakes||[]).length>=8)for(const id of ['low_stakes','mid_stakes','high_stakes','completionist_plus'])supportedAchievements.add(id);if((E?.jokers||[]).length>=150)supportedAchievements.add('completionist_plus_plus');if((E?.challenges||[]).length===20)for(const id of ['rule_bender','rule_breaker'])supportedAchievements.add(id);if((E?.jokers||[]).length>=150&&(E?.packs||[]).length>=15)supportedAchievements.add('completionist');
 function checkAchievements(){if(!run)return;const checks={ante_up:run.ante>=4,ante_upper:run.ante>=8,heads_up:run._uiOutcome==='won',card_player:profile.cardsPlayed>=2500,card_discarder:profile.cardsDiscarded>=2500,nest_egg:run.money>=400,royale:!!run._uiRoyal||run.lastResult?.name==='Royal Flush',retrograde:Object.values(run.levels||{}).some(n=>n>=10),score_10k:profile.best>=10000,score_1000k:profile.best>=1000000,score_100000k:profile.best>=100000000,tiny_hands:run.cards.length<=20,big_hands:run.cards.length>=80,speedrunner:run._uiOutcome==='won'&&(run._uiRoundsStarted??99)<=12,you_get_what_you_get:run._uiOutcome==='won'&&(run._uiRerolls||0)===0,roi:(run._uiVouchersByAnte4||0)>=5,flushed:!!run._uiFlushed,shattered:(run.lastResult?.glassBroken||0)>=2,low_stakes:!run.challengeId&&run._uiOutcome==='won'&&run.stakeIndex>=1,mid_stakes:!run.challengeId&&run._uiOutcome==='won'&&run.stakeIndex>=3,high_stakes:!run.challengeId&&run._uiOutcome==='won'&&run.stakeIndex>=7,completionist_plus:E.decks.every(d=>profile.deckStakeWins[d.id]>=7),completionist_plus_plus:E.jokers.length>=150&&E.jokers.every(j=>profile.jokerStakeWins[j.id]>=7),rule_bender:Object.keys(profile.challengeWins).some(id=>E.challenges?.some(c=>c.id===id)),rule_breaker:E.challenges?.length===20&&E.challenges.every(c=>profile.challengeWins[c.id])};if(window.BOCollection)Object.assign(checks,window.BOCollection.milestones(profile,run,E));for(const a of window.BOAchievements||[]){if(supportedAchievements.has(a.id)&&checks[a.id]&&!profile.achievements.includes(a.id)){profile.achievements.push(a.id);toast('Local milestone: '+a.name)}}}
 function syncStats(){flushVisibleTime();syncProgression();if(!run)return;if(run.ante>4)run._uiPassedAnte4=true;const s=run.stats||{},old=run._uiStats||{};for(const [field,key]of [['handsPlayed','hands'],['discardsUsed','discards'],['cardsPlayed','cardsPlayed'],['cardsDiscarded','cardsDiscarded'],['blindsWon','blinds'],['moneyEarned','money']])profile[key]+=Math.max(0,(Number(s[field])||0)-(Number(old[field])||0));profile.best=Math.max(profile.best,Number(s.bestHand)||0,Number(run.lastResult?.total)||0);profile.ante=Math.max(profile.ante,run.ante||1);for(const[k,v]of Object.entries(s.handCounts||{}))profile.handCounts[k]=(profile.handCounts[k]||0)+Math.max(0,v-(old.handCounts?.[k]||0));run._uiStats=JSON.parse(JSON.stringify(s));if(!run._uiOutcome&&['won','lost'].includes(run.phase)){run._uiOutcome=run.phase;if(run.phase==='won'){profile.wins++;profile.deckWins[run.deckId]=(profile.deckWins[run.deckId]||0)+1;const stake=Number.isInteger(run.stakeIndex)?run.stakeIndex:0;if(run.challengeId)profile.challengeWins[run.challengeId]=true;else{const original=originalStakeRecords();if(stake<=7)original[run.deckId]=Math.max(original[run.deckId]??-1,stake);profile.deckStakeWins[run.deckId]=Math.max(profile.deckStakeWins[run.deckId]??-1,stake);for(const j of run.jokers)profile.jokerStakeWins[j.id]=Math.max(profile.jokerStakeWins[j.id]??-1,stake)}}else profile.losses++}checkAchievements()}
-function persist(){try{assertEconomyWritable()}catch(error){return false}dailyTasks?.prepare(run);pullPotionState();syncStats();if(run&&SM)run._stockMarket=profile.stockMarket;mirrorPotionProfile();const saved=!run||store(SAVE,run),profileSaved=saved&&store(PROFILE,profile);if(profileSaved){economyMayCreate=false;if(recoveredInterestSignature!==null){interestCanonicalSignature=interestSignature(profile);recoveredInterestSignature=null}}const settingsSaved=store(SETTINGS,prefs);return saved&&profileSaved&&settingsSaved}
+function persist(){progressSaveCommitted=false;try{assertEconomyWritable()}catch(error){settleXpAwards(false);return false}try{dailyTasks?.prepare(run);pullPotionState();syncStats();if(run&&SM)run._stockMarket=profile.stockMarket;mirrorPotionProfile();const saved=!run||store(SAVE,run),profileSaved=saved&&store(PROFILE,profile);if(profileSaved){economyMayCreate=false;if(recoveredInterestSignature!==null){interestCanonicalSignature=interestSignature(profile);recoveredInterestSignature=null}}progressSaveCommitted=!!profileSaved;const settingsSaved=store(SETTINGS,prefs);return saved&&profileSaved&&settingsSaved}finally{settleXpAwards(progressSaveCommitted)}}
+// Faucet's receipt is already mutated when save is requested. Report its actual
+// run/PROFILE durability, not an unrelated SETTINGS failure; keep persist's API.
+function saveLevelProgress(){persist();return progressSaveCommitted}
 function marketContext(){return {run,profile}}
 function marketContextCurrent(context){return context.run===run&&context.profile===profile}
 function commitMarket(nextState,balanceDelta,context){
@@ -7720,13 +7758,14 @@ if(window.BODailyTasks&&window.BODailyTasksUI)dailyTasks=window.BODailyTasksUI.m
 if(window.BODailyStreak&&window.BOStreakUI)dailyStreak=window.BOStreakUI.mount({assertWritable:assertEconomyWritable,openModal:modal,notify:toast,busy:()=>cloudRestoring||animating,mirror:state=>{profile.dailyStreak=state;surveys?.paint();void surveys?.observeMilestones()},totalMedalsHalf:SU?()=>{const w=surveys?.wallet();return w?.ok?w.availableHalf:null}:undefined,extraMedalsHalf:()=>dailyTasks?.info()?.earnedMedalsHalf??null,tasksHTML:view=>dailyTasks?.render(view)||'<p class="daily-tasks-warning" role="alert">Daily Tasks are unavailable. Keep daily-tasks.js and daily-tasks-ui.js with the game. The combined Medal bank cannot be verified.</p>'});
 if(EI)interest=EI.createController({getProfile:()=>profile,saveStatus:()=>writerGuard.status(),capture:captureEconomy,transact:commitEconomy,xpConfig:(now,next)=>playerXpConfig(now,next.potions),busy:()=>cloudRestoring||!!surveys?.status().pending,changed:result=>{if(surveyViewActive())return;if(result?.toLevel>result?.fromLevel)refreshProgressPresentation();else window.BOLevelUI?.refresh()}});
 window.BOApp={cloud:{open:cloudOpen,forgot:cloudForgot,requestPasswordReset:cloudRequestReset,verifyRecovery:cloudVerifyRecovery,updatePassword:cloudUpdatePassword,cancelRecovery:cloudCancelRecovery,signup:(email,password)=>cloudCredentials('signup',email,password),login:(email,password)=>cloudCredentials('login',email,password),logout:cloudLogout,upload:()=>cloudUpload(),download:cloudDownload,restoreBackup:cloudBackup,confirm:cloudConfirm,cancel:()=>{cloudPending=null;$('#cloud-confirm')?.replaceChildren();},status:cloudStatus,capture:cloudCapture,_test:{setReload:fn=>{cloudReload=fn}}},dailyStreak,dailyTasks,surveys,saveStatus:()=>writerGuard?.status(),interestStatus:()=>interest?.status(),getRun:()=>run,getProfile:()=>profile,getProgress:()=>profile.progression,getPotions:()=>profile.potions,playerXpConfig,faucetConfig,potionInfo,openPotions,openFaucet,mergePotions,potions,isAnimating:()=>animating,render,decorateMoney,act,stockMarket:market,setRun:setAppRun,showHome:()=>{cancelMotion();page='home';render()},_test:{setInterestClock:fn=>interest?.setClock(fn),interestHeartbeat:()=>interest?.heartbeat(),interestStatus:()=>interest?.status(),setPotions:value=>{if(!PT)throw new Error('Potions model missing.');cancelMotion();profile.potions=PT.normalize(value);potionLedgerError=profile.potions.blockedReason||'';if(run)run.potions=PT.normalize(profile.potions);syncPotionClock();persist();render()},potionHeartbeat,setProgression:value=>{cancelMotion();document.querySelector('#level-celebration')?.remove();profile.progression=PG.normalize(value,playerXpConfig());if(run?._uiId)profile.progression.cursors[run._uiId]=run.progressSeq||0;pendingLevelCelebration=null;interest?.resetAnchor();persist();render()},configureRules:value=>{if(value.gateMode!==undefined)LEVEL_RULES.gateMode=value.gateMode;if(value.playerXpConfig){LEVEL_RULES.playerXpConfig={...value.playerXpConfig};const from=playerLevel();profile.progression=PG.normalize(profile.progression,playerXpConfig());queueLevelUp({fromLevel:from,toLevel:playerLevel()})}if(value.claimRequirements)LEVEL_RULES.claimRequirements={...value.claimRequirements};if(value.coinUnlocks)LEVEL_RULES.coinUnlocks=value.coinUnlocks;persist();render()}}};
-window.BOLevelUI?.init({openFaucet,canNotify:()=>writerGuard?.status().writable!==false&&!cloudRestoring,decorateMoney,motionEnabled:()=>!!prefs.motion,assertCurrent:assertEconomyWritable,getProgress:()=>profile.progression,getProfile:()=>profile,playerXpConfig,onCoinUnlock:()=>render(),onFaucetClaim:result=>{queueLevelUp(result);syncProgression();render()},format:fmt,save:persist,notify:toast,openModal:modal,closeModal,faucetConfig,coinCatalog:()=>LEVEL_RULES.coinUnlocks.map(item=>({...item,description:descriptionText(item.description,item)}))});
+window.BOLevelUI?.init({openFaucet,canNotify:()=>writerGuard?.status().writable!==false&&!cloudRestoring,decorateMoney,motionEnabled:()=>!!prefs.motion,assertCurrent:assertEconomyWritable,getProgress:()=>profile.progression,getProfile:()=>profile,playerXpConfig,onCoinUnlock:()=>render(),onFaucetClaim:result=>{queueLevelUp(result,true);syncProgression();render()},format:fmt,save:saveLevelProgress,notify:toast,openModal:modal,closeModal,faucetConfig,coinCatalog:()=>LEVEL_RULES.coinUnlocks.map(item=>({...item,description:descriptionText(item.description,item)}))});
 if(PG)persist();
 void surveys?.refresh();
 void dailyTasks?.retry();
 if(PX){passiveHeartbeat();clearInterval(passiveTimer);passiveTimer=setInterval(()=>{if(!document.hidden)passiveHeartbeat()},250)}
 render();
 refreshSaveOwnership();
+xpAudioReady=true;
 interest?.start();
 if(market){marketHeartbeat();clearInterval(marketTimer);marketTimer=setInterval(()=>{if(!document.hidden)marketHeartbeat()},1000)}
 if(PT){clearInterval(potionTimer);potionTimer=setInterval(()=>{if(!document.hidden)potionHeartbeat()},250)}
