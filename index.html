@@ -324,6 +324,135 @@ body .sheet{max-height:calc(100svh - var(--bo-hud-space,152px) - 40px - env(safe
 .save-slot-scope p{line-height:1.65;overflow-wrap:anywhere}.save-slot-scope .save-slot-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}.save-slot-scope .save-slot-card{min-width:0;border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--panel2);text-align:left;display:flex;flex-direction:column;gap:12px;overflow-wrap:anywhere}.save-slot-scope .save-slot-card>strong,.save-slot-scope .save-slot-card h3{font-size:21px;color:var(--gold);margin:0}.save-slot-scope .save-slot-card>span{line-height:1.6}.save-slot-scope .save-slot-card>small{margin-top:auto}.save-slot-scope .save-slot-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto}.save-slot-scope .btn{white-space:normal;min-width:0;max-width:100%}#save-slot-message:not(:empty),#slot-startup-message{padding:12px;border:1px solid var(--line);border-radius:8px}#save-slot-manager .save-slot-list{grid-template-columns:1fr}#slot-delete-confirm{display:block;width:100%;margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text)}
 @media(max-width:600px){#save-slot-chooser .save-slot-list{grid-template-columns:1fr;gap:10px;margin:14px 0}#save-slot-chooser .save-slot-card{padding:15px;gap:7px}#save-slot-chooser p{font-size:13px}#save-slot-chooser{margin:4px auto}.save-slot-scope .save-slot-actions .btn{flex:1 1 120px}}
 
+/* Actual Level 30 game only: quieter chrome, compact stats, unchanged card geometry.
+   Both flags are set by render; the home page and lower levels keep the full
+   original stylesheet above. The measured global XP/faucet HUD is untouched. */
+body.clean-game-ui #app{padding:16px 24px 24px}
+body.clean-game-ui.passive-xp-unlocked .topbar{height:auto;min-height:80px;gap:12px;padding:8px 24px}
+body.clean-game-ui .wordmark{min-height:40px;min-width:0;flex-wrap:wrap;line-height:1.2}
+body.clean-game-ui .wordmark em{display:inline}
+body.clean-game-ui .header-right{gap:6px}
+body.clean-game-ui .local-badge{display:inline-block;font-size:9px;letter-spacing:.06em;line-height:1.3}
+body.clean-game-ui .topbar .icon-button{flex:0 0 40px;width:40px;height:40px;min-height:40px}
+body.clean-game-ui .passive-xp-button{height:auto;min-height:64px;min-width:260px;max-width:380px;flex:0 1 380px;grid-template-columns:46px minmax(0,1fr) auto;gap:8px;padding:6px 12px 8px;border-radius:12px}
+body.clean-game-ui .passive-panel-copy{gap:3px}
+body.clean-game-ui .passive-panel-label{font-size:13px;line-height:1.25}
+body.clean-game-ui .passive-panel-note{font-size:10px;line-height:1.35}
+body.clean-game-ui .passive-panel-clock{font-size:24px}
+body.clean-game-ui .faucet-shortcut .passive-panel-clock{font-size:17px}
+body.clean-game-ui .passive-panel-caption{font-size:9px;line-height:1.3}
+
+body.clean-game-ui #app .game-grid.clean-table{grid-template-columns:204px minmax(0,1fr);gap:16px;align-items:start}
+body.clean-game-ui #app .clean-table .sidebar{gap:9px;min-width:0}
+body.clean-game-ui #app .clean-table .sidebar>.panel{padding:12px 10px;border-radius:12px}
+body.clean-game-ui #app .clean-table :is(.sidebar>.panel,.tray-wrap,.table-surface){box-shadow:inset 0 1px 0 #ffffff12,0 4px 14px #0002}
+body.clean-game-ui #app .clean-table .blind-panel .blind-symbol{width:34px;height:34px;font-size:20px;margin:5px auto 7px}
+body.clean-game-ui #app .clean-table .blind-panel h2{font-size:18px;line-height:1.25;margin:4px 0 6px;overflow-wrap:anywhere}
+body.clean-game-ui #app .clean-table .blind-panel p{min-height:0;font-size:11px;line-height:1.4;margin:0 0 7px}
+body.clean-game-ui #app .clean-table .blind-panel>.tiny-label{font-size:9px;line-height:1.35;letter-spacing:.07em}
+/* The existing Round score label has an inline 12px gap. Only that gap changes. */
+body.clean-game-ui #app .clean-table .blind-panel>.tiny-label[style]{margin-top:6px!important}
+body.clean-game-ui #app .clean-table .blind-panel :is(.target,.score-total){font-size:24px;line-height:1.2;font-variant-numeric:tabular-nums}
+body.clean-game-ui #app .clean-table .blind-panel .score-total{margin:3px 0}
+body.clean-game-ui #app .clean-table .blind-panel .progress{width:100%;margin-top:7px}
+body.clean-game-ui #app .clean-table .sidebar .shop-summary{min-height:130px}
+body.clean-game-ui #app .clean-table .shop-summary .shop-sidebar-title{font-size:25px;margin:4px 0 6px}
+body.clean-game-ui #app .clean-table .shop-summary .shop-sidebar-subtitle{font-size:12px;line-height:1.4;margin:0}
+body.clean-game-ui #app .clean-table .resource-grid{min-width:0;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+body.clean-game-ui #app .clean-table .resource{min-width:0;min-height:54px;padding:8px 6px;border-radius:10px}
+body.clean-game-ui #app .clean-table .resource .tiny-label{font-size:9px;line-height:1.3;letter-spacing:.06em}
+body.clean-game-ui #app .clean-table .resource strong{max-width:100%;font-size:22px;line-height:1.2;margin-top:2px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+body.clean-game-ui #app .clean-table .resource.cash{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:3px 8px;min-height:44px;padding:7px 6px}
+body.clean-game-ui #app .clean-table .resource.cash strong{margin:0}
+body.clean-game-ui #app .clean-table .round-meta{min-width:0;flex-wrap:wrap;gap:4px 10px;padding:0 2px;font-size:10px;line-height:1.5;font-variant-numeric:tabular-nums}
+body.clean-game-ui #app .clean-table .round-meta>span{max-width:100%;overflow-wrap:anywhere}
+
+body.clean-game-ui #app .clean-table .table-column{gap:10px}
+body.clean-game-ui #app .clean-table .tray-wrap{padding:10px;border-radius:12px}
+body.clean-game-ui #app .clean-table .tray-head{flex-wrap:wrap;gap:4px 8px;margin-bottom:6px;font-size:10px;line-height:1.4;letter-spacing:.06em}
+/* Keep native tray scrolling, card sizes, selection lift and Mothim's 30px HP
+   headroom. In particular, do not replace the tray's padding-top shorthand. */
+body.clean-game-ui #app .clean-table .tray{padding-inline:4px;padding-bottom:7px}
+body.clean-game-ui #app .clean-table .owned-tags{padding:8px 10px;border-radius:10px}
+body.clean-game-ui #app .clean-table .owned-tags .owned-tags-heading{gap:3px 8px;margin-bottom:5px}
+body.clean-game-ui #app .clean-table .owned-tags .owned-tags-heading small{font-size:10px}
+body.clean-game-ui #app .clean-table .owned-tags .owned-tag{min-height:40px;padding:7px 9px}
+body.clean-game-ui #app .clean-table [data-move-panel="consumables"]{min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+body.clean-game-ui #app .clean-table .consumable-bar{gap:7px}
+body.clean-game-ui #app .clean-table .consumable{min-height:40px;padding:8px 10px}
+body.clean-game-ui #app .clean-table .table-surface{padding:16px 14px;border-radius:14px}
+body.clean-game-ui #app .clean-table .table-title{margin-bottom:10px}
+body.clean-game-ui #app .clean-table .table-title h2{font-size:24px;line-height:1.25;margin:4px 0}
+body.clean-game-ui #app .clean-table .table-title p{font-size:11px;line-height:1.4;margin:4px 0}
+body.clean-game-ui #app .clean-table .hand-row{min-height:0;padding-top:24px;padding-bottom:10px}
+body.clean-game-ui #app .clean-table .hand-footer{flex-wrap:wrap;gap:6px 10px;margin-top:4px}
+body.clean-game-ui #app .clean-table .selection-caption{flex:1 1 145px;min-width:0;font-size:10px;line-height:1.4}
+body.clean-game-ui #app .clean-table .sort-buttons>button{min-width:44px;min-height:40px;padding:7px 9px;font-size:10px}
+body.clean-game-ui #app .clean-table .game-actions{gap:9px;margin-top:12px}
+body.clean-game-ui #app .clean-table .hint{margin-top:8px;font-size:10px;line-height:1.5}
+body.clean-game-ui #app .clean-table .table-column>[data-move-panel^="phase-"].panel{padding:16px}
+body.clean-game-ui #app .clean-table .blind-choice{padding:12px 8px}
+body.clean-game-ui #app .clean-table .blind-choice p{display:block;min-height:0;font-size:11px;line-height:1.4;margin:6px 0}
+body.clean-game-ui #app .clean-table .blind-choice .btn{min-height:40px;white-space:normal;line-height:1.3}
+
+/* Both semantic groups remain expanded. Wrapping is ordinary flow, never a
+   drawer, reordered panel, clipped toolbar, or a second set of actions. */
+body.clean-game-ui #app .clean-table .table-subnav.clean-controls{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:stretch;gap:8px;padding:0;background:none}
+body.clean-game-ui #app .clean-table .clean-control-group{display:flex;align-items:center;flex-wrap:wrap;gap:6px;flex:1 1 340px;min-width:0;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+body.clean-game-ui #app .clean-table .clean-control-group+.clean-control-group{flex-basis:440px}
+body.clean-game-ui #app .clean-table .clean-control-label{flex:0 0 auto;padding:0 3px;color:var(--muted);font-size:10px;line-height:1.4;font-weight:800;letter-spacing:.06em}
+body.clean-game-ui #app .clean-table .clean-controls .btn{min-width:0;max-width:100%;min-height:40px;padding:8px 10px;font-size:11px;line-height:1.3;white-space:normal}
+
+@media(max-width:1050px){
+ body.clean-game-ui #app{padding:14px 16px 22px}
+ body.clean-game-ui #app .game-grid.clean-table{grid-template-columns:174px minmax(0,1fr);gap:12px}
+}
+@media(max-width:900px){
+ body.clean-game-ui.passive-xp-unlocked .topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:8px 10px;min-height:0;padding:8px 16px}
+ body.clean-game-ui .passive-xp-button{width:100%;min-width:0;max-width:none}
+}
+@media(max-width:700px){
+ body.clean-game-ui #app{padding:10px 10px 18px}
+ body.clean-game-ui.passive-xp-unlocked .topbar{padding:8px 10px}
+ body.clean-game-ui #app .game-grid.clean-table{gap:9px;align-items:stretch}
+ body.clean-game-ui #app .clean-table .sidebar{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);grid-template-rows:auto 1fr;gap:7px 8px}
+ body.clean-game-ui #app .clean-table .sidebar>.resource-grid{align-self:start;gap:6px}
+ body.clean-game-ui #app .clean-table .sidebar>.round-meta{align-self:start}
+ body.clean-game-ui #app .clean-table .sidebar>.blind-panel{padding:9px 8px}
+ body.clean-game-ui #app .clean-table .blind-panel h2{font-size:16px;margin:3px 0 5px}
+ body.clean-game-ui #app .clean-table .blind-panel p{font-size:10.5px;line-height:1.35;margin-bottom:6px}
+ body.clean-game-ui #app .clean-table .blind-panel :is(.target,.score-total){font-size:22px}
+ body.clean-game-ui #app .clean-table .resource{min-height:50px;padding:7px 4px}
+ body.clean-game-ui #app .clean-table .resource strong{font-size:21px}
+ body.clean-game-ui #app .clean-table .round-meta{padding:0;font-size:10px}
+ body.clean-game-ui #app .clean-table .table-column{gap:8px}
+ body.clean-game-ui #app .clean-table .tray-wrap{padding:8px}
+ body.clean-game-ui #app .clean-table .tray-head{font-size:9px}
+ body.clean-game-ui #app .clean-table .table-surface{padding:12px 8px}
+ body.clean-game-ui #app .clean-table .table-title{margin-bottom:6px}
+ body.clean-game-ui #app .clean-table .table-title h2{font-size:21px}
+ body.clean-game-ui #app .clean-table .table-title p{font-size:10.5px}
+ body.clean-game-ui #app .clean-table .hand-row{padding-top:23px;padding-bottom:8px}
+ body.clean-game-ui #app .clean-table .game-actions{margin-top:10px}
+ body.clean-game-ui #app .clean-table .table-column>[data-move-panel^="phase-"].panel{padding:12px}
+ body.clean-game-ui #app .clean-table .blind-choice p{font-size:10.5px}
+}
+@media(max-width:479px){
+ /* Restore the wordmark and local-first label without squeezing the three
+    native header buttons. The label wraps inside its own existing group. */
+ body.clean-game-ui .header-right{max-width:132px;flex-wrap:wrap;justify-content:flex-end;gap:4px 6px}
+ body.clean-game-ui .local-badge{flex:1 0 100%;text-align:right}
+ body.clean-game-ui .wordmark{gap:4px;font-size:10px;letter-spacing:.7px;padding:0}
+}
+
+/* Native Moving Mode owns transforms, hit-testing, z69 handles and z90 toolbar.
+   Extra space exists ONLY while editing, so a narrow resource's wrapped move
+   handle cannot cover its live label/amount. No stacking or clipping is added. */
+body.clean-game-ui #app .clean-table :is(.blind-panel,.tray-wrap,.owned-tags,[data-move-panel="consumables"],[data-move-panel^="phase-"])[data-moving-edit],
+body.clean-game-ui #app .clean-table .table-column>[data-move-panel^="phase-"][data-moving-edit]{padding-top:44px}
+body.clean-game-ui #app .clean-table .resource[data-moving-edit]{min-height:116px;padding-top:76px;padding-bottom:8px}
+body.clean-game-ui #app .clean-table .round-meta[data-moving-edit]{min-height:72px;padding-top:44px;padding-bottom:6px}
+/* End actual Level 30 clean game UI. */
 
 </style><style>
 /* Semantic effect tokens only: never recolour prices, rarity frames or card art. */
@@ -3867,12 +3996,12 @@ const level8Reward='Blind targets another 5% lower (×0.95), independent of Leve
 const level10DealReward='Optional Level10 deal (toggle in Settings): +1 hand size, ×1.05 final chips and ×1.01 final Mult, for -$3 at round end while enabled';
 const level18PrecisionReward='Settings: XP display precision 0–10 decimal places (default 5), display only';
 const level30InterestReward='Current XP bank ×0.025%, maximum5 actual XP/sec · Next-level XP requirement temporarily ×3 only while at the exact 5 XP/sec cap, normal again below cap · XP numerator grows greener with the numeric bank (strong green at 20,000 XP); interest gradually reaches yellow from 1 to 2 XP/sec, then greener from 2 to 5 XP/sec';
-function rewards(level){if(level===6)return level6Reward;if(level===8)return level8Reward;const map={2:'Music unlocked',3:'Interest unlocked',4:'Four base Joker slots',5:'Five base Joker slots · Emotional music unlocked: Last Chance',7:'Smart number abbreviations',9:'Manual passive XP · 0.01/sec, 10-minute session, then 5-minute cooldown',10:'Moving Mode · save movable-panel layouts · Custom table themes · All levels XP required halved · '+level10DealReward,11:'Passive XP increases to 0.025 every second for 10-minute sessions, then a 5-minute cooldown',12:'Potions unlocked · hold 2, drink for a 2-minute effect. Boss wins: base 1 in 10 drop chance, capped at 5 in 10.',13:'Passive XP sessions last 20 minutes',14:'Unlock Theorem Reach Surveys · Passive XP cooldown reduced to 4 minutes',15:'Double XP from now on',16:'Passive XP sessions last 30 minutes · Base passive XP increases to 0.05/sec (0.1 XP/sec with Level 15 double XP)',17:'Permanent +25% luck · listed probabilities ×1.25; stacks with Oops and caps at 100%',18:'Better Player Levels UI · clearer XP, rewards and completed / locked states · green +XP gain animations and a bouncing white XP-bar shine · '+level18PrecisionReward,19:'Unlock Bitlabs Surveys · Earn $1 each time an active Boss special effect triggers · one reward per ability activation, not per affected card',20:'Future XP costs another40% lower, stacking with Level10 (30% of original costs); no refunds · +1 hand and discard on every Boss · Cleaner UI and smoother buttons · richer colors and soft glows · dollar amounts yellow · Small Blind blue, Big Blind yellow, Boss Blind red · '+interestNote,21:'Stock Market · fictional game-dollar predictions using public Binance BTC prices; no real money',22:'Animations20% quicker · +20% manual XP (gameplay, surveys and faucet); not passive, Knowledge or interest',23:'+$1 at every cleared-round cashout',24:'Everything in the run shop costs $1 less, after existing discounts; floor $0 · Casino soundtrack unlocked',25:'Unlock CPX Research Surveys · Coin faucet · base10 XP per successful claim, with manual22, Exp Potion and Exp Jokers (not Level15). Starts at 50% task rate; reach Ante 4 in 1 qualifying run each day for full task rate. Repeated claims reduce the daily claim tier.',26:'Compound interest improves to currentXP ×0.015%, capped at3 actual XP/sec',27:'Two more original soundtracks: Starlight Felt and Copper Groove',28:'Non-spam in-game faucet-ready notification; no browser permissions',29:'Five original decks and two original stakes unlock on the main screen',30:level30InterestReward+' · '+'Future XP costs an extra30% lower from 30→31 onward; stacks with Level10 halving and Level20 reduction (21% of original before integer rounding and potions); no refunds · Custom face-card photos (J/Q/K) · Enhanced UI and richer table colors · Upload your own background and card-back images',31:'Fullscreen and exit controls; OS minimizing remains a device control',32:critReward,33:'Merge two stored potions, retaining both effects for one120-second lifetime · Passive sessions50 minutes',35:'+$2 at the end of every cleared round',44:'Passive XP sessions last 1 hour'};return map[level]||'Keep building your poker adventure'}
+function rewards(level){if(level===6)return level6Reward;if(level===8)return level8Reward;const map={2:'Music unlocked',3:'Interest unlocked',4:'Four base Joker slots',5:'Five base Joker slots · Emotional music unlocked: Last Chance',7:'Smart number abbreviations',9:'Manual passive XP · 0.01/sec, 10-minute session, then 5-minute cooldown',10:'Moving Mode · save movable-panel layouts · Custom table themes · All levels XP required halved · '+level10DealReward,11:'Passive XP increases to 0.025 every second for 10-minute sessions, then a 5-minute cooldown',12:'Potions unlocked · hold 2, drink for a 2-minute effect. Boss wins: base 1 in 10 drop chance, capped at 5 in 10.',13:'Passive XP sessions last 20 minutes',14:'Unlock Theorem Reach Surveys · Passive XP cooldown reduced to 4 minutes',15:'Double XP from now on',16:'Passive XP sessions last 30 minutes · Base passive XP increases to 0.05/sec (0.1 XP/sec with Level 15 double XP)',17:'Permanent +25% luck · listed probabilities ×1.25; stacks with Oops and caps at 100%',18:'Better Player Levels UI · clearer XP, rewards and completed / locked states · green +XP gain animations and a bouncing white XP-bar shine · '+level18PrecisionReward,19:'Unlock Bitlabs Surveys · Earn $1 each time an active Boss special effect triggers · one reward per ability activation, not per affected card',20:'Future XP costs another40% lower, stacking with Level10 (30% of original costs); no refunds · +1 hand and discard on every Boss · Cleaner UI and smoother buttons · richer colors and soft glows · dollar amounts yellow · Small Blind blue, Big Blind yellow, Boss Blind red · '+interestNote,21:'Stock Market · fictional game-dollar predictions using public Binance BTC prices; no real money',22:'Animations20% quicker · +20% manual XP (gameplay, surveys and faucet); not passive, Knowledge or interest',23:'+$1 at every cleared-round cashout',24:'Everything in the run shop costs $1 less, after existing discounts; floor $0 · Casino soundtrack unlocked',25:'Unlock CPX Research Surveys · Coin faucet · base10 XP per successful claim, with manual22, Exp Potion and Exp Jokers (not Level15). Starts at 50% task rate; reach Ante 4 in 1 qualifying run each day for full task rate. Repeated claims reduce the daily claim tier.',26:'Compound interest improves to currentXP ×0.015%, capped at3 actual XP/sec',27:'Two more original soundtracks: Starlight Felt and Copper Groove',28:'Non-spam in-game faucet-ready notification; no browser permissions',29:'Five original decks and two original stakes unlock on the main screen',30:level30InterestReward+' · '+'Future XP costs an extra30% lower from 30→31 onward; stacks with Level10 halving and Level20 reduction (21% of original before integer rounding and potions); no refunds · Custom face-card photos (J/Q/K) · Enhanced UI and richer table colors: compact stats, grouped Run / Tools controls and more room for cards · Upload your own background and card-back images',31:'Fullscreen and exit controls; OS minimizing remains a device control',32:critReward,33:'Merge two stored potions, retaining both effects for one120-second lifetime · Passive sessions50 minutes',35:'+$2 at the end of every cleared round',44:'Passive XP sessions last 1 hour'};return map[level]||'Keep building your poker adventure'}
 // Immediate next level, not the next milestone. Full conditions reuse the roadmap's reward copy.
  function paintNextReward(p){
   const hint=$('#player-next-reward');if(!hint)return;
   const max=p.level>=playerMax(),next=max?null:p.level+1;
-  const compact={2:'Music',3:'Interest',4:'4 Joker slots',5:'5 Joker slots + emotional music (Last Chance)',6:'Blind targets -2.5% (×0.975)',7:'Smart numbers',8:'Blind targets -5% (×0.95), independently',9:'Passive XP 0.01/s · 10min',10:'Moving Mode + themes + half XP costs + optional +1 hand/×1.05 chips/×1.01 Mult/-$3 deal',11:'Passive XP 0.025/s',12:'Potions · 2 slots',13:'Passive XP 20min',14:'Theorem + 4min CD',15:'Double XP',16:'Passive 30min + 0.1 XP/s',17:'+25% luck',18:'XP visuals + clearer UI + 0–10 XP decimals in Settings',19:'Bitlabs +$1/Boss effect',20:'Extra40% XP discount + Exp Interest + Boss buffs',21:'Stock Market',22:'20% quicker +20% manual XP',23:'+$1/cleared round',24:'Shop $1 cheaper + casino music',25:'CPX + coin faucet',26:'Interest cap3 + rate0.015%',27:'Two new soundtracks',28:'Faucet-ready notification',29:'Five decks + two stakes',30:'Interest 0.025% / cap5 + temporary ×3 next XP at cap + greener XP + extra30% XP discount + Enhanced UI + photos',31:'Fullscreen + exit',32:critReward,33:'Merge potions + passive50min',35:'+$2/cleared round',44:'Passive XP 1h'};
+  const compact={2:'Music',3:'Interest',4:'4 Joker slots',5:'5 Joker slots + emotional music (Last Chance)',6:'Blind targets -2.5% (×0.975)',7:'Smart numbers',8:'Blind targets -5% (×0.95), independently',9:'Passive XP 0.01/s · 10min',10:'Moving Mode + themes + half XP costs + optional +1 hand/×1.05 chips/×1.01 Mult/-$3 deal',11:'Passive XP 0.025/s',12:'Potions · 2 slots',13:'Passive XP 20min',14:'Theorem + 4min CD',15:'Double XP',16:'Passive 30min + 0.1 XP/s',17:'+25% luck',18:'XP visuals + clearer UI + 0–10 XP decimals in Settings',19:'Bitlabs +$1/Boss effect',20:'Extra40% XP discount + Exp Interest + Boss buffs',21:'Stock Market',22:'20% quicker +20% manual XP',23:'+$1/cleared round',24:'Shop $1 cheaper + casino music',25:'CPX + coin faucet',26:'Interest cap3 + rate0.015%',27:'Two new soundtracks',28:'Faucet-ready notification',29:'Five decks + two stakes',30:'Interest 0.025% / cap5 + temporary ×3 next XP at cap + greener XP + extra30% XP discount + compact game UI + photos',31:'Fullscreen + exit',32:critReward,33:'Merge potions + passive50min',35:'+$2/cleared round',44:'Passive XP 1h'};
   const full=max?'Maximum player level '+number(playerMax())+' reached. Earlier rewards stay active.':'Next level '+number(next)+': '+levelReward(next);
   const text=max?'Max level':'Next '+number(next)+': '+(compact[next]||(rewards(next).startsWith('Keep ')?'No new bonus':rewards(next)));hint.dataset.nextLevel=max?'':String(next);if(hint.textContent!==text)hint.textContent=text;
   hint.title=full;hint.setAttribute('aria-label',full+' · View Player Levels for full details');api.decorateMoney?.(hint);
@@ -9474,6 +9603,7 @@ function playerLevel(){return profile.progression?.level||1}
 // Level 20 is cumulative, cosmetic and keyed to the actual profile, never the
 // run's cached level or Level 30's independent enhanced-ui flag.
 function syncLevel20Polish(){const enabled=playerLevel()>=20;document.body.classList.toggle('level20-polish',enabled);return enabled}
+function syncCleanGameUI(){const enabled=page==='game'&&!!run&&playerLevel()>=30,changed=document.body.classList.contains('clean-game-ui')!==enabled;document.body.classList.toggle('clean-game-ui',enabled);const grid=$('#app .game-grid');if(grid){grid.classList.toggle('clean-table',enabled);const controls=grid.querySelector('.table-subnav');if(page==='game'&&controls&&controls.classList.contains('clean-controls')!==enabled)controls.outerHTML=tableControls()}if(changed)movingPanels?.refresh();return enabled}
 const moneyToken=/[+−-]?\$[+−-]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)(?:e[+−-]?\d+|Qa|Qi|[KMBT])?/gi;
 const moneySkip='script,style,input,textarea,select,svg,math,[contenteditable]:not([contenteditable="false"]),.money-amount';
 function decorateMoney(root){
@@ -9562,7 +9692,7 @@ function queueLevelUp(result,committed=false){
 }
 function settleXpAwards(committed){const awards=pendingXpAwards;pendingXpAwards=[];if(committed)for(const award of awards)if(award.progression===profile.progression)presentXpAward(award.result)}
 function syncHudSpace(){const hud=$('#level-hud');if(!hud||document.body.classList.contains('save-slot-pending'))return;const height=Math.ceil(hud.getBoundingClientRect().height)+8;if(height>8&&document.body.style.getPropertyValue('--bo-hud-space')!==height+'px')document.body.style.setProperty('--bo-hud-space',height+'px')}
-function refreshProgressPresentation(){if(surveyViewActive())return;syncLevel20Polish();window.BOAudio?.configure(effectiveAudioPrefs());refreshMusicStatus();window.BOLevelUI?.refresh();potions?.refresh();window.BOLevelUI?.applyTheme(prefs);CI?.apply(prefs.customImages,playerLevel());refreshCustomImageControls();syncAudioButton();updatePassiveButton();if($('#theme-select'))$('#theme-select').disabled=!playerBuffs().themes;document.querySelectorAll('#music-track option').forEach(option=>{option.disabled=!trackUnlocked(option.value)});if(pendingLevelCelebration&&window.BOLevelUI){window.BOLevelUI.celebrate(pendingLevelCelebration);pendingLevelCelebration=null}decorateMoney($('#level-hud'));decorateMoney($('#dialog-body'));decorateMoney($('#level-celebration'));syncHudSpace()}
+function refreshProgressPresentation(){if(surveyViewActive())return;syncLevel20Polish();syncCleanGameUI();window.BOAudio?.configure(effectiveAudioPrefs());refreshMusicStatus();window.BOLevelUI?.refresh();potions?.refresh();window.BOLevelUI?.applyTheme(prefs);CI?.apply(prefs.customImages,playerLevel());refreshCustomImageControls();syncAudioButton();updatePassiveButton();if($('#theme-select'))$('#theme-select').disabled=!playerBuffs().themes;document.querySelectorAll('#music-track option').forEach(option=>{option.disabled=!trackUnlocked(option.value)});if(pendingLevelCelebration&&window.BOLevelUI){window.BOLevelUI.celebrate(pendingLevelCelebration);pendingLevelCelebration=null}decorateMoney($('#level-hud'));decorateMoney($('#dialog-body'));decorateMoney($('#level-celebration'));syncHudSpace()}
 function syncRunOptions(){if(!run)return;const mode=prefs.handSortMode==='suit'?'suit':'rank',deal=playerLevel()>=10&&prefs.level10Deal===true;if(E.setHandSort&&run.handSortMode!==mode)E.setHandSort(run,mode);if(E.setLevel10Deal&&run.level10Deal!==deal)E.setLevel10Deal(run,deal)}
 function movingPanelsReady(){if(playerLevel()<10||page!=='game'||!run||animating||cloudBusy||cloudRestoring||saveReadBlocked||slotBusy||customImageBusy||cloudPending||cloudClient?.status().pending||cloudClient?.status().recovery?.active||surveyViewActive()||surveys?.status().pending||dailyStreak?.status().pending||dailyTasks?.status().pending||interest?.status().pending)return false;try{assertEconomyWritable();return true}catch(_){return false}}
 function saveMovingPanelLayout(layout){if(!movingPanelsReady()||window.BOMovingPanels?.validate(layout)!==true)return false;const next={...prefs,panelLayout:window.BOMovingPanels.normalize(layout)};try{assertEconomyWritable();if(!store(SETTINGS,next)||localStorage.getItem(SETTINGS)!==JSON.stringify(next))return false;assertEconomyWritable();prefs=next;return true}catch(_){return false}}
@@ -9659,7 +9789,8 @@ function tagPackOriginHTML(p){
  if(p.source!=='tag')return '';const id=p.tagId||(p.id==='mega_buffoon'?'buffoon':''),d=tagDefinition(id),queued=queuedTagPackCount();
  return `<div class="pack-tag-origin" data-tag-pack-origin="${esc(id)}">Free ${esc(d.name)} reward · ${queued} more free ${queued===1?'pack':'packs'} queued<small>${p.returnPhase==='select'?'Returns to the next Blind after your free packs.':'Return to your run after choosing.'} This opened reward is not a pending owned tag.</small></div>`;
 }
-function renderGame(){return `<div class="game-grid">${sidebar()}<div class="table-column">${jokerTray()}${tagTray()}${movingPhaseHTML()}${consumables()}${run.phase==='shop'?(surveys?.shopHTML()||''):''}<div class="table-subnav">${dailyStreak?.buttonHTML()||''}${btn('Run info','run-info','ghost small')}${movingModeButton()}${level10DealButton()}${btn('Deck · '+fmt(run.cards.length),'view-deck','ghost small')}${btn('Scoring log','score-log','ghost small')}${playerLevel()>=12?btn('Potions','potions-open','ghost small'):''}${playerLevel()>=21?btn('Stock Market','market-open','ghost small'):''}${btn('Back to menu','menu','ghost small')}</div></div></div>`}
+function tableControls(){if(page!=='game'||playerLevel()<30)return `<div class="table-subnav">${dailyStreak?.buttonHTML()||''}${btn('Run info','run-info','ghost small')}${movingModeButton()}${level10DealButton()}${btn('Deck · '+fmt(run.cards.length),'view-deck','ghost small')}${btn('Scoring log','score-log','ghost small')}${playerLevel()>=12?btn('Potions','potions-open','ghost small'):''}${playerLevel()>=21?btn('Stock Market','market-open','ghost small'):''}${btn('Back to menu','menu','ghost small')}</div>`;return `<nav class="table-subnav clean-controls" aria-label="Table controls"><div class="clean-control-group" role="group" aria-label="Run controls"><span class="clean-control-label">Run</span>${btn('Run info','run-info','ghost small')}${btn('Deck · '+fmt(run.cards.length),'view-deck','ghost small')}${btn('Scoring log','score-log','ghost small')}${btn('Back to menu','menu','ghost small')}</div><div class="clean-control-group" role="group" aria-label="Tools"><span class="clean-control-label">Tools</span>${dailyStreak?.buttonHTML()||''}${movingModeButton()}${level10DealButton()}${playerLevel()>=12?btn('Potions','potions-open','ghost small'):''}${playerLevel()>=21?btn('Stock Market','market-open','ghost small'):''}</div></nav>`}
+function renderGame(){return `<div class="game-grid${playerLevel()>=30?' clean-table':''}">${sidebar()}<div class="table-column">${jokerTray()}${tagTray()}${movingPhaseHTML()}${consumables()}${run.phase==='shop'?(surveys?.shopHTML()||''):''}${tableControls()}</div></div>`}
 function movingPhaseHTML(){return renderPhase().replace('<section ','<section data-move-panel="phase-'+esc(run.phase)+'" ')}
 function renderPhase(){if(run.phase==='select')return renderBlinds();if(run.phase==='play')return renderPlay();if(run.phase==='cashout')return renderCashout();if(run.phase==='shop')return renderShop();if(run.phase==='pack')return renderPack();if(['won','lost'].includes(run.phase))return renderEnd();return '<div class="panel">Unknown phase. Return to menu and start a new run.</div>'}
 function renderBlinds(){return `<section class="panel"><div class="section-head"><div><div class="eyebrow">Ante ${fmt(run.ante)}</div><h2 style="margin-top:8px">Pick your next move.</h2></div><span class="pill">${run.deckId} deck</span></div><div class="blind-choice-grid">${[0,1,2].map(i=>{const b=safeBlind({...run,blindIndex:i});const cur=i===run.blindIndex;return `<article class="blind-choice ${cur?'current':i<run.blindIndex?'done':''}" data-blind-kind="${['small','big','boss'][i]}"><div class="blind-symbol">${i===2?'✦':i===1?'◆':'♣'}</div><h3>${esc(b.name)}</h3><p class="effect-description">${descriptionHTML(b.description||'Reach the target score.',i===2?run.bossId:'')}</p><div class="target">${fmt(b.target)}</div><div class="tiny-label" style="margin-top:8px">Reward $${b.reward||0}</div>${cur?btn('Play blind','start-blind','primary'):btn(i<run.blindIndex?'Passed':'Upcoming','none','',true)}${cur&&i<2?`<div class="tag-info">${esc(b.tag?.name||'Skip for a tag')}</div>${btn('Skip → tag','skip-blind','ghost small')}`:''}</article>`}).join('')}</div><p class="hint">Skipping trades this blind's payout and shop for its tag. Boss blinds cannot be skipped.</p></section>`}
