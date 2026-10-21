@@ -3664,6 +3664,7 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
 let api=null,timer=null,celebrationTimer=null,attempt=null,serial=0,roadmapPage=0,graphMetric='claims',detailCostSignature=null;
 let xpHud=null,xpGain=null,xpGainTimer=null,xpGainAmount=0;
 const xpAwardsSeen=new WeakSet(),XP_GAIN_LIFETIME=1400;
+const critReward='Permanent +1% CRIT per actual scoring card trigger';
 const $=s=>document.querySelector(s),P=()=>root.BOProgress,progress=()=>api.getProgress();
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const themes=[{id:'classic',name:'Classic Poker Table'},{id:'mothim',name:"Mothim's Backboard"},{id:'casino',name:'Fancy Casino Slots'},{id:'sea',name:'Sea Breeze'},{id:'amethyst',name:'Shiny Amethyst'}];
@@ -3750,12 +3751,12 @@ function paintInterest(p){
  const state=root.BOApp?.interestStatus?.(),rate=root.BOExpInterest.rate(p,xpConfig()),shown=exactXp(rate),text=state?.blocked?'Exp Interest · paused':'Exp Interest +'+shown+' XP/s';
  if(hint.textContent!==text)hint.textContent=text;hint.dataset.expInterestRate=String(state?.blocked?0:rate);hint.title=interestNote+' Current bank: '+exactXp(p.xp)+' XP; next second: '+exactXp(rate)+' actual XP.'+(p.level>=100?' Maximum level: interest is 0.':'')+(state?.blocked?' Paused: '+state.reason:'')+(root.BOApp?.saveStatus?.().note?' '+root.BOApp.saveStatus().note:'');hint.setAttribute('aria-label',hint.title);
 }
-function rewards(level){const map={2:'Music unlocked',3:'Interest unlocked',4:'Four base Joker slots',5:'Five base Joker slots',7:'Smart number abbreviations',9:'Manual passive XP · 0.01/sec, 10-minute session, then 5-minute cooldown',10:'Custom table themes · All levels XP required halved',11:'Passive XP increases to 0.025 every second for 10-minute sessions, then a 5-minute cooldown',12:'Potions unlocked · hold 2, drink for a 2-minute effect. Boss wins: base 1 in 10 drop chance, capped at 5 in 10.',13:'Passive XP sessions last 20 minutes',14:'Unlock Theorem Reach Surveys · Passive XP cooldown reduced to 4 minutes',15:'Double XP from now on',16:'Passive XP sessions last 30 minutes · Base passive XP increases to 0.05/sec (0.1 XP/sec with Level 15 double XP)',17:'Permanent +25% luck · listed probabilities ×1.25; stacks with Oops and caps at 100%',18:'Better Player Levels UI · clearer XP, rewards and completed / locked states · green +XP gain animations and a bouncing white XP-bar shine',19:'Unlock Bitlabs Surveys · Earn $1 each time an active Boss special effect triggers · one reward per ability activation, not per affected card',20:'Future XP costs another40% lower, stacking with Level10 (30% of original costs); no refunds · +1 hand and discard on every Boss · Cleaner UI and smoother buttons · richer colors and soft glows · dollar amounts yellow · Small Blind blue, Big Blind yellow, Boss Blind red · '+interestNote,21:'Stock Market · fictional game-dollar predictions using public Binance BTC prices; no real money',22:'Animations20% quicker · +20% manual XP (gameplay, surveys and faucet); not passive, Knowledge or interest',23:'+$1 at every cleared-round cashout',24:'Everything in the run shop costs $1 less, after existing discounts; floor $0 · Casino soundtrack unlocked',25:'Unlock CPX Research Surveys · Coin faucet · base10 XP per successful claim, with manual22, Exp Potion and Exp Jokers (not Level15). Starts at 50% task rate; reach Ante 4 in 5 different daily runs for full task rate. Repeated claims reduce the daily claim tier.',26:'Compound interest improves to currentXP ×0.015%, capped at3 actual XP/sec',27:'Two more original soundtracks: Starlight Felt and Copper Groove',28:'Non-spam in-game faucet-ready notification; no browser permissions',29:'Five original decks and two original stakes unlock on the main screen',30:'Future XP costs an extra30% lower from 30→31 onward; stacks with Level10 halving and Level20 reduction (21% of original before integer rounding and potions); no refunds · Custom face-card photos (J/Q/K) · Enhanced UI and richer table colors · Upload your own background and card-back images',31:'Fullscreen and exit controls; OS minimizing remains a device control',32:'Permanent +1 percentage-point base CRIT per actual scoring-card trigger',33:'Merge two stored potions, retaining both effects for one120-second lifetime · Passive sessions50 minutes',35:'+$2 at the end of every cleared round',44:'Passive XP sessions last 1 hour'};return map[level]||'Keep building your poker adventure'}
+function rewards(level){const map={2:'Music unlocked',3:'Interest unlocked',4:'Four base Joker slots',5:'Five base Joker slots · Emotional music unlocked: Last Chance',7:'Smart number abbreviations',9:'Manual passive XP · 0.01/sec, 10-minute session, then 5-minute cooldown',10:'Custom table themes · All levels XP required halved',11:'Passive XP increases to 0.025 every second for 10-minute sessions, then a 5-minute cooldown',12:'Potions unlocked · hold 2, drink for a 2-minute effect. Boss wins: base 1 in 10 drop chance, capped at 5 in 10.',13:'Passive XP sessions last 20 minutes',14:'Unlock Theorem Reach Surveys · Passive XP cooldown reduced to 4 minutes',15:'Double XP from now on',16:'Passive XP sessions last 30 minutes · Base passive XP increases to 0.05/sec (0.1 XP/sec with Level 15 double XP)',17:'Permanent +25% luck · listed probabilities ×1.25; stacks with Oops and caps at 100%',18:'Better Player Levels UI · clearer XP, rewards and completed / locked states · green +XP gain animations and a bouncing white XP-bar shine',19:'Unlock Bitlabs Surveys · Earn $1 each time an active Boss special effect triggers · one reward per ability activation, not per affected card',20:'Future XP costs another40% lower, stacking with Level10 (30% of original costs); no refunds · +1 hand and discard on every Boss · Cleaner UI and smoother buttons · richer colors and soft glows · dollar amounts yellow · Small Blind blue, Big Blind yellow, Boss Blind red · '+interestNote,21:'Stock Market · fictional game-dollar predictions using public Binance BTC prices; no real money',22:'Animations20% quicker · +20% manual XP (gameplay, surveys and faucet); not passive, Knowledge or interest',23:'+$1 at every cleared-round cashout',24:'Everything in the run shop costs $1 less, after existing discounts; floor $0 · Casino soundtrack unlocked',25:'Unlock CPX Research Surveys · Coin faucet · base10 XP per successful claim, with manual22, Exp Potion and Exp Jokers (not Level15). Starts at 50% task rate; reach Ante 4 in 5 different daily runs for full task rate. Repeated claims reduce the daily claim tier.',26:'Compound interest improves to currentXP ×0.015%, capped at3 actual XP/sec',27:'Two more original soundtracks: Starlight Felt and Copper Groove',28:'Non-spam in-game faucet-ready notification; no browser permissions',29:'Five original decks and two original stakes unlock on the main screen',30:'Future XP costs an extra30% lower from 30→31 onward; stacks with Level10 halving and Level20 reduction (21% of original before integer rounding and potions); no refunds · Custom face-card photos (J/Q/K) · Enhanced UI and richer table colors · Upload your own background and card-back images',31:'Fullscreen and exit controls; OS minimizing remains a device control',32:critReward,33:'Merge two stored potions, retaining both effects for one120-second lifetime · Passive sessions50 minutes',35:'+$2 at the end of every cleared round',44:'Passive XP sessions last 1 hour'};return map[level]||'Keep building your poker adventure'}
 // Immediate next level, not the next milestone. Full conditions reuse the roadmap's reward copy.
  function paintNextReward(p){
   const hint=$('#player-next-reward');if(!hint)return;
   const max=p.level>=playerMax(),next=max?null:p.level+1;
-  const compact={2:'Music',3:'Interest',4:'4 Joker slots',5:'5 Joker slots',7:'Smart numbers',9:'Passive XP 0.01/s · 10min',10:'Themes + half XP costs',11:'Passive XP 0.025/s',12:'Potions · 2 slots',13:'Passive XP 20min',14:'Theorem + 4min CD',15:'Double XP',16:'Passive 30min + 0.1 XP/s',17:'+25% luck',18:'XP visuals + clearer UI',19:'Bitlabs +$1/Boss effect',20:'Extra40% XP discount + Exp Interest + Boss buffs',21:'Stock Market',22:'20% quicker +20% manual XP',23:'+$1/cleared round',24:'Shop $1 cheaper + casino music',25:'CPX + coin faucet',26:'Interest cap3 + rate0.015%',27:'Two new soundtracks',28:'Faucet-ready notification',29:'Five decks + two stakes',30:'Extra30% XP discount + Enhanced UI + photos',31:'Fullscreen + exit',32:'+1pp base CRIT',33:'Merge potions + passive50min',35:'+$2/cleared round',44:'Passive XP 1h'};
+  const compact={2:'Music',3:'Interest',4:'4 Joker slots',5:'5 Joker slots + emotional music (Last Chance)',7:'Smart numbers',9:'Passive XP 0.01/s · 10min',10:'Themes + half XP costs',11:'Passive XP 0.025/s',12:'Potions · 2 slots',13:'Passive XP 20min',14:'Theorem + 4min CD',15:'Double XP',16:'Passive 30min + 0.1 XP/s',17:'+25% luck',18:'XP visuals + clearer UI',19:'Bitlabs +$1/Boss effect',20:'Extra40% XP discount + Exp Interest + Boss buffs',21:'Stock Market',22:'20% quicker +20% manual XP',23:'+$1/cleared round',24:'Shop $1 cheaper + casino music',25:'CPX + coin faucet',26:'Interest cap3 + rate0.015%',27:'Two new soundtracks',28:'Faucet-ready notification',29:'Five decks + two stakes',30:'Extra30% XP discount + Enhanced UI + photos',31:'Fullscreen + exit',32:critReward,33:'Merge potions + passive50min',35:'+$2/cleared round',44:'Passive XP 1h'};
   const full=max?'Maximum player level '+number(playerMax())+' reached. Earlier rewards stay active.':'Next level '+number(next)+': '+levelReward(next);
   const text=max?'Max level':'Next '+number(next)+': '+(compact[next]||(rewards(next).startsWith('Keep ')?'No new bonus':rewards(next)));hint.dataset.nextLevel=max?'':String(next);if(hint.textContent!==text)hint.textContent=text;
   hint.title=full;hint.setAttribute('aria-label',full+' · View Player Levels for full details');api.decorateMoney?.(hint);
@@ -3842,13 +3843,21 @@ function renderCaptcha(){if(!attempt)return;const f=info(),math=attempt.kind==='
 function fail(){attempt=null;api.closeModal();api.notify('Incorrect answer—claim closed. No coins or cooldown used.')}
 function checkCaptcha(){if(!attempt||attempt.stage!=='captcha')return;const answer=$('#faucet-captcha-input')?.value.trim().toUpperCase(),expected=attempt.kind==='math'?String(attempt.a+attempt.b):attempt.code;if(answer!==expected){fail();return}attempt.stage='quiz';const item=quiz[randomInt(quiz.length)],answers=shuffled(item[1].map((text,i)=>({text,correct:i===item[2]})));attempt.answers=answers;api.openModal('Free coins · Balatro question','<p>'+escape(item[0])+'</p><div class="faucet-answers">'+answers.map((a,i)=>'<button class="btn ghost" data-level-action="quiz-answer" data-choice="'+i+'">'+escape(a.text)+'</button>').join('')+'</div><p class="build-note">One answer. A wrong answer closes the claim.</p>')}
 function canMutateProgress(){try{api.assertCurrent?.();return true}catch(error){api.notify?.(error.message||'Your save changed in another tab. Reload before claiming or spending.');return false}}
-function answerQuiz(choice){if(!canMutateProgress())return;if(!attempt||attempt.stage!=='quiz')return;if(!attempt.answers[choice]?.correct){fail();return}attempt.stage='claimed';const result=P().claimFaucet(progress(),Date.now(),{...(api.faucetConfig?.()||{}),passedCaptcha:true,passedQuiz:true});attempt=null;if(!result.ok){api.closeModal();api.notify(result.reason||'Claim is not ready.');refresh();return}if(api.save()===false){api.closeModal();api.notify('Claim could not be saved. Reload to check your progress before claiming again.');refresh();return}api.onFaucetClaim?.(result);api.closeModal();root.BOAudio?.sfx('coin');api.notify('Claimed '+faucetCoinNumber(result.rewardCoins??(result.rewardHalf??result.coinsAwardedHalf??0)/2)+' in-game coins + '+xpNumber(result.awardedXp??10)+' XP!');refresh()}
+// The successful receipt contains the POST-claim daily view, independent of task rate and faucet level.
+function faucetSlowdownText(f){
+ const claims=f?.claimsToday,next=f?.nextTierAt,remaining=f?.remainingAtTier;
+ if(Number.isSafeInteger(claims)&&claims>=150&&next===null&&remaining===null)return 'No further slowdown today.';
+ if(Number.isSafeInteger(claims)&&claims>=0&&Number.isSafeInteger(next)&&next>claims){const left=Number.isSafeInteger(remaining)&&remaining===next-claims?remaining:next-claims;return left+' '+(left===1?'claim':'claims')+' left until slowdown.'}
+ return 'Daily slowdown information is unavailable.';
+}
+function showFaucetThanks(result){const f=result.faucet||info();api.openModal('Thanks for claiming the faucet!','<section id="faucet-claim-thanks" aria-label="Successful faucet claim"><p id="faucet-thanks-slowdown" role="status">'+escape(faucetSlowdownText(f))+'</p><p id="faucet-thanks-payout">Claimed '+faucetCoinNumber(result.rewardCoins??(result.rewardHalf??result.coinsAwardedHalf??0)/2)+' in-game coins + <strong>'+xpNumber(result.awardedXp??10)+' XP</strong>!</p><div class="sheet-actions"><button type="button" class="btn primary" data-level-action="close-faucet-thanks">Close</button></div></section>')}
+function answerQuiz(choice){if(!canMutateProgress())return;if(!attempt||attempt.stage!=='quiz')return;if(!attempt.answers[choice]?.correct){fail();return}attempt.stage='claimed';const result=P().claimFaucet(progress(),Date.now(),{...(api.faucetConfig?.()||{}),passedCaptcha:true,passedQuiz:true});attempt=null;if(!result.ok){api.closeModal();api.notify(result.reason||'Claim is not ready.');refresh();return}if(api.save()===false){api.closeModal();api.notify('Claim could not be saved. Reload to check your progress before claiming again.');refresh();return}api.onFaucetClaim?.(result);api.closeModal();root.BOAudio?.sfx('coin');api.notify('Claimed '+faucetCoinNumber(result.rewardCoins??(result.rewardHalf??result.coinsAwardedHalf??0)/2)+' in-game coins + '+xpNumber(result.awardedXp??10)+' XP!');refresh();showFaucetThanks(result)}
 function graphRows(){return P().faucetCosts?.(api.faucetConfig?.()||{})||[]}
 function showGraph(metric='claims'){if(progress().level<25){api.openModal('Faucet graph locked','<p>Reach Player Level 25 to unlock the faucet graph.</p>'+graphButton());return}attempt=null;graphMetric=['claims','coins','cooldown'].includes(metric)?metric:'claims';const graph=root.BOFaucetGraph;if(!graph){api.openModal('Faucet graph','<p>The faucet graph module is missing.</p>');return}api.openModal('Faucet level graph · not player XP',graph.render({rows:graphRows(),metric:graphMetric,format:number}))}
 function showGraphPoint(level){const el=$('#faucet-graph-point');if(el&&root.BOFaucetGraph)el.textContent=root.BOFaucetGraph.pointInfo(graphRows(),level,graphMetric,number)}
 function coinUnlocks(){attempt=null;const catalog=api.coinCatalog?.()||[];if(!P().buffs(progress().level).faucet){showFaucet();return}if(!catalog.length){api.openModal('Coin Joker unlocks','<p>Your coins are saved. The Joker unlock roster and prices have not been specified yet, so no prices have been invented.</p>');return}api.openModal('Coin Joker unlocks','<p>Balance: '+faucetCoinNumber(info().coins)+' in-game coins.</p><div class="collection-grid">'+catalog.map(x=>{const owned=progress().unlockedJokers.includes(x.id),enough=progress().coinsHalf>=x.priceHalf;return '<article class="collection-entry"><h3>'+escape(x.name||x.id)+'</h3><p>'+escape(x.description||'')+'</p><button class="btn '+(owned?'ghost':'primary')+' small" data-level-action="unlock-joker" data-id="'+escape(x.id)+'" '+(owned||!enough?'disabled':'')+'>'+(owned?'✓ Unlocked':'Unlock · '+number(x.priceHalf/2)+' coins')+'</button><small>Permanent unlock; then eligible in shops and packs.</small></article>'}).join('')+'</div>')}
 function unlockJoker(id,origin='modal'){if(!canMutateProgress())return;if(!P().buffs(progress().level).faucet){api.notify('Coin Joker unlocks become available at player level 25.');return}const catalog=api.coinCatalog?.()||[],item=catalog.find(x=>x.id===id);if(!item)return;const r=P().unlockJoker(progress(),id,item.priceHalf,catalog);if(!r.ok){api.notify(r.reason||'Cannot unlock this Joker.');return}api.save();api.notify((item.name||id)+' permanently unlocked.');api.onCoinUnlock?.(id);if(origin==='modal')coinUnlocks();refresh()}
-document.addEventListener('click',event=>{const el=event.target.closest('[data-level-action]');if(!el||el.disabled||!api)return;const action=el.dataset.levelAction;if(action==='details'||action==='next-reward'||action==='interest-details')details();else if(action==='roadmap-page')details(Number(el.dataset.page));else if(action==='faucet-graph')showGraph();else if(action==='graph-metric')showGraph(el.dataset.metric);else if(action==='graph-point')showGraphPoint(Number(el.dataset.level));else if(action==='faucet-levels')showFaucetLevels();else if(action==='faucet-preview'){showFaucetLevels(Number(el.dataset.level));const focus=document.getElementById(el.id)||$('#faucet-preview-select');(focus&&!focus.disabled?focus:$('#faucet-preview-select'))?.focus({preventScroll:true})}else if(action==='faucet')showFaucet();else if(action==='begin-claim')beginClaim();else if(action==='check-captcha')checkCaptcha();else if(action==='math-captcha'&&attempt){attempt.kind='math';attempt.a=2+randomInt(18);attempt.b=2+randomInt(18);renderCaptcha()}else if(action==='quiz-answer')answerQuiz(Number(el.dataset.choice));else if(action==='coin-unlocks')coinUnlocks();else if(action==='unlock-joker')unlockJoker(el.dataset.id,el.closest('#dialog-body')?'modal':'collection')});
+document.addEventListener('click',event=>{const el=event.target.closest('[data-level-action]');if(!el||el.disabled||!api)return;const action=el.dataset.levelAction;if(action==='details'||action==='next-reward'||action==='interest-details')details();else if(action==='roadmap-page')details(Number(el.dataset.page));else if(action==='faucet-graph')showGraph();else if(action==='graph-metric')showGraph(el.dataset.metric);else if(action==='graph-point')showGraphPoint(Number(el.dataset.level));else if(action==='faucet-levels')showFaucetLevels();else if(action==='faucet-preview'){showFaucetLevels(Number(el.dataset.level));const focus=document.getElementById(el.id)||$('#faucet-preview-select');(focus&&!focus.disabled?focus:$('#faucet-preview-select'))?.focus({preventScroll:true})}else if(action==='faucet')showFaucet();else if(action==='begin-claim')beginClaim();else if(action==='check-captcha')checkCaptcha();else if(action==='math-captcha'&&attempt){attempt.kind='math';attempt.a=2+randomInt(18);attempt.b=2+randomInt(18);renderCaptcha()}else if(action==='quiz-answer')answerQuiz(Number(el.dataset.choice));else if(action==='close-faucet-thanks')api.closeModal();else if(action==='coin-unlocks')coinUnlocks();else if(action==='unlock-joker')unlockJoker(el.dataset.id,el.closest('#dialog-body')?'modal':'collection')});
 document.addEventListener('change',event=>{if(event.target.id==='faucet-preview-select'&&event.target.closest('#faucet-level-preview')){showFaucetLevels(Number(event.target.value));$('#faucet-preview-select')?.focus({preventScroll:true})}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClock()});
 document.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.id==='faucet-captcha-input'){event.preventDefault();checkCaptcha()}});
@@ -4285,7 +4294,7 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
   const MUSIC_DATA = root.BOMusicData && root.BOMusicData.version === 1 ? root.BOMusicData : null;
   const TRACKS = MUSIC_DATA ? MUSIC_DATA.tracks : LEGACY_TRACKS;
   const LICENSED = MUSIC_DATA && MUSIC_DATA.licensed.verified ? MUSIC_DATA.licensed : null;
-  const SCENES = Object.freeze(['table', 'boss', 'final_boss']);
+  const SCENES = Object.freeze(['table', 'boss', 'final_boss', 'last_chance']);
   const sceneId = value => SCENES.includes(value) ? value : 'table';
   const DEFAULTS = Object.freeze({ sound: true, music: true, sfxVolume: 0.62,
     musicVolume: 0.44, muted: false, track: 'poker_lounge' });
@@ -4911,7 +4920,73 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
     bossCompositions[LICENSED.id]=bossComposition(LICENSED,harmony,false,17);
     finalCompositions[LICENSED.id]=bossComposition(LICENSED,harmony,true,17);
   }
-  const ARRANGEMENTS=Object.freeze({table:Object.freeze(tableCompositions),boss:Object.freeze(bossCompositions),final_boss:Object.freeze(finalCompositions)});
+  // Last Chance is transient, never a catalog selection or saved preference.
+  // Revoice the selected piece's root journey as a slow minor/add9/sus lament:
+  // open piano, a falling two-note sigh, breathy bowed swells and a soft heartbeat.
+  // This deliberately shares none of the boss ostinato, snare or climax score.
+  function lastChanceStrings(graph, v, at, notes, velocity, length) {
+    const ctx=graph.ctx, gain=v.own(ctx.createGain()), filter=v.own(ctx.createBiquadFilter());
+    const level=velocity*.075/Math.sqrt(notes.length), end=at+length;
+    gain.gain.setValueAtTime(0,at);
+    gain.gain.linearRampToValueAtTime(level,at+Math.min(.65,length*.28));
+    gain.gain.linearRampToValueAtTime(level*.78,at+length*.66);
+    gain.gain.exponentialRampToValueAtTime(.00001,end-.08);gain.gain.linearRampToValueAtTime(0,end);
+    filter.type='lowpass';filter.frequency.value=1450;filter.Q.value=.45;
+    filter.connect(gain);gain.connect(v.output);
+    for(const note of notes) for(const [shape,cents]of [['triangle',-5],['sawtooth',5]]) {
+      const osc=ctx.createOscillator();osc.type=shape;osc.frequency.setValueAtTime(hz(note),at);
+      osc.detune.setValueAtTime(cents,at);osc.connect(filter);v.source(osc,at,end+.012);
+    }
+    const breath=ctx.createBufferSource(), band=v.own(ctx.createBiquadFilter()), air=v.own(ctx.createGain());
+    breath.buffer=graph.noise;breath.loop=true;band.type='bandpass';band.frequency.value=1050;band.Q.value=.6;
+    air.gain.value=.22;breath.connect(band);band.connect(air);air.connect(filter);v.source(breath,at,end+.012,.23);
+  }
+  function lastChanceComposition(metadata, harmony, identity) {
+    const beat=60/clamp(metadata.bpm*.56,56,74),score=[];
+    const add=(bar,b,type,data)=>score.push({beat:bar*4+b,bar,type,...data});
+    const sighs=[[7,3,2,0],[10,7,5,3],[12,10,7,2],[7,5,3,2]],cell=sighs[identity%4];
+    for(let bar=0;bar<16;bar++) {
+      const rootNote=36+((harmony[bar%harmony.length][0]%12+12)%12),sus=bar%4===1||bar===15;
+      const notes=[rootNote+12,rootNote+(sus?17:15),rootNote+19,rootNote+26];
+      const lift=bar>=8&&bar<12?1.1:bar>=12?.88:1;
+      add(bar,0,'felt_piano',{notes,length:3.35,velocity:.55*lift});
+      add(bar,.12,'bowed_breath',{notes:[rootNote+12,rootNote+19,rootNote+(sus?29:27)],length:3.75,velocity:.56*lift});
+      add(bar,.025,'quiet_sub',{note:rootNote-12,length:3.65,velocity:.34});
+      add(bar,.78,'sigh',{note:rootNote+24+cell[(bar+identity)%4],length:1.65,velocity:.61*lift});
+      add(bar,2.55,'sigh',{note:rootNote+24+cell[(bar+identity+1)%4],length:1.35,velocity:.47*lift});
+      if(sus) add(bar,2.75,'felt_piano',{notes:[rootNote+15,rootNote+26],length:1.12,velocity:.31});
+      // A double heartbeat, not a dance kick: two rounded low pulses every half bar.
+      for(const b of [0,2]) {
+        add(bar,b,'heartbeat',{velocity:.43});add(bar,b+.27,'heartbeat',{velocity:.25});
+      }
+    }
+    score.sort((a,b)=>a.beat-b.beat);
+    return {beat,loopBeats:64,score,play(graph,event,at) {
+      const v=voice(graph,'music',at,event.type==='felt_piano'?-.2:event.type==='sigh'?.21:event.type==='bowed_breath'?.08:0,
+        event.type==='felt_piano'||event.type==='sigh'?.43:event.type==='bowed_breath'?.32:.02);
+      const length=(event.length||.3)*beat,vel=event.velocity;
+      if(event.type==='felt_piano'||event.type==='sigh') {
+        const notes=event.notes||[event.note],level=vel/Math.sqrt(notes.length);
+        for(let i=0;i<notes.length;i++) {
+          const t=at+i*.016;
+          tone(graph,v,t,notes[i],length,level*.28,'piano',1750,.014,.5);
+          tone(graph,v,t,notes[i]+12.01,length*.7,level*.018,'sine',1900,.012,.32);
+        }
+      } else if(event.type==='bowed_breath') lastChanceStrings(graph,v,at,event.notes,vel,length);
+      else if(event.type==='quiet_sub') tone(graph,v,at,event.note,length,vel*.27,'sine',0,.04,.65);
+      else {
+        const osc=tone(graph,v,at,33,.24,vel*.19,'sine',180,.016,.32);
+        osc.frequency.setValueAtTime(61,at);osc.frequency.exponentialRampToValueAtTime(43,at+.15);
+      }
+    }};
+  }
+  const lastChanceCompositions={};
+  TRACKS.forEach((metadata,index)=>{
+    const harmony=oldHarmony[metadata.id]||MUSIC_DATA.scores[LICENSED&&metadata.id===LICENSED.id?LICENSED.fallback:metadata.id].harmony;
+    lastChanceCompositions[metadata.id]=lastChanceComposition(metadata,harmony,index);
+  });
+  const ARRANGEMENTS=Object.freeze({table:Object.freeze(tableCompositions),boss:Object.freeze(bossCompositions),
+    final_boss:Object.freeze(finalCompositions),last_chance:Object.freeze(lastChanceCompositions)});
   const isLicensed = id => !!(LICENSED && id === LICENSED.id);
   function effectiveId(id, ready) { return isLicensed(id) && !ready ? LICENSED.fallback : id; }
   function compositionFor(id, scene, ready) { return ARRANGEMENTS[scene][effectiveId(id,ready)]; }
@@ -4970,8 +5045,9 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
       })]);
     } finally { root.clearTimeout(timeout); }
   }
-  function recordingRate(scene) { return scene==='final_boss'?Math.pow(2,-3/12):scene==='boss'?Math.pow(2,-2/12):1; }
+  function recordingRate(scene) { return scene==='last_chance'?Math.pow(2,-5/12):scene==='final_boss'?Math.pow(2,-3/12):scene==='boss'?Math.pow(2,-2/12):1; }
   function recordingVoice(target, buffer, at, position, scene, beat, endAt) {
+    if(scene==='last_chance') return lastChanceRecording(target,buffer,at,position,beat,endAt);
     const rate=recordingRate(scene);
     const v=voice(target,'music',at,0,0), source=target.ctx.createBufferSource();
     source.buffer=buffer;source.loop=true;source.playbackRate.setValueAtTime(rate,at);
@@ -4982,6 +5058,18 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
     return v;
   }
 
+  function lastChanceRecording(target, buffer, at, position, beat, endAt) {
+    // Keep the verified local recording audible underneath the new orchestration,
+    // with a five-semitone slowdown and subdued, low-passed backing (modified CC BY).
+    const rate=recordingRate('last_chance'),v=voice(target,'music',at,0,.12);
+    const source=target.ctx.createBufferSource(),filter=v.own(target.ctx.createBiquadFilter());
+    source.buffer=buffer;source.loop=true;source.playbackRate.setValueAtTime(rate,at);
+    filter.type='lowpass';filter.frequency.value=900;filter.Q.value=.5;
+    v.output.gain.setValueAtTime(0,at);v.output.gain.linearRampToValueAtTime(.13,at+.18);
+    source.connect(filter);filter.connect(v.output);
+    v.source(source,at,endAt,(Math.max(0,position)*beat*rate)%buffer.duration);
+    return v;
+  }
 
   function cancelKind(graph, kind, immediate) {
     if (!graph) return;
@@ -5229,7 +5317,7 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
       scheduledVoices: graph ? graph.fx.size + graph.music.size : 0,
       lastSfx, eventsTriggered, track: prefs.track,
       trackName: TRACKS.find(track => track.id === prefs.track).name,
-      scene, effectiveArrangement:scene, arrangementName:scene==='final_boss'?'Final Boss':scene==='boss'?'Boss Blind':'Table',
+      scene, effectiveArrangement:scene, arrangementName:scene==='last_chance'?'Last Chance':scene==='final_boss'?'Final Boss':scene==='boss'?'Boss Blind':'Table',
       effectiveTrack, effectiveTrackName:TRACKS.find(track=>track.id===effectiveTrack).name,
       assetStatus:isLicensed(prefs.track)?assetStatus:'idle', assetError:isLicensed(prefs.track)?assetError:null,
       licensedPlaying, modified:isLicensed(prefs.track)&&scene!=='table' };
@@ -9145,10 +9233,10 @@ function settlePassiveResult(result){if(!result?.ok)return;queueLevelUp(result);
 function startPassiveXp(){if(playerLevel()>=20){openFaucet();return}if(!PX)return;try{assertEconomyWritable()}catch(error){toast(error.message);return}syncPotionClock();const result=PX.start(profile,Date.now(),playerXpConfig());if(!result.ok){toast(result.reason||'Passive XP cannot start.');return}settlePassiveResult(result);window.BOAudio?.sfx('click');const s=PX.status(profile,Date.now(),playerXpConfig());toast((result.resumed?'Passive Exp continued after a duration upgrade: ':'Passive Exp started: ')+fmtXp(s.rateXp)+' XP every '+((s.intervalMs||1000)===1000?'second':Math.round(s.intervalMs/1000)+' seconds')+' for '+Math.round(s.durationMs/60000)+' minutes.')}
 function passiveHeartbeat(){if(!PX||!PG||passivePolling)return;try{assertEconomyWritable()}catch(error){return}pullPotionState();const now=Date.now(),s=PX.status(profile,now,playerXpConfig(now));updatePassiveButton(s);if(!s.unlocked||!(s.pendingTicks>0||s.needsDurationUpdate||s.needsRateUpdate||profile.passiveXp.sequence>0&&!profile.passiveXp.completionCounted&&now>=profile.passiveXp.endsAt))return;passivePolling=true;try{const result=PX.poll(profile,now,playerXpConfig(now));if(result.ok&&(result.ticks>0||result.stopped||s.needsDurationUpdate||s.needsRateUpdate)){settlePassiveResult(result);if(result.stopped){const stoppedStatus=PX.status(profile,Date.now(),playerXpConfig());toast(stoppedStatus.coolingDown?'Passive Exp finished. '+Math.round(stoppedStatus.cooldownMs/60000)+'-minute cooldown started.':'Passive Exp finished; the cooldown has already passed. You can start another session.')}}}finally{passivePolling=false}}
 function trackUnlocked(id){return id==='poker_lounge'||id==='casino_lounge'&&playerBuffs().casinoTrack||['starlight_felt','copper_groove'].includes(id)&&playerBuffs().moreTracks||!['casino_lounge','starlight_felt','copper_groove'].includes(id)&&!!window.BOMusicData?.tracks?.some(t=>t.id===id)&&playerBuffs().music}
-function musicScene(){return page==='game'&&run?.blindIndex===2&&(run.phase==='play'||animating)?(run.ante>=8?'final_boss':'boss'):'table'}
+function musicScene(){if(page!=='game'||!run||!(run.phase==='play'||animating))return 'table';if(playerLevel()>=5&&run.hands===1&&run.discards===0)return 'last_chance';return run.blindIndex===2?(run.ante>=8?'final_boss':'boss'):'table'}
 function effectiveAudioPrefs(){return {...prefs,music:!!prefs.music&&playerBuffs().music,track:trackUnlocked(prefs.track)?prefs.track:'poker_lounge',scene:musicScene()}}
-function refreshMusicStatus(){const el=$('#music-now-playing'),s=window.BOAudio?.status();if(!el||!s)return;const mode=s.scene==='final_boss'?'Final Boss · deeper bass, heavy drums and a climax':s.scene==='boss'?'Boss Blind · dark, heavy arrangement':'Table · original arrangement',asset=typeof s.assetStatus==='string'?s.assetStatus:'';el.textContent=(s.playingMusic?'Playing: ':'Selected: ')+s.trackName+' · '+mode+(s.track==='deadly_roulette'&&/loading|decoding/.test(asset)?' · Loading local recording…':s.track==='deadly_roulette'&&/error|fail|fallback/.test(asset)?' · Recording unavailable; original roulette fallback':'');}
-function soundtrackCreditsHTML(){return '<p id="music-now-playing" class="build-note" aria-live="polite"></p><p class="build-note">12 new original arcade, roulette, casino, poker and blackjack compositions. Boss Blinds automatically switch to darker arrangements; Ante 8+ Boss Blinds add a final-boss climax. Your selected track returns afterward.</p><p class="build-note" id="music-attribution">“Deadly Roulette” by Kevin MacLeod (<a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1600033" target="_blank" rel="noopener noreferrer">incompetech.com</a>), licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution 4.0</a>. Original recording included locally; boss modes add original backing and playback processing. No endorsement implied. The other tracks are original compositions for this fan game, not the official Balatro soundtrack.</p>';}
+function refreshMusicStatus(){const el=$('#music-now-playing'),s=window.BOAudio?.status();if(!el||!s)return;const mode=s.scene==='last_chance'?'Last Chance · dramatic piano, strings and a heartbeat':s.scene==='final_boss'?'Final Boss · deeper bass, heavy drums and a climax':s.scene==='boss'?'Boss Blind · dark, heavy arrangement':'Table · original arrangement',asset=typeof s.assetStatus==='string'?s.assetStatus:'';el.textContent=(s.playingMusic?'Playing: ':'Selected: ')+s.trackName+' · '+mode+(s.track==='deadly_roulette'&&/loading|decoding/.test(asset)?' · Loading local recording…':s.track==='deadly_roulette'&&/error|fail|fallback/.test(asset)?' · Recording unavailable; original roulette fallback':'');}
+function soundtrackCreditsHTML(){return '<p id="music-now-playing" class="build-note" aria-live="polite"></p><p class="build-note">12 new original arcade, roulette, casino, poker and blackjack compositions. Boss Blinds automatically switch to darker arrangements; Ante 8+ Boss Blinds add a final-boss climax. Level 5 unlocks emotional Last Chance music when you have 1 hand and no discards left. Your selected track returns afterward.</p><p class="build-note" id="music-attribution">“Deadly Roulette” by Kevin MacLeod (<a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1600033" target="_blank" rel="noopener noreferrer">incompetech.com</a>), licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution 4.0</a>. Original recording included locally; boss and Last Chance modes add original backing and playback processing. No endorsement implied. The other tracks are original compositions for this fan game, not the official Balatro soundtrack.</p>';}
 window.addEventListener('bo-audio-status',refreshMusicStatus);
 function coinUnlockIds(){return [...new Set((profile.progression?.unlockedJokers||[]).filter(id=>E.jokers.some(j=>j.id===id&&j.requiresCoinUnlock)))].sort()}
 function newRunId(){return window.crypto?.randomUUID?'run-'+window.crypto.randomUUID():'run-'+Date.now()+'-'+(profile.runs+1)}
