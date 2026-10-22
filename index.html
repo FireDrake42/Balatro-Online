@@ -890,6 +890,30 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
 @keyframes emerald-glide{0%,100%{transform:translateX(-8px)}50%{transform:translateX(8px)}}
 @media(prefers-reduced-motion:reduce){.emerald-group{animation:none!important}}
 @media(max-width:400px){.emerald-stage{padding-left:10px;padding-right:10px}.emerald-bubble{font-size:13px}}
+/* Emerald's own progression is below the untouched original photo. */
+.emerald-group img{width:calc(98px * var(--emerald-scale,1))}
+.emerald-group{animation-duration:calc(4s / var(--emerald-speed,1))}
+.emerald-stage[data-position=glide] .emerald-group{animation-duration:calc(6s / var(--emerald-speed,1))}
+.emerald-stage[data-position=corner] .emerald-group{animation-duration:calc(5s / var(--emerald-speed,1))}
+.emerald-aura .emerald-group img{outline:2px solid #76f880;outline-offset:3px;box-shadow:0 0 18px 5px #42df7455}
+.emerald-level-bar{box-sizing:border-box;width:min(250px,100%);padding:7px 9px;border:1px solid #84ed88;border-radius:10px;background:#102d1e;color:#edffed!important;font-size:12px;line-height:1.4}
+.emerald-level-track{height:9px;margin-top:5px;overflow:hidden;border:1px solid #7ce586;border-radius:6px;background:#05180b}
+.emerald-level-fill{display:block;height:100%;background:linear-gradient(90deg,#39ad57,#9bff90)}
+.emerald-working .emerald-group{animation:none!important}
+/* Centered in normal flow: never overlays a card, a button or a dialog. */
+.frenzy-meter{box-sizing:border-box;width:min(360px,100%);margin:10px auto 14px;padding:9px 14px;text-align:center;border:2px solid #a8ecb0;border-radius:14px;background:#102a23;color:#f5fff4!important;pointer-events:none;flex-shrink:0}
+.frenzy-title{font-weight:900;font-size:15px;letter-spacing:.06em}.frenzy-count{font-size:12px;margin-top:4px;line-height:1.3;font-variant-numeric:tabular-nums}
+.frenzy-track{height:13px;margin-top:6px;border:1px solid #b7ecc0;border-radius:8px;overflow:hidden;background:#05180f}.frenzy-fill{display:block;width:0;height:100%;background:#7deb90}
+#faucet-ready-notice.frenzy-inline-notice{position:static;left:auto;bottom:auto;transform:none;display:inline-block;max-width:100%;width:auto;box-sizing:border-box;margin:8px 0 0;padding:8px 10px;min-height:44px;font-size:12px;line-height:1.35;pointer-events:auto;z-index:auto}
+.frenzy-meter.is-active{border-color:#fff;box-shadow:0 0 22px #a7ffb577}.frenzy-meter.is-active .frenzy-fill{background:linear-gradient(90deg,#ff667c,#ffe176,#8aff98,#74ddff,#c395ff,#ff87cc)}
+body.frenzy-active :is(#app,#level-hud,.topbar,.site-footer){animation:frenzy-colour-orbit 4s linear infinite}
+body.frenzy-active :is(.panel,.table-surface,.resource,.emerald-bubble,.emerald-level-bar,.frenzy-meter){background-image:linear-gradient(125deg,#58233ddd,#5b4d21dd,#1b523cdd,#233c5add,#442c60dd);border-color:#d8ffeb}
+body.frenzy-active :is(.progress,.level-progress,.levels-progress,.xp-track,.xp-bar,.faucet-progress,.faucet-claim-track,.emerald-level-track) > span{background:linear-gradient(90deg,#ff697e,#ffe176,#8aff98,#74ddff,#c395ff,#ff87cc)!important}
+body.frenzy-active .emerald-group img{box-shadow:0 0 8px 3px #ff8bb8,0 0 14px 5px #ffe778,0 0 23px 8px #72ebbe,0 0 31px 10px #b69bff}
+@keyframes frenzy-colour-orbit{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(360deg)}}
+body.frenzy-motion-off :is(#app,#level-hud,.topbar,.site-footer){animation:none!important}
+@media(prefers-reduced-motion:reduce){body.frenzy-active :is(#app,#level-hud,.topbar,.site-footer){animation:none!important}}
+
 
 </style></head><body>
 <div class="grain" aria-hidden="true"></div><header class="topbar"><button class="wordmark" id="home" aria-label="Main menu"><span class="logo">♠</span> BALATRO <em>ONLINE</em></button><button id="passive-xp-button" class="passive-xp-button" data-action="start-passive-xp" hidden>Start Passive Exp</button><div class="header-right"><span class="local-badge">● LOCAL-FIRST</span><button class="icon-button" id="audio-toggle" aria-label="Enable sound and music" title="Tap to enable audio">♪</button><button class="icon-button" id="help" aria-label="How to play">?</button><button class="icon-button" id="settings" aria-label="Settings">⚙</button></div></header>
@@ -944,9 +968,13 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
     ['all_suiter','All-Suiter','Every non-Stone card counts as every suit for 2 minutes without changing its printed suit.'],
     ['boss_disabler','Boss-disabler Potion','Fixed 1 in 20 chance to disable an actual Boss at its start, only until this potion ends.'],
     ['turtle','Turtle Potion','Start at +12 hand size, losing 1 every 10 seconds for 2 minutes; excess held cards are kept.'],
-    ['xp_discount','Exp for Discounts Potion','Player XP level costs are 10% lower for 2 minutes; earned levels remain afterwards.']
+    ['xp_discount','Exp for Discounts Potion','Player XP level costs are 10% lower for 2 minutes; earned levels remain afterwards.'],
+    ['speed','Speed Potion','Scoring animation durations are multiplied by 0.7 for 2 minutes. Emerald gift only; no scoring, gameplay clock or cooldown changes.']
   ].map(function (x) { return Object.freeze({id:x[0],name:x[1],description:x[2]}); });
   Object.freeze(CATALOG);
+  // Speed is an Emerald gift, not an implicit new Boss reward or Medal-shop offer.
+  // Keep the historical sixteen-item order and random selection unchanged.
+  var DROP_CATALOG = Object.freeze(CATALOG.slice(0,16)), SHOP_CATALOG = DROP_CATALOG;
   var ids = CATALOG.map(function (x) { return x.id; });
   function check(ok, message) { if (!ok) throw new Error(message); }
   function copy(x) { return JSON.parse(JSON.stringify(x)); }
@@ -1018,7 +1046,7 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
   var dayFormatter = new Intl.DateTimeFormat('en-GB',{timeZone:'Atlantic/Canary',day:'numeric'});
   function dayOfMonth(now) { clock(now);return Number(dayFormatter.format(new Date(now))); }
   function effectsAt(state, now) {
-    var e=at(state,now),m={potionId:null,xpMultiplier:1,luckMultiplier:1,cardMult:0,cardChips:0,roundMoney:0,interestDivisor:5,baseCritChance:0,knowledgeXpPerSecond:null,cooldownMultiplier:1,daylightMult:0,planetBonusLevels:0,allSuits:false,bossDisableChance:0,handSizeBonus:0,xpCostMultiplier:1,gamingHP:null};
+    var e=at(state,now),m={potionId:null,xpMultiplier:1,luckMultiplier:1,cardMult:0,cardChips:0,roundMoney:0,interestDivisor:5,baseCritChance:0,knowledgeXpPerSecond:null,cooldownMultiplier:1,daylightMult:0,planetBonusLevels:0,allSuits:false,bossDisableChance:0,handSizeBonus:0,xpCostMultiplier:1,gamingHP:null,scoringDurationMultiplier:1};
     if(!e)return m;m.potionId=e.potionId;
     components(e).forEach(function(id){switch(id){
       case 'exp':m.xpMultiplier=2;break;case 'luck':m.luckMultiplier=2;break;
@@ -1028,7 +1056,7 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
       case 'daylight':m.daylightMult=dayOfMonth(now);break;case 'night':m.planetBonusLevels=1;break;
       case 'critical':m.baseCritChance+=.025;break;case 'all_suiter':m.allSuits=true;break;
       case 'boss_disabler':m.bossDisableChance=.05;break;case 'turtle':m.handSizeBonus=Math.max(0,12-Math.floor((now-e.startedAt)/10000));break;
-      case 'xp_discount':m.xpCostMultiplier=.9;break;
+      case 'xp_discount':m.xpCostMultiplier=.9;break;case 'speed':m.scoringDurationMultiplier=.7;break;
     }});
     return m;
   }
@@ -1070,7 +1098,7 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
     if(!e || !hasEffect(e,'gaming') || e.hp===hp)return s;
     s.active.hp=hp;s.timeline[s.timeline.length-1].hp=hp;return revise(s);
   }
-  return {CATALOG:CATALOG,MAX_INVENTORY:MAX_INVENTORY,DURATION_MS:DURATION_MS,create:create,normalize:normalize,recover:recover,current:current,effectsAt:effectsAt,drink:drink,merge:merge,components:components,hasEffect:hasEffect,displayName:displayName,receiveDrop:receiveDrop,endActive:endActive,patchActiveHp:patchActiveHp,dayOfMonth:dayOfMonth};
+  return {CATALOG:CATALOG,DROP_CATALOG:DROP_CATALOG,SHOP_CATALOG:SHOP_CATALOG,MAX_INVENTORY:MAX_INVENTORY,DURATION_MS:DURATION_MS,create:create,normalize:normalize,recover:recover,current:current,effectsAt:effectsAt,drink:drink,merge:merge,components:components,hasEffect:hasEffect,displayName:displayName,receiveDrop:receiveDrop,endActive:endActive,patchActiveHp:patchActiveHp,dayOfMonth:dayOfMonth};
 });
 
 </script><script>
@@ -1130,17 +1158,114 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
 });
 
 </script><script>
+/* Frenzy: strict optional run-owned state, physical-score accounting, supplied clock only. */
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (root) root.BOFrenzy = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  var MAX = 500, DURATION_MS = 10000, MAX_TIME = 8640000000000000-DURATION_MS;
+  var FIELDS = ['version','revision','charge','startedAt','expiresAt','lastNow'];
+  function check(ok, message) { if (!ok) throw new Error(message); }
+  // Check descriptors BEFORE reading values: JSON cloning must not hide forged
+  // accessors, symbols, non-enumerable fields, inherited records or undefined.
+  function fields(value, allowed) {
+    check(value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype, 'Invalid Frenzy record.');
+    var keys = Reflect.ownKeys(value);
+    check(keys.length === allowed.length && keys.every(function (key) {
+      var d = Object.getOwnPropertyDescriptor(value,key);
+      return typeof key === 'string' && allowed.indexOf(key) >= 0 && d.enumerable && Object.prototype.hasOwnProperty.call(d,'value');
+    }), 'Invalid or unknown Frenzy fields.');
+  }
+  function clock(now) { check(Number.isSafeInteger(now) && now >= 0 && now <= MAX_TIME, 'Supply a valid Frenzy clock time.'); return now; }
+  function level(actualLevel) { check(Number.isInteger(actualLevel) && actualLevel >= 1 && actualLevel <= 100, 'Supply the actual player level (1-100) for Frenzy.'); return actualLevel; }
+  function create() { return {version:1,revision:0,charge:0,startedAt:null,expiresAt:null,lastNow:0}; }
+  function normalize(value) {
+    fields(value,FIELDS);
+    check(value.version === 1, 'Invalid Frenzy version.');
+    check(Number.isSafeInteger(value.revision) && value.revision >= 0, 'Invalid Frenzy revision.');
+    check(Number.isInteger(value.charge) && value.charge >= 0 && value.charge < MAX, 'Invalid Frenzy charge.');
+    clock(value.lastNow);
+    if (value.startedAt === null || value.expiresAt === null) {
+      check(value.startedAt === null && value.expiresAt === null, 'Invalid Frenzy activation pair.');
+    } else {
+      clock(value.startedAt);
+      check(value.expiresAt === value.startedAt+DURATION_MS && value.lastNow >= value.startedAt && value.lastNow < value.expiresAt && value.charge === 0, 'Invalid Frenzy activation.');
+    }
+    check(value.revision !== 0 || value.charge === 0 && value.startedAt === null && value.lastNow === 0, 'Invalid fresh Frenzy state.');
+    return {version:1,revision:value.revision,charge:value.charge,startedAt:value.startedAt,expiresAt:value.expiresAt,lastNow:value.lastNow};
+  }
+  function validate(value) { normalize(value); return true; }
+  function context(value) {
+    fields(value,['actualLevel','now']);
+    return {actualLevel:level(value.actualLevel),now:clock(value.now)};
+  }
+  function view(s, actualLevel, now) {
+    var eligible = actualLevel >= 33, active = eligible && s.startedAt !== null && now < s.expiresAt;
+    var remaining = active ? s.expiresAt-now : 0;
+    return {eligible:eligible,active:active,charge:eligible && s.startedAt === null?s.charge:0,meter:active?remaining/20:eligible && s.startedAt === null?s.charge:0,max:MAX,durationMs:DURATION_MS,remainingMs:remaining,multiplier:active?1.5:1,startedAt:s.startedAt,expiresAt:s.expiresAt,revision:s.revision};
+  }
+  function checked(value, actualLevel, now) {
+    var s = value === undefined ? create() : normalize(value);
+    level(actualLevel); clock(now);
+    check(now >= s.lastNow, 'Frenzy clock cannot move backwards.');
+    return s;
+  }
+  // Expiry is virtual during queries: no timer, reset, revision bump or write.
+  function info(value, actualLevel, now) { return view(checked(value,actualLevel,now),actualLevel,now); }
+  function commit(value, actualLevel, now, scoringTriggers) {
+    var s = checked(value,actualLevel,now);
+    check(Number.isSafeInteger(scoringTriggers) && scoringTriggers >= 0, 'Invalid physical Frenzy scoring-trigger count.');
+    var before = view(s,actualLevel,now), charged = 0, activationTrigger = null;
+    if (before.eligible && scoringTriggers > 0) {
+      check(s.revision < Number.MAX_SAFE_INTEGER, 'Frenzy revision is exhausted.');
+      if (!before.active) {
+        // Expired overflow is deliberately discarded. A fresh scoring play may
+        // begin charging, never resume or refill the old 10-second activation.
+        if (s.startedAt !== null) { s.startedAt = null; s.expiresAt = null; s.charge = 0; }
+        charged = Math.min(scoringTriggers,MAX-s.charge);
+        s.charge += charged;
+        if (s.charge === MAX) { activationTrigger = charged; s.charge = 0; s.startedAt = now; s.expiresAt = now+DURATION_MS; }
+      }
+      s.lastNow = now;
+      s.revision++;
+    }
+    var after = view(s,actualLevel,now);
+    return {state:s,receipt:{eligible:after.eligible,now:now,scoringTriggers:scoringTriggers,charged:charged,ignored:scoringTriggers-charged,activationTrigger:activationTrigger,activated:activationTrigger !== null,active:after.active,meter:after.meter,remainingMs:after.remainingMs,multiplier:after.multiplier,startedAt:after.startedAt,expiresAt:after.expiresAt,revision:after.revision}};
+  }
+  return {MAX:MAX,DURATION_MS:DURATION_MS,create:create,normalize:normalize,validate:validate,context:context,info:info,commit:commit};
+});
+
+</script><script>
 /* Balatro Online rules engine. Original code; no DOM, network or assets. */
 (function (root, factory) {
   'use strict';
-  var BO = factory(typeof module === 'object' && module.exports ? require('./potions.js') : root && root.BOPotions, typeof module === 'object' && module.exports ? require('./run-wallet.js') : root && root.BORunWallet);
+  var BO = factory(typeof module === 'object' && module.exports ? require('./potions.js') : root && root.BOPotions, typeof module === 'object' && module.exports ? require('./run-wallet.js') : root && root.BORunWallet, typeof module === 'object' && module.exports ? require('./frenzy.js') : root && root.BOFrenzy);
   if (typeof module === 'object' && module.exports) module.exports = BO;
   if (root) root.BO = BO;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Potions, Wallet) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Potions, Wallet, Frenzy) {
   'use strict';
   // The absent-model fallback only keeps historical vanilla UMD consumers valid.
   // Potion actions require BOPotions, loaded before this engine in the browser.
-  var NO_POTIONS={potionId:null,xpMultiplier:1,luckMultiplier:1,cardMult:0,cardChips:0,roundMoney:0,interestDivisor:5,baseCritChance:0,knowledgeXpPerSecond:null,cooldownMultiplier:1,daylightMult:0,planetBonusLevels:0,allSuits:false,bossDisableChance:0,handSizeBonus:0,xpCostMultiplier:1,gamingHP:null};
+  var NO_POTIONS={potionId:null,xpMultiplier:1,luckMultiplier:1,cardMult:0,cardChips:0,roundMoney:0,interestDivisor:5,baseCritChance:0,knowledgeXpPerSecond:null,cooldownMultiplier:1,daylightMult:0,planetBonusLevels:0,allSuits:false,bossDisableChance:0,handSizeBonus:0,xpCostMultiplier:1,gamingHP:null,scoringDurationMultiplier:1};
+  // Optional Frenzy is strict even on legacy actions. Validate before atomic's
+  // JSON clone so it cannot silently erase forged fields, accessors or undefined.
+  function validateFrenzy(s) {
+    if(!s||!('frenzy' in s))return;
+    var d=Object.getOwnPropertyDescriptor(s,'frenzy');
+    check(d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value'),'Invalid optional Frenzy state.');
+    check(Frenzy,'Load the Frenzy model before the engine.');Frenzy.validate(d.value);
+  }
+  function frenzyInfo(s,actualLevel,now) {check(Frenzy,'Load the Frenzy model before the engine.');validateFrenzy(s);return Frenzy.info(s?s.frenzy:undefined,actualLevel,now);}
+  function commitFrenzy(s,context,scoringTriggers,scoringCards) {
+    var next=Frenzy.commit(s.frenzy,context.actualLevel,context.now,scoringTriggers),receipt=next.receipt;
+    if(scoringTriggers>0)s.frenzy=next.state;
+    receipt.activationCardId=null;
+    if(receipt.activationTrigger!==null){var row=scoringCards.find(function(c){return receipt.activationTrigger>=c.firstTrigger&&receipt.activationTrigger<c.firstTrigger+c.triggers;});receipt.activationCardId=row?row.cardId:null;}
+    return receipt;
+  }
   function potionEffects(s) {return s&&s.potions&&Potions?Potions.effectsAt(s.potions,s.potionNow===undefined?0:s.potionNow):NO_POTIONS;}
   function potionEligible(s) {return s.progressionEnabled===true&&Number.isInteger(s.playerLevel)&&s.playerLevel>=12&&s.playerLevel<=100;}
   function potionBossSuppressed(s) {
@@ -1678,7 +1803,7 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
   function refresh(s) {rebalanceJokers(s);var v=summary(s);s.handSize=v.handSize;s.jokerSlots=v.jokerSlots;s.consumableSlots=v.consumableSlots;}
   function hydrate(s) {if(s.level10Deal===undefined)s.level10Deal=false;normalizeProgression(s);if(s.potions){check(Potions,'Load the potion model before the engine.');s.potions=Potions.recover(s.potions,null);}rebalanceJokers(s);if(s.stake===undefined)s.stake='white';if(s.stakeIndex===undefined)s.stakeIndex=runStake(s).index;var map={};s.cards.forEach(function(c){map[c.id]=c;});['hand','drawPile','discardPile'].forEach(function(k){s[k]=(s[k]||[]).map(function(c){check(map[c.id],'Save contains an unknown playing card.');return map[c.id];});});refreshPrices(s);}
   function atomic(fn) {return function(s){
-    check(s&&s.version===1,'This save is not supported.');if(Object.prototype.hasOwnProperty.call(s,'wallet'))check(Wallet&&Wallet.validate(s.wallet),'Wallet save needs attention. No balance was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);
+    check(s&&s.version===1,'This save is not supported.');validateFrenzy(s);if(Object.prototype.hasOwnProperty.call(s,'wallet'))check(Wallet&&Wallet.validate(s.wallet),'Wallet save needs attention. No balance was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);
     try{hydrate(next);fn.apply(null,[next].concat(args));refresh(next);
       // Settle AFTER native scoring/on-play/Matador/lifecycle evaluation: this
       // dollar cannot alter Vagabond/Bull/Ox eligibility midway through a hand.
@@ -1930,7 +2055,8 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
   // Blocked hands bypass normal scoring and use the same idempotent hook.
   // Vanilla excludes The Hook/The Tooth and debuffed non-scoring kickers.
   function payMatador(s,r,b,lines) {if(!r.bossTriggered||r.matadorPaid[b.source.uid])return;r.matadorPaid[b.source.uid]=true;addMoney(s,8);lines.push(abilityLabel(b)+': +$8');}
-  function scoreHand(s,cards,r,bindings) {
+  function scoreHand(s,cards,r,bindings,frenzyContext) {
+    var scoringTriggers=0,scoringCards=[];
     var lines=[],critEvents=[],critTotals=null,chips,mult,potion=potionEffects(s),scored=r.indices.map(function(i){return cards[i];}),held=s.hand.filter(function(c){return cards.indexOf(c)<0;}),firstFace;
     function C(n,label){chips=finite(chips+n);if(n)lines.push(label+' +'+n+' Chips');}function M(n,label){mult=finite(mult+n);if(n)lines.push(label+' +'+n+' Mult');}function X(n,label){mult=finite(mult*n);if(n!==1)lines.push(label+' X'+Number(n.toFixed(4))+' Mult');}
     function addCritTotal(cardId,lineIndex){var group=critTotals.find(function(g){return g.cardId===cardId;});if(group)group.totalCount++;else critTotals.push({cardId:cardId,firstLine:lineIndex,totalCount:1});}
@@ -1966,7 +2092,11 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
         if(j.id==='hack'&&c.rank>=2&&c.rank<=5&&c.enhancement!=='stone'||j.id==='sock_and_buskin'&&face(s,c)||j.id==='seltzer'&&j.counter>0||j.id==='dusk'&&s.hands===0)triggers++;
         if(j.id==='hanging_chad'&&scoredIndex===0)triggers+=2;
       });
+      // Only this physical scoring loop charges Frenzy. Keep at most one row
+      // per selected/scoring card, not an unbounded per-retrigger receipt list.
+      var scoringRow=frenzyContext?{cardId:c.id,firstTrigger:scoringTriggers+1,triggers:0}:null;if(scoringRow)scoringCards.push(scoringRow);
       for(var t=0;t<triggers;t++){
+        if(scoringRow){check(scoringTriggers<Number.MAX_SAFE_INTEGER,'Physical scoring-trigger count is exhausted.');scoringTriggers++;scoringRow.triggers++;}
         var label=(RANK_NAMES[c.rank]||c.rank)+' '+SUIT_NAMES[c.suit]+(t?' retrigger':'');C(c.enhancement==='stone'?50:rankChips(c),label);C(c.bonusChips||0,'Permanent bonus');
         if(c.enhancement==='bonus')C(30,'Bonus');if(c.enhancement==='mult')M(4,'Mult card');if(c.enhancement==='glass')X(2,'Glass');
         if(c.enhancement==='lucky'){var lucky=false;if(chance(s,5)){M(20,'Lucky');lucky=true;}if(chance(s,15)){addMoney(s,20);lines.push('Lucky: +$20');lucky=true;}if(lucky)s.jokers.forEach(function(j){if(j.id==='lucky_cat'&&isJokerActive(j))j.counter+=0.25;});}
@@ -2052,9 +2182,17 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
     if(potion.daylightMult)M(potion.daylightMult,'Daylight Potion');
     var deal=level10DealActive(s);
     if(deal){chips=finite(chips*1.05);lines.push('Level 10 deal X1.05 Chips');X(1.01,'Level 10 deal');}
+    // Threshold crossing is an atomic hand event at the supplied start-of-play
+    // clock. The triggering hand receives the final boost; excess scores are
+    // ignored, not banked, and cannot restart its anchored ten-second window.
+    var frenzyReceipt=frenzyContext?commitFrenzy(s,frenzyContext,scoringTriggers,scoringCards):null;
+    if(frenzyReceipt&&frenzyReceipt.active){mult=finite(mult*1.5);lines.push('Frenzy X1.5 FINAL Mult');}
     // Keep both final stages visible even when a large retrigger log is capped.
     var resultLines=deal&&lines.length>250?lines.slice(0,248).concat(lines.slice(-2)):lines.slice(0,250);
-    var total=finite(Math.floor(chips*mult)),result={name:r.name,key:r.key,handLevel:lv+1,chips:chips,mult:mult,total:total,lines:resultLines};if(critEvents.length)result.critEvents=critEvents;if(critTotals)result.critTotals=critTotals;return result;
+    if(frenzyReceipt&&lines.length>250){var tail=(potion.daylightMult?1:0)+(deal?2:0)+(frenzyReceipt.active?1:0);if(tail)resultLines=lines.slice(0,250-tail).concat(lines.slice(-tail));}
+    var total=finite(Math.floor(chips*mult)),result={name:r.name,key:r.key,handLevel:lv+1,chips:chips,mult:mult,total:total,lines:resultLines};
+    if(frenzyReceipt){result.scoringTriggers=scoringTriggers;result.scoringCards=scoringCards;result.frenzy=frenzyReceipt;}
+    if(critEvents.length)result.critEvents=critEvents;if(critTotals)result.critTotals=critTotals;return result;
   }
   // Cash-out bonuses occur AFTER Perishable expiry. Round-end lifecycle hooks
   // (e.g. fifth-round Popcorn destruction) still resolve on the final live round.
@@ -2087,7 +2225,7 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
     // Last RNG work in round completion: native lifecycle rolls keep their old
     // position; eligibility/luck was captured before physical Perishable expiry.
     if(random(s)>=probability)return;
-    var def=Potions.CATALOG[int(s,Potions.CATALOG.length)],now=s.potionNow===undefined?0:s.potionNow;
+    var pool=Potions.DROP_CATALOG||Potions.CATALOG,def=pool[int(s,pool.length)],now=s.potionNow===undefined?0:s.potionNow;
     var receipt='boss:'+hash(String(s._uiId||s.seed))+':'+s.round+':'+s.potionDropSeq+':'+(state.sequence+1);
     var result=Potions.receiveDrop(state,def.id,receipt,now);
     s.potions=result.state;if(s.potionNow===undefined)s.potionNow=now;
@@ -2126,7 +2264,10 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
   }
   function abandon(s) {phase(s,['select','play','cashout','shop','pack']);if(s.phase==='play')snapshotRoundDeal(s,'loss');s.phase='lost';s.abandoned=true;note(s,'Run abandoned at Ante '+s.ante+'.');}
   function maybeLose(s) {if(s.hands<=0||s.hand.length===0&&s.drawPile.length===0){var bones=s.jokers.find(function(j){return j.id==='mr_bones'&&isJokerActive(j);});if(bones&&s.score>=s.target/4){note(s,'Mr. Bones prevented defeat.');finishRound(s);destroyJoker(s,bones);}else {s.phase='lost';snapshotRoundDeal(s,'loss');note(s,'Run ended at Ante '+s.ante+'.');}}}
-  function play(s,ids) {
+  function play(s,ids,options) {
+    // Legacy two-argument callers never gain new scoring authority from a cached
+    // run level. The app must supply the actual profile level and one clock.
+    var context=null;if(options!==undefined){check(Frenzy,'Load the Frenzy model before the engine.');context=Frenzy.context(options);if(context.actualLevel<33)context=null;}
     phase(s,['play']);check(s.hands>0,'No hands remain.');var cards=selected(s,ids,s.hand,5,1),r=evaluateRun(s,cards);
     var forbidden=activeBoss(s,'psychic')&&cards.length!==5?'The Psychic requires exactly 5 cards.':activeBoss(s,'eye')&&s.roundTypes[r.key]?'The Eye forbids repeating a poker hand.':activeBoss(s,'mouth')&&s.firstRoundHand&&s.firstRoundHand!==r.key?'The Mouth only allows '+HANDS[s.firstRoundHand][0]+'.':null;
     check(!activeBoss(s,'cerulean_bell')||ids.indexOf(s.forcedCardId)>=0,'Include the card selected by Cerulean Bell.');
@@ -2143,7 +2284,9 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
     // hand-level / win receipts, and before Gaming death ends the active potion.
     progressEvent(s,'hand-play',cards.length,{cards:cards.length});
     if(activeBoss(s,'ox')&&r.key===s.oxHand){if(s.money>0)r.bossTriggered=true;if(s.money!==0)recordBossEffect(s,'ox','bank-reset');s.money=0;}if(activeBoss(s,'tooth')){s.money-=cards.length;recordBossEffect(s,'tooth','played-card-loss');}
-    s.lastResult=forbidden?{name:r.name,key:r.key,handLevel:s.levels[r.key],chips:0,mult:0,total:0,lines:[forbidden,'Hand consumed: scores 0.']}:scoreHand(s,cards,r,handBindings);s.score=finite(s.score+s.lastResult.total);s.stats.bestHand=Math.max(s.stats.bestHand,s.lastResult.total);
+    s.lastResult=forbidden?{name:r.name,key:r.key,handLevel:s.levels[r.key],chips:0,mult:0,total:0,lines:[forbidden,'Hand consumed: scores 0.']}:scoreHand(s,cards,r,handBindings,context);
+    if(forbidden&&context){s.lastResult.scoringTriggers=0;s.lastResult.scoringCards=[];s.lastResult.frenzy=commitFrenzy(s,context,0,[]);}
+    s.score=finite(s.score+s.lastResult.total);s.stats.bestHand=Math.max(s.stats.bestHand,s.lastResult.total);
     cards.forEach(function(c){if(s.antePlayed.indexOf(c.id)<0)s.antePlayed.push(c.id);c.faceDown=false;});
     var playedIds=cards.map(function(c){return c.id;});s.hand=s.hand.filter(function(c){return playedIds.indexOf(c.id)<0;});cards.forEach(function(c){if(s.cards.some(function(x){return x.id===c.id;}))s.discardPile.push(c);});
     // Count only actual end-of-hand Glass breaks, never cards already destroyed
@@ -2332,7 +2475,7 @@ body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{
   function describeCard(c) {check(c&&SUIT_NAMES[c.suit],'Unknown playing card.');var lines=[(RANK_NAMES[c.rank]||c.rank)+' of '+SUIT_NAMES[c.suit]];if(c.enhancement)lines.push(ENHANCEMENTS[c.enhancement]||'Unknown enhancement.');else lines.push('Base card: +'+rankChips(c)+' Chips when scored.');if(c.edition)lines.push(EDITIONS[c.edition]||'Unknown edition.');if(c.seal)lines.push(SEALS[c.seal]||'Unknown Seal.');if(c.bonusChips)lines.push('Permanent bonus: +'+c.bonusChips+' Chips when scored.');if(c.debuffed)lines.push('Debuffed: no Chips, card effects, edition, Seal or card-triggered Joker effects.');if(c.faceDown)lines.push('Face down for this Blind.');return lines.join('\n');}
   return {version:1,decks:decks,stakes:stakes,jokers:jokers,tags:tags,planets:planets,tarots:tarots,spectrals:spectrals,vouchers:vouchers,bosses:bosses,packs:PACKS,enhancements:clone(ENHANCEMENTS),editions:clone(EDITIONS),seals:clone(SEALS),hands:clone(HANDS),
     achievements:[{id:'first_blind',name:'First Blind',description:'Win a Blind.'},{id:'ante_eight',name:'Eight Antes',description:'Defeat the Ante 8 Boss.'}],
-    newRun:newRun,evaluate:evaluate,preview:preview,blindInfo:blindInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
+    newRun:newRun,evaluate:evaluate,preview:preview,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
     setHandSort:atomic(setHandSort),setLevel10Deal:atomic(setLevel10Deal),setPotionState:atomic(setPotionState),drinkPotion:atomic(drinkPotion),setCoinUnlocks:atomic(setCoinUnlocks),setPlayerLevel:atomic(setPlayerLevel),disableBossOnce:atomic(disableBossOnce),mothimAttack:atomic(mothimAttack),startBlind:atomic(startBlind),skipBlind:atomic(skipBlind),play:atomic(play),discard:atomic(discard),cashout:atomic(cashout),buy:atomic(buy),reroll:atomic(reroll),buyVoucher:atomic(buyVoucher),openPack:atomic(openPack),openPendingTagPack:atomic(openPendingTagPack),choosePack:atomic(choosePack),sellJoker:atomic(sellJoker),moveJoker:atomic(moveJoker),useConsumable:atomic(useConsumable),sellConsumable:atomic(sellConsumable),abandon:atomic(abandon),continueRun:atomic(continueRun),leaveShop:atomic(leaveShop),nextRound:atomic(leaveShop),rerollBoss:atomic(rerollBoss),sellValue:sellValue,
     coverage:{decks:decks.length,jokers:jokers.length,tarots:tarots.length,planets:planets.length,spectrals:spectrals.length,vouchers:vouchers.length,tags:tags.length,bosses:bosses.length,stakes:stakes.length,stickers:3},
     _test:{addJoker:function(s,id,edition){return addJoker(s,id,edition);},addConsumable:function(s,id){return addConsumable(s,id);},grantTag:function(s,id){grantTag(s,id);},generateShop:function(s){generateShop(s);},rollShopStickers:rollShopStickers,chance:chance,edition:edition,resolveJokerAbility:resolveJokerAbility,captureJokerBindings:captureJokerBindings,eachAbility:eachAbility}
@@ -4832,7 +4975,7 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
   const MUSIC_DATA = root.BOMusicData && root.BOMusicData.version === 1 ? root.BOMusicData : null;
   const TRACKS = MUSIC_DATA ? MUSIC_DATA.tracks : LEGACY_TRACKS;
   const LICENSED = MUSIC_DATA && MUSIC_DATA.licensed.verified ? MUSIC_DATA.licensed : null;
-  const SCENES = Object.freeze(['table', 'boss', 'final_boss', 'last_chance']);
+  const SCENES = Object.freeze(['table', 'boss', 'final_boss', 'last_chance', 'frenzy']);
   const sceneId = value => SCENES.includes(value) ? value : 'table';
   const DEFAULTS = Object.freeze({ sound: true, music: true, sfxVolume: 0.62,
     musicVolume: 0.44, muted: false, track: 'poker_lounge' });
@@ -5518,13 +5661,40 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
       }
     }};
   }
+  // Emerald Frenzy: original 192-BPM, eight-bar (exactly ten-second) neon sprint.
+  // Separate deterministic score; never uses game RNG, external music or storage.
+  function frenzyComposition() {
+    const beat=60/192,score=[],roots=[40,43,45,47,40,43,38,47],hook=[0,7,12,15,14,12,7,10];
+    const add=(bar,b,type,data)=>score.push({beat:bar*4+b,bar,type,...data});
+    for(let bar=0;bar<8;bar++) {
+      const note=roots[bar];
+      for(let n=0;n<8;n++) {
+        add(bar,n*.5,'lead',{note:note+24+hook[(n+bar*2)%8],length:.32,velocity:.18});
+        add(bar,n*.5+.25,'bass',{note:note+(n%3===2?12:0),length:.21,velocity:.28});
+        add(bar,n*.5,'hat',{velocity:n%2?.095:.13});
+      }
+      for(const b of [0,1,2,3])add(bar,b,'kick',{velocity:.48});
+      for(const b of [1,3])add(bar,b,'stick',{velocity:.32});
+      add(bar,0,'chord',{notes:[note+12,note+15,note+19],length:1.35,velocity:.20});
+      add(bar,2.5,'chord',{notes:[note+19,note+24,note+27],length:.55,velocity:.17});
+    }
+    score.sort((a,b)=>a.beat-b.beat);
+    return {beat,loopBeats:32,score,play(graph,event,at) {
+      const v=voice(graph,'music',at,event.type==='lead'?.22:event.type==='chord'?-.24:0,event.type==='lead'?.18:.07);
+      if(event.type==='lead')tone(graph,v,at,event.note,event.length*beat,event.velocity,'square',2600,.007,.22);
+      else if(event.type==='bass')tone(graph,v,at,event.note,event.length*beat,event.velocity,'sawtooth',820,.008,.15);
+      else if(event.type==='chord')electricPiano(graph,v,at,event.notes,event.velocity,event.length*beat);
+      else drum(graph,v,at,event.type,event.velocity);
+    }};
+  }
+  const frenzyPiece=frenzyComposition(),frenzyCompositions=Object.freeze(Object.fromEntries(TRACKS.map(t=>[t.id,frenzyPiece])));
   const lastChanceCompositions={};
   TRACKS.forEach((metadata,index)=>{
     const harmony=oldHarmony[metadata.id]||MUSIC_DATA.scores[LICENSED&&metadata.id===LICENSED.id?LICENSED.fallback:metadata.id].harmony;
     lastChanceCompositions[metadata.id]=lastChanceComposition(metadata,harmony,index);
   });
   const ARRANGEMENTS=Object.freeze({table:Object.freeze(tableCompositions),boss:Object.freeze(bossCompositions),
-    final_boss:Object.freeze(finalCompositions),last_chance:Object.freeze(lastChanceCompositions)});
+    final_boss:Object.freeze(finalCompositions),last_chance:Object.freeze(lastChanceCompositions),frenzy:frenzyCompositions});
   const isLicensed = id => !!(LICENSED && id === LICENSED.id);
   function effectiveId(id, ready) { return isLicensed(id) && !ready ? LICENSED.fallback : id; }
   function compositionFor(id, scene, ready) { return ARRANGEMENTS[scene][effectiveId(id,ready)]; }
@@ -5715,9 +5885,9 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
     activeComposition = compositionFor(prefs.track,scene,!!assetBuffer);
     baseBeat = musicPosition; baseTime = context.currentTime + 0.035;
     locate(baseBeat); playingMusic = true;
-    if (isLicensed(prefs.track) && assetBuffer) assetVoice = recordingVoice(graph,assetBuffer,baseTime,baseBeat,scene,activeComposition.beat,baseTime+86400);
+    if (scene!=='frenzy' && isLicensed(prefs.track) && assetBuffer) assetVoice = recordingVoice(graph,assetBuffer,baseTime,baseBeat,scene,activeComposition.beat,baseTime+86400);
     tick();
-    if (isLicensed(prefs.track) && !assetBuffer && assetStatus !== 'failed') prepareRecording(transportGeneration,context,scene);
+    if (scene!=='frenzy' && isLicensed(prefs.track) && !assetBuffer && assetStatus !== 'failed') prepareRecording(transportGeneration,context,scene);
   }
   function sync() {
     if (!context || !graph) return;
@@ -5855,8 +6025,8 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
       scheduledVoices: graph ? graph.fx.size + graph.music.size : 0,
       lastSfx, eventsTriggered, track: prefs.track,
       trackName: TRACKS.find(track => track.id === prefs.track).name,
-      scene, effectiveArrangement:scene, arrangementName:scene==='last_chance'?'Last Chance':scene==='final_boss'?'Final Boss':scene==='boss'?'Boss Blind':'Table',
-      effectiveTrack, effectiveTrackName:TRACKS.find(track=>track.id===effectiveTrack).name,
+      scene, effectiveArrangement:scene, arrangementName:scene==='frenzy'?'Emerald Frenzy':scene==='last_chance'?'Last Chance':scene==='final_boss'?'Final Boss':scene==='boss'?'Boss Blind':'Table',
+      effectiveTrack, effectiveTrackName:scene==='frenzy'?'Emerald Frenzy':TRACKS.find(track=>track.id===effectiveTrack).name,
       assetStatus:isLicensed(prefs.track)?assetStatus:'idle', assetError:isLicensed(prefs.track)?assetError:null,
       licensedPlaying, modified:isLicensed(prefs.track)&&scene!=='table' };
   }
@@ -5887,7 +6057,7 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
     // recording. Empty/short previews have no source to play and need no decode.
     const available=offlineContext.length/offlineContext.sampleRate;
     const seconds=clamp(number(duration,available),0,available);
-    const selected=trackId(options.track), wantsRecording=isLicensed(selected) && seconds>.045 && options.music!==false &&
+    const selected=trackId(options.track), wantsRecording=sceneId(options.scene)!=='frenzy' && isLicensed(selected) && seconds>.045 && options.music!==false &&
       options.muted!==true && unit(options.musicVolume,DEFAULTS.musicVolume)>0;
     // Failure rejects instead of falsely returning a procedural 'licensed' preview.
     return wantsRecording ? decodeLicensed(offlineContext).then(buffer=>renderOfflineGraph(offlineContext,seconds,overrides,buffer)) :
@@ -5961,7 +6131,7 @@ window.BOMusicAssets=Object.freeze({deadly_roulette:"data:audio/mpeg;base64,SUQz
 let current=null;
 const reduced=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 function enabled(prefs){return !!prefs.motion&&!reduced()}
-function durationMultiplier(){return root.BOApp?.getProgress?.().level>=22?.8:1}
+function durationMultiplier(){return (root.BOApp?.getProgress?.().level>=22?.8:1)*(current?.scoringDurationMultiplier||1)}
  function animate(el,frames,options){options={...options,duration:options.duration*durationMultiplier(),...(options.delay?{delay:options.delay*durationMultiplier()}: {})};if(!el||typeof el.animate!=='function')return null;try{return el.animate(frames,{fill:'both',...options})}catch(e){return null}}
 function skip(){window.BOAudio?.cancelEffects();if(!current)return;current.skipped=true;clearCritBursts(current);for(const resolve of [...current.waiters])resolve();for(const a of current.animations){try{a.finish()}catch(e){a.cancel()}}}
 function wait(session,ms){if(session.skipped)return Promise.resolve();return new Promise(resolve=>{let timer;const done=()=>{clearTimeout(timer);session.waiters.delete(done);resolve()};session.waiters.add(done);timer=setTimeout(done,ms*durationMultiplier()/session.speed)})}
@@ -6017,7 +6187,7 @@ function entrance(kind,before,run,prefs){if(!enabled(prefs))return;const speed=N
  if(['deal','discard','play'].includes(kind)){let i=0;for(const el of document.querySelectorAll('[data-context="hand"]'))if(kind==='deal'||!before.handIds.includes(el.dataset.card)){animate(el,[{transform:'translate(45px,-40px) rotate(12deg)',opacity:0},{transform:'translate(0,0) rotate(0)',opacity:1}],{duration:340/speed,delay:(kind==='discard'?100:0)+(i++*42)/speed,easing:'cubic-bezier(.15,.8,.25,1)',fill:'none'})}}
  if(['purchase','cashout','pack'].includes(kind)){pop(document.querySelector('.resource.cash'));const delta=(run.money||0)-before.money;if(delta)floating((delta>0?'+':'−')+'$'+Math.abs(delta),document.querySelector('.resource.cash'),delta>0?'#91d6ac':'#edc878');let i=0;for(const el of document.querySelectorAll('.shop-item,.cashout-line'))animate(el,[{transform:'translateY(15px)',opacity:0},{transform:'translateY(0)',opacity:1}],{duration:260/speed,delay:(i++*30)/speed,fill:'none'});for(const el of document.querySelectorAll('[data-context="owned"]')){const j=run.jokers[Number(el.dataset.joker)];if(j&&!before.jokerUids.includes(j.uid))animate(el,[{transform:'scale(.6) rotate(-9deg)',opacity:0},{transform:'scale(1.08) rotate(2deg)',opacity:1,offset:.7},{transform:'scale(1) rotate(0)',opacity:1}],{duration:450/speed,fill:'none'})}}
 }
-async function play(ctx){skip();const {before,run,cardHTML,fmt,esc,formatLine,prefs,jokerName}=ctx;if(!enabled(prefs))return;const session={skipped:false,waiters:new Set(),animations:[],speed:Number(prefs.speed)||1,prefs};current=session;const result=run.lastResult;if(!result)return;const surface=document.querySelector('.table-surface');if(!surface)return;
+async function play(ctx){skip();const {before,run,cardHTML,fmt,esc,formatLine,prefs,jokerName}=ctx;if(!enabled(prefs))return;const session={skipped:false,waiters:new Set(),animations:[],speed:Number(prefs.speed)||1,prefs,scoringDurationMultiplier:root.BOApp?.potionInfo?.()?.effects?.scoringDurationMultiplier||1};current=session;const result=run.lastResult;if(!result)return;const surface=document.querySelector('.table-surface');if(!surface)return;
  const cards=before.cards.map(c=>({...c,faceDown:false}));
  surface.innerHTML=`<div class="fx-scoring" aria-live="polite"><div class="eyebrow">Scoring your hand</div><h2>${esc(result.name)} ${ctx.handLevelHTML?ctx.handLevelHTML(result.handLevel):''}</h2><div class="score-pair"><span class="chips-pill" id="fx-chips">0</span><span>×</span><span class="mult-pill" id="fx-mult">0</span></div><div class="hand-row fx-played-row">${cards.map((c,i)=>cardHTML(c,'scored',i)).join('')}</div><div class="fx-event" id="fx-event">Cards on the table.</div><div class="fx-hand-total" id="fx-total">0</div><button class="btn ghost small" data-action="skip-animation">Skip animation →</button></div>`;
  const eventEl=document.getElementById('fx-event'),chipsEl=document.getElementById('fx-chips'),multEl=document.getElementById('fx-mult'),totalEl=document.getElementById('fx-total');const scoreEl=document.querySelector('.score-total');if(scoreEl)scoreEl.textContent=fmt(before.score);
@@ -6576,8 +6746,8 @@ return Object.freeze({create,guideHTML});
 /* Original potion bottles and accessible, inspect-first inventory. No rewards or RNG here. */
 (function(root){'use strict';
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const colours={exp:'#b394ff',luck:'#8edb9d',mult:'#ef898c',chips:'#77c8f5',money:'#f0c96f',high_stonks:'#e7aa6f',gaming:'#83e2be',knowledge:'#a7b9ff',cooldown:'#73d6db',daylight:'#ffd786',night:'#aaa0ef',critical:'#ff9c75',all_suiter:'#df9ed8',boss_disabler:'#da91a1',turtle:'#a6d584',xp_discount:'#c5e387'};
-const marks={exp:'×2',luck:'♧',mult:'+4',chips:'+20',money:'$5',high_stonks:'↗',gaming:'✚',knowledge:'1',cooldown:'½',daylight:'☀',night:'☾',critical:'!',all_suiter:'♠',boss_disabler:'⊘',turtle:'12',xp_discount:'−10%'};
+const colours={exp:'#b394ff',luck:'#8edb9d',mult:'#ef898c',chips:'#77c8f5',money:'#f0c96f',high_stonks:'#e7aa6f',gaming:'#83e2be',knowledge:'#a7b9ff',cooldown:'#73d6db',daylight:'#ffd786',night:'#aaa0ef',critical:'#ff9c75',all_suiter:'#df9ed8',boss_disabler:'#da91a1',turtle:'#a6d584',xp_discount:'#c5e387',speed:'#6ce6bc'};
+const marks={exp:'×2',luck:'♧',mult:'+4',chips:'+20',money:'$5',high_stonks:'↗',gaming:'✚',knowledge:'1',cooldown:'½',daylight:'☀',night:'☾',critical:'!',all_suiter:'♠',boss_disabler:'⊘',turtle:'12',xp_discount:'−10%',speed:'»'};
 const rules={
  exp:'Doubles ordinary newly earned XP for120seconds, including faucet and surveys; compound interest and Knowledge keep their own rates. Stacks with the Level 15 XP bonus. Knowledge is a fixed-rate exception; old XP is never boosted retroactively.',
  luck:'Doubles ordinary listed probabilities for 120 seconds. Stacks with Level 17 luck and active physical Oops! All 6s. Potion drops cap at 50%; Boss Disabler stays fixed at 1 in 20. Shop rarity and edition rates are unchanged.',
@@ -6594,7 +6764,8 @@ const rules={
  all_suiter:'For 120 seconds, every non-Stone card qualifies as every suit for hand classification, Joker effects and Boss suit rules. Printed suits stay unchanged. Stone remains suitless.',
  boss_disabler:'One fixed 1 in 20 (5%) attempt at the start of an actual Boss while the 120-second effect is active. Luck and Oops NEVER boost this chance. A successful temporary disable ends when the potion expires, is replaced, or the Boss ends. No reroll on inspect, reload or clock sync; no once-per-run disable button.',
  turtle:'Immediately grants +12 hand size; the bonus decreases by 1 every 10 real seconds: +12 → +11 → … → 0 at 120 seconds. In play, the initial increase can draw cards. Decay never deletes held cards; future refills respect the smaller capacity.',
- xp_discount:'Player-level XP costs are 10% lower (×0.9, rounded up to whole XP, minimum 1) for 120 seconds. Already banked XP can earn levels immediately. Earned levels stay after expiry; no XP is fabricated or spent as a shop action.'
+ xp_discount:'Player-level XP costs are 10% lower (×0.9, rounded up to whole XP, minimum 1) for 120 seconds. Already banked XP can earn levels immediately. Earned levels stay after expiry; no XP is fabricated or spent as a shop action.',
+ speed:'Gift-only from Emerald Level 4+: 1% per genuine automatic speech, no more than once every 10 seconds. For 120 seconds, scoring animation durations are 30% shorter (×0.7). Stacks with Level 22 and your animation-speed preference; no score, money, gift odds or game timer changes. Original two inventory slots, one active potion, and merging rules still apply.'
 };
 function bottle(id,small=false){const colour=colours[id]||'#c6cbd0',shape=['exp','knowledge','night','xp_discount'].includes(id)?'M24 28 17 39Q12 47 15 65Q17 75 40 75T65 65Q68 47 63 39L56 28V17H24Z':['turtle','high_stonks','money','chips'].includes(id)?'M25 29Q12 33 12 46V65Q12 76 24 76H56Q68 76 68 65V46Q68 33 55 29V17H25Z':'M25 27Q15 33 14 49Q12 73 30 76H50Q68 73 66 49Q65 33 55 27V17H25Z';return '<svg class="potions-bottle-svg'+(small?' is-small':'')+'" viewBox="0 0 80 88" aria-hidden="true" focusable="false"><path d="'+shape+'" fill="'+colour+'" fill-opacity=".12" stroke="'+colour+'" stroke-width="2.4"/><path d="M17 49Q29 44 40 49T63 49L62 65Q60 71 49 72H31Q20 71 18 65Z" fill="'+colour+'" fill-opacity=".65"/><path d="M22 39 19 47M20 51V61" stroke="#fff" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/><rect x="23" y="11" width="34" height="10" rx="3" fill="#b89465" stroke="#f0d3a4" stroke-width="1.5"/><path d="M29 13H51M27 25H53" stroke="#fff" stroke-opacity=".3" stroke-width="2"/><text x="40" y="62" text-anchor="middle" fill="#09252b" font-family="system-ui,sans-serif" font-size="'+(id==='xp_discount'?11:17)+'" font-weight="900">'+escape(marks[id]||'?')+'</text><circle cx="53" cy="36" r="3" fill="'+colour+'" fill-opacity=".6"/></svg>'}
 function clock(ms){const s=Math.max(0,Math.ceil(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
@@ -6609,11 +6780,11 @@ function create(api){
  const current=t=>{try{return model()?.current(state(),t)||null}catch(e){return null}};
  const effect=t=>{try{return model()?.effectsAt(state(),t)||{}}catch(e){return {}}};
  const luck=()=>Math.max(1,Number(api.listedMultiplier?.())||1);
- function detail(active,t){if(active.components)return active.components.map(id=>detail({...active,potionId:id,components:undefined},t)).join(' · ')+(model().hasEffect(active,'gaming')&&model().hasEffect(active,'critical')?' · Combined potion CRIT4.5% base; Level32 adds1pp; final odds cap100%.':'');const e=effect(t);switch(active.potionId){case 'exp':return '×2 newly earned XP';case 'luck':return '×2 listed luck · drops capped at 50%';case 'mult':return '+4 Mult / scoring-card trigger';case 'chips':return '+20 Chips / scoring-card trigger';case 'money':return '+$5 / cleared round';case 'high_stonks':return '$1 interest / $3 held · normal cap';case 'gaming':return '2% base CRIT · '+(Math.min(1,.02*luck())*100).toLocaleString('en-US',{maximumFractionDigits:3})+'% now · lose 1 HP / selected card';case 'knowledge':return 'Fixed 1 XP / second · manual Passive Exp only';case 'cooldown':return '½ new passive / faucet waits · market still 10m';case 'daylight':return '+'+e.daylightMult+' Mult at scoring END · not ×day';case 'night':return '+1 extra level / Planet · not Black Hole';case 'critical':return '2.5% base CRIT · '+(Math.min(1,.025*luck())*100).toLocaleString('en-US',{maximumFractionDigits:3})+'% now / scoring trigger · ×2 Mult';case 'all_suiter':return 'Every non-Stone card qualifies as every suit';case 'boss_disabler':return 'Fixed 1 in 20 at Boss start · temporary disable';case 'turtle':return '+'+e.handSizeBonus+' hand size · −1 every 10 real seconds';case 'xp_discount':return 'Player XP costs ×0.9 · earned levels stay';default:return item(active.potionId).description}}
+ function detail(active,t){if(active.components)return active.components.map(id=>detail({...active,potionId:id,components:undefined},t)).join(' · ')+(model().hasEffect(active,'gaming')&&model().hasEffect(active,'critical')?' · Combined potion CRIT4.5% base; Level32 adds1pp; final odds cap100%.':'');const e=effect(t);switch(active.potionId){case 'exp':return '×2 newly earned XP';case 'luck':return '×2 listed luck · drops capped at 50%';case 'mult':return '+4 Mult / scoring-card trigger';case 'chips':return '+20 Chips / scoring-card trigger';case 'money':return '+$5 / cleared round';case 'high_stonks':return '$1 interest / $3 held · normal cap';case 'gaming':return '2% base CRIT · '+(Math.min(1,.02*luck())*100).toLocaleString('en-US',{maximumFractionDigits:3})+'% now · lose 1 HP / selected card';case 'knowledge':return 'Fixed 1 XP / second · manual Passive Exp only';case 'cooldown':return '½ new passive / faucet waits · market still 10m';case 'daylight':return '+'+e.daylightMult+' Mult at scoring END · not ×day';case 'night':return '+1 extra level / Planet · not Black Hole';case 'critical':return '2.5% base CRIT · '+(Math.min(1,.025*luck())*100).toLocaleString('en-US',{maximumFractionDigits:3})+'% now / scoring trigger · ×2 Mult';case 'all_suiter':return 'Every non-Stone card qualifies as every suit';case 'boss_disabler':return 'Fixed 1 in 20 at Boss start · temporary disable';case 'turtle':return '+'+e.handSizeBonus+' hand size · −1 every 10 real seconds';case 'xp_discount':return 'Player XP costs ×0.9 · earned levels stay';case 'speed':return 'Scoring animation durations ×0.7 · no score or timer change';default:return item(active.potionId).description}}
  function hpHTML(active,compact=false){if(!model()?.hasEffect(active,'gaming'))return '';const hp=Math.max(0,Math.min(100,Number(active.hp)||0)),colour=hp>70?'green':hp>40?'yellow':'red';return '<div class="potions-hp'+(compact?' is-compact':'')+'" data-hp-colour="'+colour+'"><div class="potions-hp-caption"><span>Gaming HP</span><strong data-potion-hp="'+hp+'">'+hp+' / 100</strong></div><div class="potions-hp-track" role="meter" aria-label="Gaming HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+hp+'"><span style="width:'+hp+'%"></span></div></div>'}
  function activeHTML(t){const active=current(t);if(!active)return '<div class="potions-no-active"><span aria-hidden="true">◇</span><div><strong>No active potion</strong><p>Inspect a stored bottle, then explicitly confirm Drink.</p></div></div>';return '<article class="potions-active-card" data-active-potion="'+escape(active.potionId)+'"><div class="potions-active-top">'+art(active,true)+'<div><small>ONE ACTIVE EFFECT</small><h3>'+escape(name(active))+'</h3></div><span class="potions-clock" data-potion-remaining-ms="'+Math.max(0,active.expiresAt-t)+'" aria-label="Remaining time '+clock(active.expiresAt-t)+'">'+clock(active.expiresAt-t)+'</span></div><p class="potions-effect-now">'+effectHTML(detail(active,t))+'</p>'+hpHTML(active)+'<small>Real time · continues offline and through new runs. One active bottle; a blend retains all listed effects.</small></article>'}
  function render(){if(!model())return '<section class="potions-scope potions-page"><h2>Potions unavailable</h2><p>Keep potions.js and potions-ui.js with the game.</p></section>';if(api.error?.())return '<section class="potions-scope potions-page"><h2>Potions save needs attention</h2><p>'+escape(api.error())+'</p><p>No potion has been consumed or overwritten. Export a backup in Settings.</p></section>';const t=now(),inventory=state()?.inventory||[],drop=Math.min(.5,luck()/10);return '<section class="potions-scope potions-page" id="potions-root" aria-label="Potion inventory"><header class="potions-heading"><div><div class="potions-eyebrow">UNLOCKED · PLAYER LEVEL 12</div><h2>A little bottled chaos.</h2><p>Two stored bottles. One active effect. 120 real seconds.</p></div><button class="btn ghost small" data-potion-action="guide">How to Use</button></header><div class="potions-active-region">'+activeHTML(t)+'</div><div class="potions-inventory-heading"><h3>Your inventory</h3><span>'+inventory.length+' / 2 slots</span></div><div class="potions-inventory">'+Array.from({length:2},(_,i)=>{const p=inventory[i];return p?'<button class="potions-slot potions-bottle" data-potion-uid="'+escape(p.uid)+'" aria-label="Inspect '+escape(name(p))+'" title="Tap, hold, or press I to inspect — never auto-drinks">'+art(p)+'<strong>'+escape(name(p))+'</strong><span>Tap / hold to inspect</span></button>':'<div class="potions-slot potions-empty" aria-label="Empty potion slot '+(i+1)+'"><span class="potions-empty-glyph" aria-hidden="true">＋</span><strong>Empty slot</strong><span>Beat a Boss for a chance</span></div>'}).join('')+'</div>'+(api.canMerge?.()?'<button class="btn primary potions-merge-button" data-potion-action="ask-merge" '+(inventory.length===2?'':'disabled')+'>Merge two stored potions</button><p class="build-note">Both effects, one120-second clock. Duplicate types do not amplify.</p>':'<p class="build-note">Potion merging unlocks at actual player Level33.</p>')+'<p class="potions-inspect-hint">Tap, hold, Enter, Space or I to inspect. Only the explicit Drink confirmation consumes a bottle.</p><aside class="potions-drop-note"><strong>Boss drops · '+(inventory.length>=2?'storage full — no drop roll':'<span class="probability-highlight">'+(drop*10).toLocaleString('en-US',{maximumFractionDigits:3})+' in 10 · '+(drop*100).toLocaleString('en-US',{maximumFractionDigits:3})+'% current chance</span>')+'</strong><p>Base 1 in 10 per actual Boss defeat, boosted by listed luck up to 5 in 10 (50%). A successful drop chooses uniformly from all 16 potions. No third bottle when both slots are full.</p><small>Boss Disabler is different: its ability stays fixed at 1 in 20, with no luck boost.</small></aside></section>'}
- function guideHTML(){return '<div class="potions-scope potions-guide"><p class="potions-guide-intro">Unlock at actual player Level 12. Defeat a Boss for a base 1 in 10 drop chance, boosted by ordinary listed luck but capped at 50%. Successful drops choose uniformly from all 16 types. Store at most 2 bottles; a full inventory never gains a third.</p><ol><li>Open Potions from the menu tab or your run’s subnav.</li><li>Tap, hold, Enter, Space or I on a bottle to inspect. Releasing a hold never drinks it.</li><li>Choose Drink, read the confirmation, then explicitly confirm. Consuming frees a slot.</li><li>Only ONE potion can be active. Replacing it asks again and ends the old effect immediately; there is no stacking or refund.</li><li>At Level33, merge the two stored bottles with confirmation. A blend preserves all distinct effects for one120-second lifetime; duplicates do not amplify. Gaming+Critical add4.5% base CRIT; Level32 adds1pp and final odds cap100%.</li></ol><p>Every potion lasts exactly <b>120 real seconds</b>, not game rounds. Reloading, closing the game, or starting a new run does not restart the timer or heal Gaming HP. You can drink from the menu without a run. Stock Market predictions still last <b>10 real minutes</b>; Cooldown does not modify them.</p><div class="potions-guide-catalog">'+(model()?.CATALOG||[]).map(p=>'<article class="potions-guide-entry" data-potion-guide="'+escape(p.id)+'">'+bottle(p.id,true)+'<div><h3>'+escape(p.name)+'</h3><p>'+effectHTML(rules[p.id]||p.description)+'</p></div></article>').join('')+'</div></div>'}
+ function guideHTML(){return '<div class="potions-scope potions-guide"><p class="potions-guide-intro">Unlock at actual player Level 12. Defeat a Boss for a base 1 in 10 drop chance, boosted by ordinary listed luck but capped at 50%. Successful Boss drops choose uniformly from all 16 original types. Emerald Level 4 adds a separate gift-only 17th type: Speed, with a fixed 1% chance per genuine automatic speech (10-second minimum interval), never sold or Boss-dropped. Manual tip browsing and rendering cannot roll gifts. Store at most 2 bottles; a full inventory never gains a third.</p><ol><li>Open Potions from the menu tab or your run’s subnav.</li><li>Tap, hold, Enter, Space or I on a bottle to inspect. Releasing a hold never drinks it.</li><li>Choose Drink, read the confirmation, then explicitly confirm. Consuming frees a slot.</li><li>Only ONE potion can be active. Replacing it asks again and ends the old effect immediately; there is no stacking or refund.</li><li>At Level33, merge the two stored bottles with confirmation. A blend preserves all distinct effects for one120-second lifetime; duplicates do not amplify. Gaming+Critical add4.5% base CRIT; Level32 adds1pp and final odds cap100%.</li></ol><p>Every potion lasts exactly <b>120 real seconds</b>, not game rounds. Reloading, closing the game, or starting a new run does not restart the timer or heal Gaming HP. You can drink from the menu without a run. Stock Market predictions still last <b>10 real minutes</b>; Cooldown does not modify them.</p><div class="potions-guide-catalog">'+(model()?.CATALOG||[]).map(p=>'<article class="potions-guide-entry" data-potion-guide="'+escape(p.id)+'">'+bottle(p.id,true)+'<div><h3>'+escape(p.name)+'</h3><p>'+effectHTML(rules[p.id]||p.description)+'</p></div></article>').join('')+'</div></div>'}
  function inspect(uid){if(!api.unlocked?.())return;const p=state()?.inventory?.find(p=>p.uid===uid);if(!p){api.notify?.('That bottle is no longer stored.');return}pending=null;api.openModal(name(p),'<div class="potions-scope potions-inspect"><div class="potions-inspect-art">'+art(p)+'</div><p>'+effectHTML(rulesFor(p))+'</p><p class="potions-confirm-note">120 real seconds · one active effect · tap and hold never auto-drink.</p><div class="sheet-actions"><button class="btn primary" data-potion-action="ask-drink" data-potion-uid="'+escape(uid)+'">Drink '+escape(name(p))+'</button><button class="btn ghost" data-action="close-modal">Keep bottle</button></div></div>')}
  function inspectActive(){const t=now(),a=current(t);if(!a){api.open?.();return}pending=null;api.openModal(name(a)+' · active','<div class="potions-scope potions-inspect"><div class="potions-active-region">'+activeHTML(t)+'</div><p>'+effectHTML(rulesFor(a))+'</p><button class="btn ghost" data-potion-action="open">Open inventory</button></div>')}
  function askDrink(uid){const p=state()?.inventory?.find(p=>p.uid===uid);if(!p)return;const a=current(now());pending={uid,revision:state().revision,activeUid:a?.uid||null};api.openModal(a?'Replace active potion?':'Drink '+name(p)+'?','<div class="potions-scope potions-confirm"><div class="potions-inspect-art">'+art(p)+'</div><p>'+(a?'Your active <b>'+escape(name(a))+'</b> has '+clock(a.expiresAt-now())+' remaining. Its effect ends immediately, with no refund.':'This uses one stored bottle and frees its slot.')+'</p><p><b>'+escape(name(p))+'</b> starts a new 120-second effect. '+(a?'The two effects will NOT stack.':'The clock continues offline.')+'</p><p class="potions-confirm-note">'+effectHTML(rulesFor(p))+'</p><div class="sheet-actions"><button class="btn '+(a?'danger':'primary')+'" data-potion-action="confirm-drink">'+(a?'Drink & replace':'Confirm Drink')+'</button><button class="btn ghost" data-potion-action="cancel-drink">Keep bottle</button></div></div>')}
@@ -8558,7 +8729,7 @@ return Object.freeze({clips:clips,get:function(id){return typeof id==='string'&&
   function countdown(ms){const s=Math.max(0,Math.ceil(ms/1000));return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
   function eventCountdown(ms){const days=Math.floor(Math.max(0,ms)/86400000);return (days?days+'d ':'')+countdown(Math.max(0,ms)-days*86400000)}
    function shopHTML(){const w=wallet(),p=api.getProfile();let pt=null;try{pt=root.BOPotions?.normalize(p.potions)}catch(error){}const locked=!(p.progression?.level>=12),full=pt?.inventory.length>=2,blocked=!w.ok||!pt||!!pt.blockedReason;
-   return '<section class="medal-potion-shop" data-medal-potion-shop aria-label="Medal potion shop"><div class="medal-potion-heading"><div><div class="surveys-eyebrow">ALL 16 BOTTLES · MEDALS, NOT CASH</div><h3>Potion apothecary</h3><p>Buy a stored bottle. Inspect it in Potions and explicitly confirm to drink.</p></div><strong>'+(w.ok?fmt(w.availableHalf)+' Medals':'Bank unavailable')+'</strong></div><p class="medal-potion-capacity">'+(locked?'Unlocks at actual player Level 12.':full?'2 / 2 slots full · drink a stored potion to make room.':(pt?.inventory.length||0)+' / 2 bottles stored · one active effect at a time.')+'</p><div class="medal-potion-grid">'+(root.BOPotions?.CATALOG||[]).map(p=>'<article class="medal-potion-item" data-medal-potion="'+p.id+'"><span class="medal-potion-glyph" aria-hidden="true">♜</span><h4>'+esc(p.name)+'</h4><p>'+(typeof api.formatPotionDescription==='function'?api.formatPotionDescription(p.description):esc(p.description))+'</p><button class="btn ghost small" data-survey-action="buy-potion" data-potion-id="'+p.id+'" '+(locked||full||blocked||pending||w.availableHalf<PRICES[p.id]*2?'disabled':'')+'>Buy · '+PRICES[p.id]+' Medals</button></article>').join('')+'</div></section>';
+   return '<section class="medal-potion-shop" data-medal-potion-shop aria-label="Medal potion shop"><div class="medal-potion-heading"><div><div class="surveys-eyebrow">ALL 16 BOTTLES · MEDALS, NOT CASH</div><h3>Potion apothecary</h3><p>Buy a stored bottle. Inspect it in Potions and explicitly confirm to drink.</p></div><strong>'+(w.ok?fmt(w.availableHalf)+' Medals':'Bank unavailable')+'</strong></div><p class="medal-potion-capacity">'+(locked?'Unlocks at actual player Level 12.':full?'2 / 2 slots full · drink a stored potion to make room.':(pt?.inventory.length||0)+' / 2 bottles stored · one active effect at a time.')+'</p><div class="medal-potion-grid">'+(root.BOPotions?.SHOP_CATALOG||root.BOPotions?.CATALOG||[]).filter(p=>own(PRICES,p.id)).map(p=>'<article class="medal-potion-item" data-medal-potion="'+p.id+'"><span class="medal-potion-glyph" aria-hidden="true">♜</span><h4>'+esc(p.name)+'</h4><p>'+(typeof api.formatPotionDescription==='function'?api.formatPotionDescription(p.description):esc(p.description))+'</p><button class="btn ghost small" data-survey-action="buy-potion" data-potion-id="'+p.id+'" '+(locked||full||blocked||pending||w.availableHalf<PRICES[p.id]*2?'disabled':'')+'>Buy · '+PRICES[p.id]+' Medals</button></article>').join('')+'</div></section>';
   }
   function paint(){if(destroyed||localSession||root.BOSurveyRunner?.isMounted?.())return;for(const panel of document.querySelectorAll('[data-surveys-panel]')){const html=render();if(panel.outerHTML!==html)panel.outerHTML=html}for(const shop of document.querySelectorAll('[data-medal-potion-shop]')){const html=shopHTML();if(shop.outerHTML!==html)shop.outerHTML=html}}
   function renderInto(container){if(typeof container==='string')container=document.querySelector(container);if(container)container.innerHTML=render();return container}
@@ -9128,8 +9299,329 @@ return Object.freeze({clips:clips,get:function(id){return typeof id==='string'&&
 });
 
 </script><script>
+/* Pure Emerald progression proposals. No storage, clock, DOM or game RNG.
+ * Optional profile.emerald is per save-slot profile. Absence is NOT historical
+ * credit. Only the caller's actual new completed-GAME action may create a win
+ * receipt; loading an old won run, blind wins and endless never create one.
+ * Every mutation returns a NEW state after strict revision/CAS validation. The
+ * parent must durably save/read back the whole action before applying it live.
+ */
+(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldProgress=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+ const VERSION=1,UNLOCK_LEVEL=36,MAX_WINS=415,SPEECH_COOLDOWN_MS=10000,MAX_TIME=8640000000000000;
+ const NEXT_WINS=Object.freeze([10,15,25,30,40,50,65,80,100]);
+ const CUMULATIVE_WINS=Object.freeze([10,25,50,80,120,170,235,315,415]);
+ const FACTS=Object.freeze(['My favourite number is 6.','I love greenery and green places.','I like fictional casino scratch tickets in this game — not real-money gambling.']);
+ const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+ function check(ok,message){if(!ok)throw new Error(message)}
+ function fields(value,keys){
+  if(!value||typeof value!=='object'||Array.isArray(value))return false;
+  const p=Object.getPrototypeOf(value);if(p!==null&&p!==Object.prototype)return false;
+  const names=Reflect.ownKeys(value);if(names.length!==keys.length||!names.every(k=>typeof k==='string'&&keys.includes(k)))return false;
+  return names.every(k=>{const d=Object.getOwnPropertyDescriptor(value,k);return d&&own(d,'value')&&d.enumerable===true});
+ }
+ function array(value,max){
+  if(!Array.isArray(value)||Object.getPrototypeOf(value)!==Array.prototype||value.length>max)return false;
+  const keys=Reflect.ownKeys(value);if(keys.length!==value.length+1||!keys.includes('length'))return false;
+  for(let i=0;i<value.length;i++){const d=Object.getOwnPropertyDescriptor(value,String(i));if(!d||!own(d,'value')||d.enumerable!==true)return false}
+  return true;
+ }
+ function count(n){return Number.isSafeInteger(n)&&n>=0}
+ function timestamp(n){return count(n)&&n<=MAX_TIME}
+ function seed(n){return Number.isInteger(n)&&n>0&&n<=4294967295}
+ function validRunId(id){return typeof id==='string'&&/^[a-zA-Z0-9:_-]{1,160}$/.test(id)&&!['__proto__','constructor','prototype'].includes(id)}
+ function unlocked(actualLevel){return Number.isInteger(actualLevel)&&actualLevel>=UNLOCK_LEVEL&&actualLevel<=100}
+ function validate(state){try{
+  if(!fields(state,['version','revision','winRunIds','speech'])||state.version!==VERSION||!count(state.revision)||!array(state.winRunIds,MAX_WINS)||!state.winRunIds.every(validRunId)||new Set(state.winRunIds).size!==state.winRunIds.length)return false;
+  const s=state.speech;
+  return fields(s,['sequence','lastAt','rng'])&&count(s.sequence)&&s.sequence<=Number.MAX_SAFE_INTEGER-MAX_WINS&&timestamp(s.lastAt)&&(s.sequence!==0||s.lastAt===0)&&s.lastAt>=Math.max(0,s.sequence-1)*SPEECH_COOLDOWN_MS&&seed(s.rng)&&state.revision===state.winRunIds.length+s.sequence;
+ }catch(_){return false}}
+ function copy(state){check(validate(state),'Emerald progress save needs attention. Nothing was credited.');return {version:VERSION,revision:state.revision,winRunIds:state.winRunIds.slice(),speech:{sequence:state.speech.sequence,lastAt:state.speech.lastAt,rng:state.speech.rng}}}
+ function create(rng=1831565813){check(seed(rng),'Choose a separate nonzero uint32 Emerald speech seed.');return {version:VERSION,revision:0,winRunIds:[],speech:{sequence:0,lastAt:0,rng}}}
+ function cas(state,revision){const s=copy(state);check(count(revision)&&revision===s.revision,'Emerald revision changed. Read the current save before retrying.');return s}
+ function progress(state,actualLevel){
+  const s=copy(state),total=s.winRunIds.length,enabled=unlocked(actualLevel);let level=1,previous=0;
+  while(level<=CUMULATIVE_WINS.length&&total>=CUMULATIVE_WINS[level-1]){previous=CUMULATIVE_WINS[level-1];level++}
+  const max=level===10;
+  return {unlocked:enabled,level:enabled?level:0,totalWins:total,wins:enabled?total-previous:0,nextWins:enabled&&!max?NEXT_WINS[level-1]:null,nextLevel:enabled&&!max?level+1:null,cumulativeForNext:enabled&&!max?CUMULATIVE_WINS[level-1]:null,bar:!enabled?'Locked':max?'MAX':(total-previous)+'/'+NEXT_WINS[level-1],max:enabled&&max};
+ }
+ function capabilities(state,actualLevel){const l=progress(state,actualLevel).level;return {level:l,facts:l>=2,photoScale:l>=3?1.2:1,movementSpeed:l>=3?1.2:1,speedGift:l>=4,greenAura:l>=5,eventCommentary:l>=6,welcome:l>=7,adviceRichness:l>=8?1.2:1,workshop:l>=9,workshopRankGain:l>=10?3:l>=9?1:0}}
+ function creditWin(state,receipt,expectedRevision){
+  const next=cas(state,expectedRevision);
+  check(fields(receipt,['runId','actualLevel','beforePhase','afterPhase','endless','abandoned','source'])&&validRunId(receipt.runId)&&unlocked(receipt.actualLevel)&&['play','cashout'].includes(receipt.beforePhase)&&receipt.afterPhase==='won'&&receipt.endless===false&&receipt.abandoned===false&&receipt.source==='fresh-completion','Only a fresh completed GAME win at actual profile Level 36+ can credit Emerald.');
+  if(next.winRunIds.includes(receipt.runId))return {state:next,changed:false,reason:'duplicate'};
+  if(next.winRunIds.length===MAX_WINS)return {state:next,changed:false,reason:'max'};
+  check(next.revision<Number.MAX_SAFE_INTEGER,'Emerald revision overflow.');next.winRunIds.push(receipt.runId);next.revision++;
+  return {state:next,changed:true,reason:'credited'};
+ }
+ function stepRng(value){let x=value>>>0;x^=x<<13;x^=x>>>17;x^=x<<5;return x>>>0}
+ // Xorshift is linear over GF(2): jump in O(log steps), without a replay loop.
+ function applyMatrix(matrix,value){let out=0,v=value>>>0;for(let i=0;i<32;i++){if(v&1)out^=matrix[i];v>>>=1}return out>>>0}
+ function advanceRng(value,steps){let matrix=Array.from({length:32},(_,i)=>stepRng((1<<i)>>>0)),v=value;while(steps>0){if(steps%2===1)v=applyMatrix(matrix,v);steps=Math.floor(steps/2);if(steps>0)matrix=matrix.map(x=>applyMatrix(matrix,x))}return v}
+ function giftForRoll(roll){check(typeof roll==='number'&&Number.isFinite(roll)&&roll>=0&&roll<1,'Choose an Emerald roll in [0,1).');return roll<.01}
+ function recordSpeech(state,event,expectedRevision){
+  const next=cas(state,expectedRevision);
+  check(fields(event,['runId','actualLevel','source','sequence','at','inventoryFree'])&&validRunId(event.runId)&&event.source==='automatic'&&typeof event.inventoryFree==='boolean','Only a genuine guarded automatic speech may roll a Speed gift.');
+  check(capabilities(next,event.actualLevel).speedGift,'Emerald Speed gifts unlock at Emerald Level 4 and actual profile Level 36+.');
+  check(count(event.sequence)&&event.sequence===next.speech.sequence+1&&event.sequence<=Number.MAX_SAFE_INTEGER-MAX_WINS,'Emerald speech sequence changed or overflowed.');
+  check(timestamp(event.at)&&(next.speech.sequence===0||event.at-next.speech.lastAt>=SPEECH_COOLDOWN_MS),'Emerald automatic speech cooldown or timestamp is invalid.');
+  check(next.revision<Number.MAX_SAFE_INTEGER,'Emerald revision overflow.');next.speech.rng=stepRng(next.speech.rng);next.speech.sequence=event.sequence;next.speech.lastAt=event.at;next.revision++;
+  const roll=next.speech.rng/4294967296,rolled=giftForRoll(roll),granted=rolled&&event.inventoryFree;
+  return {state:next,changed:true,giftResult:{roll,rolled,granted,potionId:granted?'speed':null,nonce:rolled?'emerald-speed:'+event.sequence+':'+event.runId:null,reason:rolled?(granted?'granted':'full'):'no-gift'}};
+ }
+ function recover(profileState,runMirror){
+  check(profileState!==undefined||runMirror!==undefined,'No Emerald progress exists to recover.');
+  if(profileState===undefined)return copy(runMirror);if(runMirror===undefined)return copy(profileState);
+  const a=copy(profileState),b=copy(runMirror);if(a.revision===b.revision){check(JSON.stringify(a)===JSON.stringify(b),'Divergent Emerald states at the same revision. No replay was attempted.');return a}
+  const low=a.revision<b.revision?a:b,high=a.revision<b.revision?b:a;
+  check(low.winRunIds.length<=high.winRunIds.length&&low.winRunIds.every((id,i)=>high.winRunIds[i]===id)&&low.speech.sequence<=high.speech.sequence,'Divergent Emerald receipt history. No replay was attempted.');
+  const delta=high.speech.sequence-low.speech.sequence;
+  check(high.speech.rng===advanceRng(low.speech.rng,delta)&&(delta===0?high.speech.lastAt===low.speech.lastAt:high.speech.lastAt-low.speech.lastAt>=Math.max(0,delta-(low.speech.sequence===0?1:0))*SPEECH_COOLDOWN_MS),'Divergent Emerald speech history. No replay was attempted.');
+  return high;
+ }
+ return Object.freeze({VERSION,UNLOCK_LEVEL,MAX_WINS,MAX_TIME,SPEECH_COOLDOWN_MS,NEXT_WINS,CUMULATIVE_WINS,FACTS,validRunId,unlocked,validate,copy,create,progress,capabilities,creditWin,giftForRoll,recordSpeech,recover});
+});
+
+</script><script>
+/* Pure, RUN-owned Emerald workshop. Proposals only: no clocks, RNG calls,
+ * storage, engine callbacks or DOM. Parent commits/readbacks the complete RUN
+ * atomically before live apply. Giving physically reserves a card outside the
+ * canonical deck and all three piles; never call destruction/reacquisition
+ * callbacks (which would fabricate Joker triggers). Claim returns the SAME id.
+ */
+(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports;const api=factory(node?require('./emerald-progress.js'):root.BOEmeraldProgress);if(node)module.exports=api;else root.BOEmeraldWorkshop=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P){'use strict';
+ const VERSION=1,WORK_MS=120000,COOLDOWN_MS=300000,MAX_TIME=8640000000000000,MAX_CARDS=20000;
+ const EDITIONS=Object.freeze(['foil','holo','poly']),ENHANCEMENTS=Object.freeze(['bonus','mult','wild','glass','steel','stone','gold','lucky']),SEALS=Object.freeze(['red','blue','gold','purple']),MODIFIERS=Object.freeze([...EDITIONS,...ENHANCEMENTS]);
+ const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k),count=n=>Number.isSafeInteger(n)&&n>=0,timestamp=n=>count(n)&&n<=MAX_TIME;
+ function check(ok,message){if(!ok)throw new Error(message)}
+ function dataKeys(value){
+  check(value&&typeof value==='object'&&!Array.isArray(value),'Expected a plain data object.');const p=Object.getPrototypeOf(value);check(p===null||p===Object.prototype,'Unsupported object prototype.');
+  const keys=Reflect.ownKeys(value);check(keys.every(k=>typeof k==='string'&&!['__proto__','constructor','prototype'].includes(k)),'Unsupported data keys.');
+  for(const k of keys){const d=Object.getOwnPropertyDescriptor(value,k);check(d&&own(d,'value')&&d.enumerable===true,'Only enumerable data properties are supported.')}return keys;
+ }
+ function fields(value,keys){try{const names=dataKeys(value);return names.length===keys.length&&names.every(k=>keys.includes(k))}catch(_){return false}}
+ function dataArray(value,max){
+  check(Array.isArray(value)&&Object.getPrototypeOf(value)===Array.prototype&&value.length<=max,'Invalid data array.');const keys=Reflect.ownKeys(value);check(keys.length===value.length+1&&keys.includes('length'),'Unsupported array properties.');
+  for(let i=0;i<value.length;i++){const d=Object.getOwnPropertyDescriptor(value,String(i));check(d&&own(d,'value')&&d.enumerable===true,'Sparse or accessor array is unsupported.')}return value;
+ }
+ function jsonCopy(value,limit=1000000){
+  const path=new Set();let nodes=0;
+  function visit(v,depth){
+   check(++nodes<=limit&&depth<=32,'Workshop data is too large or deep.');
+   if(v===null||typeof v==='boolean')return v;
+   if(typeof v==='number'){check(Number.isFinite(v),'Workshop contains a nonfinite value.');return v}
+   if(typeof v==='string'){check(v.length<=65536,'Workshop text is too large.');return v}
+   check(typeof v==='object'&&!path.has(v),'Workshop data is not acyclic JSON.');path.add(v);let out;
+   if(Array.isArray(v)){dataArray(v,MAX_CARDS);out=v.map(x=>visit(x,depth+1))}else{out={};for(const k of dataKeys(v))out[k]=visit(v[k],depth+1)}path.delete(v);return out;
+  }
+  return visit(value,0);
+ }
+ function stable(value){if(value===null||typeof value!=='object')return JSON.stringify(value);if(Array.isArray(value))return '['+value.map(stable).join(',')+']';return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+stable(value[k])).join(',')+'}'}
+ function same(a,b){return stable(a)===stable(b)}
+ function runId(id){return !!P&&P.validRunId(id)}
+ function cardId(id){return typeof id==='string'&&id.length>=1&&id.length<=160&&!['__proto__','constructor','prototype'].includes(id)||count(id)}
+ function cardData(c){
+  const card=jsonCopy(c,4096);dataKeys(card);check(own(card,'id')&&cardId(card.id)&&Number.isInteger(card.rank)&&card.rank>=2&&card.rank<=14&&['S','H','D','C'].includes(card.suit),'Invalid workshop playing card.');
+  for(const [key,allowed]of [['enhancement',ENHANCEMENTS],['edition',EDITIONS],['seal',SEALS]])if(own(card,key))check(card[key]===null||allowed.includes(card[key]),'Invalid single card '+key+'.');
+  if(own(card,'bonusChips'))check(typeof card.bonusChips==='number'&&Number.isFinite(card.bonusChips)&&card.bonusChips>=0,'Invalid permanent card Chips.');
+  for(const k of ['faceDown','debuffed'])if(own(card,k))check(typeof card[k]==='boolean','Invalid card visibility metadata.');return card;
+ }
+ function validateCard(card){try{cardData(card);return true}catch(_){return false}}
+ function dice(rolls){dataArray(rolls,4);check(rolls.length===4&&rolls.every(r=>typeof r==='number'&&Number.isFinite(r)&&r>=0&&r<1),'Supply exactly four guarded rolls in [0,1).');return rolls.slice()}
+ function transform(input,level,rolls){
+  const c=cardData(input),d=dice(rolls);check(level===9||level===10,'Invalid Emerald workshop level.');c.rank=Math.min(14,c.rank+(level===10?3:1));
+  if(level===9){if(d[0]<.1)c.edition=EDITIONS[Math.floor(d[1]*EDITIONS.length)]}
+  else if(d[0]<.4||d[2]<.1){
+   const mod=MODIFIERS[Math.floor(d[1]*MODIFIERS.length)],isEdition=EDITIONS.includes(mod);c[isEdition?'edition':'enhancement']=mod;
+   // Independent 10% coexist roll, including when the 40% primary roll missed.
+   // One field per category: never arrays, stacked editions or enhancements.
+   if(d[2]<.1){const opposite=isEdition?ENHANCEMENTS:EDITIONS;c[isEdition?'enhancement':'edition']=opposite[Math.floor(d[3]*opposite.length)]}
+  }
+  return c;
+ }
+ function create(id){check(runId(id),'Workshop needs the existing stable run id.');return {version:VERSION,runId:id,revision:0,sequence:0,availableAt:0,job:null}}
+ function jobId(id,sequence){return id+':emerald:'+sequence}
+ function validate(state){try{
+  check(fields(state,['version','runId','revision','sequence','availableAt','job'])&&state.version===VERSION&&runId(state.runId)&&count(state.revision)&&count(state.sequence)&&state.sequence<=Math.floor(Number.MAX_SAFE_INTEGER/2)&&timestamp(state.availableAt),'Invalid workshop state.');
+  check(state.revision===state.sequence*2-(state.job===null?0:1),'Invalid workshop revision or sequence.');
+  if(state.job===null){check(state.sequence===0?state.availableAt===0:state.availableAt>=WORK_MS+COOLDOWN_MS,'Invalid workshop cooldown.');return true}
+  const j=state.job;check(fields(j,['id','runId','level','startedAt','completedAt','input','result','rolls'])&&state.sequence>0&&j.id===jobId(state.runId,state.sequence)&&j.runId===state.runId&&(j.level===9||j.level===10)&&timestamp(j.startedAt)&&j.startedAt<=MAX_TIME-WORK_MS-COOLDOWN_MS&&j.completedAt===j.startedAt+WORK_MS&&state.availableAt===j.completedAt+COOLDOWN_MS,'Invalid run-owned workshop job or timestamps.');
+  const before=cardData(j.input),after=cardData(j.result),expected=transform(before,j.level,j.rolls);check(same(after,expected),'Stored workshop result does not match its one-time dice.');return true;
+ }catch(_){return false}}
+ function copy(state){check(validate(state),'Emerald workshop save needs attention. No card was moved.');return jsonCopy(state)}
+ function inspectedRun(run){
+  const r=jsonCopy(run);dataKeys(r);check(r.version===1&&runId(r._uiId)&&['select','play','cashout','shop','pack','won','lost'].includes(r.phase),'Invalid workshop origin run.');
+  const map=new Map(),used=new Set();
+  for(const key of ['cards','hand','drawPile','discardPile'])dataArray(r[key],MAX_CARDS);
+  for(const c of r.cards){cardData(c);const id=String(c.id);check(!map.has(id),'Duplicate canonical playing-card id.');map.set(id,c)}
+  for(const key of ['hand','drawPile','discardPile'])for(const c of r[key]){cardData(c);const id=String(c.id);check(map.has(id)&&!used.has(id)&&same(c,map.get(id)),'Unknown, duplicate or changed pile card.');used.add(id)}
+  if(own(r,'handDrawOrder')){dataArray(r.handDrawOrder,MAX_CARDS);const seen=new Set(),ids=new Set(r.hand.map(c=>String(c.id)));for(const id of r.handDrawOrder){check(cardId(id)&&ids.has(String(id))&&!seen.has(String(id)),'Invalid hand draw-order reference.');seen.add(String(id))}}
+  if(own(r,'emeraldWorkshop')){
+   const state=copy(r.emeraldWorkshop);check(state.runId===r._uiId,'Workshop belongs to another run.');
+   if(state.job)check(!map.has(String(state.job.input.id))&&!used.has(String(state.job.input.id)),'Reserved workshop card is duplicated in the deck or piles.');r.emeraldWorkshop=state;
+  }
+  // Equivalent to engine hydrate(): all pile entries alias canonical card data.
+  for(const key of ['hand','drawPile','discardPile'])r[key]=r[key].map(c=>map.get(String(c.id)));return r;
+ }
+ function validateRun(run){try{inspectedRun(run);return true}catch(_){return false}}
+ function info(run,now){
+  check(timestamp(now),'Invalid absolute workshop timestamp.');const r=inspectedRun(run),s=own(r,'emeraldWorkshop')?r.emeraldWorkshop:create(r._uiId),j=s.job;
+  return {busy:!!j,silent:!!j&&now<j.completedAt,ready:!!j&&now>=j.completedAt,jobId:j?j.id:null,workRemainingMs:j?Math.max(0,j.completedAt-now):0,cooldownRemainingMs:Math.max(0,s.availableAt-now),nextGiveAt:s.availableAt};
+ }
+ function authorize(run,options,keys){
+  check(fields(options,keys),'Invalid workshop command fields.');check(timestamp(options.now),'Invalid absolute workshop timestamp.');
+  const r=inspectedRun(run);check(r.phase==='shop'&&r.abandoned!==true,'Give and claim playing cards only in the shop of their active origin run.');
+  check(P&&P.capabilities(options.progress,options.actualLevel).workshop,'Workshop unlocks at Emerald Level 9 and actual profile Level 36+.');
+  const s=own(r,'emeraldWorkshop')?r.emeraldWorkshop:create(r._uiId);check(count(options.expectedRevision)&&options.expectedRevision===s.revision,'Workshop revision changed. Reopen the current action.');return {run:r,state:s};
+ }
+ function give(run,options){
+  const a=authorize(run,options,['progress','actualLevel','expectedRevision','now','cardId','rolls']),r=a.run,s=a.state;
+  check(!s.job,'Claim the existing workshop job before giving another card.');check(options.now>=s.availableAt,'Emerald workshop is cooling down after completion.');check(options.now<=MAX_TIME-WORK_MS-COOLDOWN_MS,'Workshop completion timestamp would overflow.');
+  check(cardId(options.cardId),'Choose an owned playing-card id.');const card=r.cards.find(c=>String(c.id)===String(options.cardId));check(card,'That playing card is not owned or is unavailable.');check(s.sequence<Math.floor(Number.MAX_SAFE_INTEGER/2),'Workshop sequence overflow.');
+  const rolls=dice(options.rolls),level=P.progress(options.progress,options.actualLevel).level>=10?10:9,input=cardData(card),result=transform(input,level,rolls),id=String(card.id);
+  for(const key of ['cards','hand','drawPile','discardPile'])r[key]=r[key].filter(c=>String(c.id)!==id);
+  if(own(r,'handDrawOrder'))r.handDrawOrder=r.handDrawOrder.filter(x=>String(x)!==id);
+  if(own(r,'forcedCardId')&&String(r.forcedCardId)===id)r.forcedCardId=null;
+  s.sequence++;s.revision++;s.availableAt=options.now+WORK_MS+COOLDOWN_MS;s.job={id:jobId(r._uiId,s.sequence),runId:r._uiId,level,startedAt:options.now,completedAt:options.now+WORK_MS,input,result,rolls};r.emeraldWorkshop=s;
+  check(validateRun(r),'Workshop give proposal violates card ownership.');return {run:r,changed:true,jobId:s.job.id};
+ }
+ function claim(run,options){
+  const a=authorize(run,options,['progress','actualLevel','expectedRevision','now','jobId']),r=a.run,s=a.state;
+  check(s.job&&typeof options.jobId==='string'&&options.jobId===s.job.id,'This workshop job was already claimed or belongs to another action.');check(options.now>=s.job.completedAt,'Emerald is still working silently.');check(r.cards.length<MAX_CARDS,'No room to restore the workshop card.');
+  const card=cardData(s.job.result);check(!r.cards.some(c=>String(c.id)===String(card.id)),'The workshop card is already present.');r.cards.push(card);r.drawPile.push(card);s.job=null;s.revision++;r.emeraldWorkshop=s;
+  check(validateRun(r),'Workshop claim proposal violates card ownership.');return {run:r,changed:true,card};
+ }
+ return Object.freeze({VERSION,WORK_MS,COOLDOWN_MS,MAX_TIME,MAX_CARDS,EDITIONS,ENHANCEMENTS,SEALS,MODIFIERS,create,validate,copy,validateCard,validateRun,info,give,claim});
+});
+
+</script><script>
+/* Guarded app integration helpers. No timers, DOM, storage or game RNG here.
+ * Call recovery only during boot, mirrors only during saves, afterAction only
+ * after an actual native action, and speech only inside a durable PROFILE commit.
+ */
+(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports;const api=factory(node?require('./frenzy'):root.BOFrenzy,node?require('./emerald-progress'):root.BOEmeraldProgress,node?require('./emerald-workshop'):root.BOEmeraldWorkshop,node?require('./potions'):root.BOPotions);if(node)module.exports=api;else root.BOEmeraldRuntime=api;})(typeof globalThis!=='undefined'?globalThis:this,function(F,P,W,PT){'use strict';
+ const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k),clone=x=>JSON.parse(JSON.stringify(x));
+ function check(ok,message){if(!ok)throw Error(message)}
+ function seed(text){let n=2166136261;for(const c of String(text)){n^=c.charCodeAt(0);n=Math.imul(n,16777619)}return (n>>>0)||1831565813}
+ function progress(profile,actualLevel){return P.progress(own(profile,'emerald')?profile.emerald:P.create(),actualLevel)}
+ function capabilities(profile,actualLevel){return P.capabilities(own(profile,'emerald')?profile.emerald:P.create(),actualLevel)}
+ function workshopInfo(run,now){check(Number.isSafeInteger(now)&&now>=0&&now<=W.MAX_TIME,'Invalid workshop clock.');const s=own(run,'emeraldWorkshop')?W.copy(run.emeraldWorkshop):W.create(run._uiId);check(s.runId===run._uiId,'Workshop belongs to another run.');const j=s.job;return {busy:!!j,silent:!!j&&now<j.completedAt,ready:!!j&&now>=j.completedAt,jobId:j?j.id:null,workRemainingMs:j?Math.max(0,j.completedAt-now):0,cooldownRemainingMs:Math.max(0,s.availableAt-now),nextGiveAt:s.availableAt}}
+ function recoverFrenzy(a,b){
+  if(a===undefined&&b===undefined)return undefined;
+  if(a===undefined)return F.normalize(b);if(b===undefined)return F.normalize(a);
+  const x=F.normalize(a),y=F.normalize(b);
+  if(x.revision===y.revision){check(JSON.stringify(x)===JSON.stringify(y),'Divergent Frenzy states. Keep your save and reload safely.');return x}
+  const low=x.revision<y.revision?x:y,high=x.revision<y.revision?y:x;
+  check(high.lastNow>=low.lastNow,'Frenzy history moved backwards. Keep your save and reload safely.');return high;
+ }
+ function recover(profile,run){
+  if(own(profile,'emerald'))P.copy(profile.emerald);
+  if(own(profile,'frenzy'))F.normalize(profile.frenzy);
+  if(own(run,'frenzy'))F.normalize(run.frenzy);
+  if(own(run,'_emeraldProfile'))P.copy(run._emeraldProfile);
+  if(own(run,'emeraldWorkshop'))check(W.validateRun(run),'Emerald workshop save needs attention. No default deck was loaded.');
+  if(own(profile,'emerald')||own(run,'_emeraldProfile'))profile.emerald=P.recover(profile.emerald,run?._emeraldProfile);
+  const f=recoverFrenzy(profile.frenzy,run?.frenzy);if(f!==undefined)profile.frenzy=f;
+ }
+ function mirror(profile,run){
+  if(!run)return;
+  const f=recoverFrenzy(profile.frenzy,run.frenzy);if(f!==undefined){profile.frenzy=f;run.frenzy=F.normalize(f)}
+  if(own(profile,'emerald'))run._emeraldProfile=P.copy(profile.emerald);
+ }
+ function seedRun(profile,run){if(own(profile,'frenzy'))run.frenzy=F.normalize(profile.frenzy)}
+ function capture(run,actualLevel,effect){return {run,id:run?._uiId,phase:run?.phase,ante:run?.ante,blindIndex:run?.blindIndex,endless:run?.endless===true,abandoned:run?.abandoned===true,outcome:!!run?._uiOutcome,actualLevel,effect,jokers:(run?.jokers||[]).map(j=>({uid:j.uid,id:j.id,eternal:j.eternal===true})),levels:clone(run?.levels||{})}}
+ function afterAction(profile,run,before){
+  const messages=[];if(!before||before.run!==run||before.id!==run?._uiId)return messages;
+  // The engine completes a GAME at final cashout, never at a blind/old won load.
+  if(before.effect==='cashout'&&before.phase==='cashout'&&before.ante===8&&before.blindIndex===2&&!before.endless&&!before.abandoned&&!before.outcome&&P.unlocked(before.actualLevel)&&run.phase==='won'&&run.abandoned!==true&&!run.endless){
+   const state=own(profile,'emerald')?profile.emerald:P.create(seed(run._uiId));
+   profile.emerald=P.creditWin(state,{runId:run._uiId,actualLevel:before.actualLevel,beforePhase:'cashout',afterPhase:'won',endless:false,abandoned:false,source:'fresh-completion'},state.revision).state;
+  }
+  if(before.effect!=='play'||!capabilities(profile,before.actualLevel).eventCommentary)return messages;
+  const lines=run.lastResult?.lines||[];
+  if(lines.includes('Lucky +20 Mult'))messages.push('Lucky landed +20 Mult! That reward really triggered.');
+  if(lines.includes('Lucky: +$20'))messages.push('Lucky paid +$20 into your run’s Bank!');
+  if(lines.some(l=>typeof l==='string'&&/Space Joker.*: level up$/.test(l))&&run.lastResult?.key&&(run.levels[run.lastResult.key]||0)>(before.levels[run.lastResult.key]||0))messages.push('Space Joker upgraded '+(run.lastResult.name||'your poker hand')+'!');
+  if(['cashout','won'].includes(run.phase))for(const j of before.jokers)if(['gros_michel','cavendish'].includes(j.id)&&!j.eternal&&!run.jokers.some(x=>x.uid===j.uid))messages.push(j.id==='gros_michel'?'Your Gros Michel banana broke after the round. Cavendish can now appear.':'Your Cavendish banana broke after the round.');
+  return messages;
+ }
+ function speech(profile,run,actualLevel,now){
+  check(run&&P.validRunId(run._uiId),'Choose the active origin run before Emerald speaks.');
+  const current=profile.emerald;check(P.validate(current),'Emerald progress needs attention.');
+  const pt=PT.normalize(profile.potions);check(!pt.blockedReason,pt.blockedReason||'Potion inventory needs attention.');
+  const change=P.recordSpeech(current,{runId:run._uiId,actualLevel,source:'automatic',sequence:current.speech.sequence+1,at:now,inventoryFree:pt.inventory.length<PT.MAX_INVENTORY},current.revision),next=clone(profile);next.emerald=change.state;
+  if(change.giftResult.granted){const drop=PT.receiveDrop(pt,'speed',change.giftResult.nonce,now);check(drop.received,'The Speed gift could not be stored. No speech roll was committed.');next.potions=drop.state}
+  return {profile:next,gift:change.giftResult};
+ }
+ function rolls(run,cardId){
+  // Dedicated deterministic workshop dice: reopening/retrying cannot reroll the
+  // same offered card/sequence, and hidden draw order/game RNG are never read.
+  let x=seed(run._uiId+':emerald-workshop:'+((run.emeraldWorkshop?.sequence||0)+1)+':'+String(cardId));
+  return Array.from({length:4},()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return (x>>>0)/4294967296});
+ }
+ return Object.freeze({seed,progress,capabilities,workshopInfo,recoverFrenzy,recover,mirror,seedRun,capture,afterAction,speech,rolls});
+});
+
+</script><script>
+/* Native Emerald consent/commit controller. Reading/opening is side-effect free.
+ * host owns slot/writer/cloud fences and storage; complete PROFILE or RUN write
+ * plus exact readback precedes live apply. An uncertain write freezes saving.
+ */
+(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports;const api=factory(root,node?require('./emerald-runtime'):root.BOEmeraldRuntime,node?require('./emerald-workshop'):root.BOEmeraldWorkshop,node?require('./emerald-progress'):root.BOEmeraldProgress,node?require('./potions'):root.BOPotions);if(node)module.exports=api;else root.BOEmeraldActions=api;})(typeof globalThis!=='undefined'?globalThis:this,function(root,R,W,P,PT){'use strict';
+ const clone=x=>JSON.parse(JSON.stringify(x)),esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function check(ok,message){if(!ok)throw Error(message)}
+ function stable(v){if(v===null||typeof v!=='object')return JSON.stringify(v);if(Array.isArray(v))return '['+v.map(stable).join(',')+']';return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stable(v[k])).join(',')+'}'}
+ function cardName(c){return (c.rank<=10?c.rank:({11:'J',12:'Q',13:'K',14:'A'})[c.rank])+({S:'♠',H:'♥',D:'♦',C:'♣'})[c.suit]+(c.enhancement?' · '+c.enhancement:'')+(c.edition?' · '+c.edition:'')}
+ function create(host){let pending=null,entered=false,events=[];
+  function get(){const c=host.get();check(c&&c.profile&&c.run&&c.page==='game','Continue the active game before using Emerald.');return c}
+  function fence(c,dialog=false){host.assertWritable(dialog);const live=get();check(live.run===c.run&&live.profile===c.profile&&live.level===c.level&&host.stamp()===c.stamp,'The slot, run or player level changed. Reopen Emerald’s current action.');return live}
+  function capture(dialog=false){host.assertWritable(dialog);const c=get();return {...c,stamp:host.stamp(),profileRaw:host.read('profile'),runRaw:host.read('run')}}
+  function unchanged(c){check(host.read('profile')===c.profileRaw&&host.read('run')===c.runRaw,'The saved game changed. Reopen Emerald’s current action.');fence(c,true)}
+  function write(c,key,value){let attempted=false;
+   try{unchanged(c);const raw=JSON.stringify(value);attempted=true;check(host.write(key,value)!==false,'The save could not be written.');check(host.read(key)===raw,'The save readback did not match.');fence(c,true);return true}
+   catch(error){if(attempted)host.pause('Emerald saving is uncertain. The action may already be saved. Do not retry or reset; reload safely to inspect it. '+error.message);throw error}
+  }
+  function automaticSpeech(){try{
+   const c=capture(false),now=host.now();check(R.capabilities(c.profile,c.level).speedGift,'Speed gifts unlock at Emerald Level 4.');
+   if(c.profile.emerald.speech.sequence&&now-c.profile.emerald.speech.lastAt<P.SPEECH_COOLDOWN_MS)return {ok:false,reason:'cooldown'};
+   if(R.workshopInfo(c.run,now).silent)return {ok:false,reason:'working'};
+   const stored=c.profileRaw===null?null:JSON.parse(c.profileRaw);check(stored&&stable(stored.emerald)===stable(c.profile.emerald)&&stable(stored.potions)===stable(c.profile.potions),'Emerald or potion progress is not durably reconciled yet.');
+   const result=R.speech(c.profile,c.run,c.level,now);write(c,'profile',result.profile);host.applyProfile(result.profile,now);
+   const gift=result.gift;return {ok:true,gift,message:gift.granted?'A Speed Potion for you! Scoring animations take 30% less time for two minutes.':gift.rolled?'A Speed gift rolled, but both potion slots are full. Make room for a future gift!':null};
+  }catch(error){return {ok:false,reason:error.message}}}
+  function status(){const c=host.get(),now=host.now();if(!c?.profile)return {progress:null,capabilities:null,workshop:null};return {progress:R.progress(c.profile,c.level),capabilities:R.capabilities(c.profile,c.level),workshop:c.run&&c.run._uiId?R.workshopInfo(c.run,now):null}}
+  function welcome(){if(entered)return null;entered=true;const c=get();return R.capabilities(c.profile,c.level).welcome?'Welcome Back! I’m glad you’re here!':null}
+  function queue(messages){events.push(...messages);if(events.length>8)events=events.slice(-8)}
+  function takeEvent(){return events.shift()||null}
+  function close(){pending=null;host.closeModal()}
+  function openWorkshop(){try{
+   const c=capture(false),s=status();check(s.capabilities.workshop,'Emerald’s card workshop unlocks at Emerald Level 9.');
+   const w=s.workshop,r=c.run;check(r.phase==='shop','Give or collect cards in the shop of their origin run.');
+   pending={...c,revision:r.emeraldWorkshop?.revision||0,jobId:r.emeraldWorkshop?.job?.id||null,cards:stable(r.cards),petLevel:s.progress.level};
+   let body;
+   if(w.busy)body='<p>'+ (w.ready?'Your original card is ready to collect.': 'Emerald is working silently. '+Math.ceil(w.workRemainingMs/1000)+' seconds remaining.')+'</p>'+(w.ready?'<button class="btn primary" data-emerald-action="claim">Collect upgraded card</button>':'');
+   else if(w.cooldownRemainingMs>0)body='<p>Cooling down after completion · '+Math.ceil(w.cooldownRemainingMs/1000)+' seconds remaining.</p>';
+   else body='<p>Give one owned playing card. It leaves your deck for 2 minutes of silent work; collect it in this run’s shop. A 5-minute cooldown starts when work finishes. Replacing or abandoning this run forfeits its reserved card.</p><p>Same card ID and suit; rank +'+s.capabilities.workshopRankGain+' (Ace maximum). '+(s.progress.level>=10?'40% primary modifier chance, plus an independent 10% chance for one enhancement and one edition together.':'10% chance for Foil, Holographic or Polychrome.')+'</p><label for="emerald-card-pick">Owned playing card</label><select id="emerald-card-pick">'+r.cards.map(card=>'<option value="'+esc(card.id)+'">'+esc(cardName(card))+'</option>').join('')+'</select><button class="btn primary" data-emerald-action="give" '+(!r.cards.length?'disabled':'')+'>Give selected card</button>';
+   host.modal('Emerald’s card workshop',body+'<p class="build-note">Only fictional game cards. No payment, real gambling or external accounts.</p><button class="btn ghost" data-emerald-action="close">Close</button>');return true;
+  }catch(error){host.notify(error.message);return false}}
+  function consent(){check(pending,'Reopen Emerald’s current card offer.');const c=pending;fence(c,true);const now=host.now(),level=R.progress(c.profile,c.level).level;check(level===c.petLevel&&(c.run.emeraldWorkshop?.revision||0)===c.revision&&stable(c.run.cards)===c.cards&&c.run.phase==='shop','The card, workshop or Emerald level changed. Reopen the workshop.');return {c,now}}
+  function commitRun(c,next){
+   // Full durable source must match live game data before replacing the RUN.
+   // potionNow is merely the action clock snapshot, not money/inventory/RNG.
+   const raw=host.read('run');check(raw!==null,'Save the current run before using the workshop.');const durable=JSON.parse(raw),live=clone(c.run);delete durable.potionNow;delete live.potionNow;check(stable(durable)===stable(live),'The saved run differs from this offer. Reopen the workshop after saving.');
+   const profileRaw=host.read('profile');check(profileRaw===c.profileRaw||profileRaw===host.ownRaw?.('profile'),'The durable profile changed outside this tab. Reopen the workshop.');const storedProfile=profileRaw===null?null:JSON.parse(profileRaw);check(storedProfile&&stable(storedProfile.emerald)===stable(c.profile.emerald)&&stable(storedProfile.potions)===stable(c.profile.potions),'Emerald or potion inventory changed during this offer. Reopen the workshop.');const current={...c,profileRaw,runRaw:raw};write(current,'run',next);host.applyRun(next);pending=null;host.closeModal();host.render();
+  }
+  function give(cardId){try{const {c,now}=consent();check(c.run.cards.some(card=>String(card.id)===String(cardId)),'Choose an owned playing card.');const proposal=W.give(c.run,{progress:c.profile.emerald,actualLevel:c.level,expectedRevision:c.revision,now,cardId,rolls:R.rolls(c.run,cardId)});commitRun(c,proposal.run);host.notify('Card reserved and saved. Emerald will work silently for 2 minutes.');return true}catch(error){host.notify(error.message);return false}}
+  function claim(){try{const {c,now}=consent();const proposal=W.claim(c.run,{progress:c.profile.emerald,actualLevel:c.level,expectedRevision:c.revision,now,jobId:c.jobId});commitRun(c,proposal.run);host.notify('Your upgraded original card is back in this run’s deck.');return true}catch(error){host.notify(error.message);return false}}
+  function click(event){const el=event.target.closest?.('[data-emerald-action]');if(!el)return;const action=el.dataset.emeraldAction;if(action==='open-workshop')openWorkshop();else if(action==='close')close();else if(action==='give')give(root.document.querySelector('#emerald-card-pick')?.value);else if(action==='claim')claim()}
+  root.document?.addEventListener('click',click);
+  return Object.freeze({status,automaticSpeech,openWorkshop,give,claim,welcome,queue,takeEvent,destroy(){root.document?.removeEventListener('click',click);pending=null;events=[]}});
+ }
+ return Object.freeze({create,stable,cardName});
+});
+
+</script><script>
 /* Manual, local-first cloud saves. Public Supabase key only; no startup requests. */
-(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports;const api=factory(root,node?{RW:require('./run-wallet'),get PI(){return require('./player-identity')},get TC(){return require('./text-customization')},MP:require('./moving-panels'),CI:require('./custom-images'),PG:require('./progression'),PX:require('./passive-xp'),PT:require('./potions'),EI:require('./exp-interest'),SU:require('./surveys-ui'),SR:require('./survey-runner'),DS:require('./daily-streak'),DT:require('./daily-tasks'),SM:require('./stock-market'),ST:require('./stats')}:{RW:root.BORunWallet,PI:root.BOPlayerIdentity,TC:root.BOTextCustomization,MP:root.BOMovingPanels,CI:root.BOCustomImages,PG:root.BOProgress,PX:root.BOPassiveXP,PT:root.BOPotions,EI:root.BOExpInterest,SU:root.BOSurveysUI,SR:root.BOSurveyRunner,DS:root.BODailyStreak,DT:root.BODailyTasks,SM:root.BOStockMarket,ST:root.BOStats});if(node)module.exports=api;else root.BOCloudSave=api;})(typeof window!=='undefined'?window:null,function(root,M){'use strict';
+(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports;const api=factory(root,node?{EP:require('./emerald-progress'),EW:require('./emerald-workshop'),FZ:require('./frenzy'),RW:require('./run-wallet'),get PI(){return require('./player-identity')},get TC(){return require('./text-customization')},MP:require('./moving-panels'),CI:require('./custom-images'),PG:require('./progression'),PX:require('./passive-xp'),PT:require('./potions'),EI:require('./exp-interest'),SU:require('./surveys-ui'),SR:require('./survey-runner'),DS:require('./daily-streak'),DT:require('./daily-tasks'),SM:require('./stock-market'),ST:require('./stats')}:{EP:root.BOEmeraldProgress,EW:root.BOEmeraldWorkshop,FZ:root.BOFrenzy,RW:root.BORunWallet,PI:root.BOPlayerIdentity,TC:root.BOTextCustomization,MP:root.BOMovingPanels,CI:root.BOCustomImages,PG:root.BOProgress,PX:root.BOPassiveXP,PT:root.BOPotions,EI:root.BOExpInterest,SU:root.BOSurveysUI,SR:root.BOSurveyRunner,DS:root.BODailyStreak,DT:root.BODailyTasks,SM:root.BOStockMarket,ST:root.BOStats});if(node)module.exports=api;else root.BOCloudSave=api;})(typeof window!=='undefined'?window:null,function(root,M){'use strict';
  const URL_BASE='https://hordwagrvwwwtvzfpmwz.supabase.co',PUBLIC_KEY='sb_publishable_5yZND_Ussr0M1CFIVOBngg_Ge-hjfDF',REDIRECT_URL='https://balatro-online.vercel.app/';
  const PROFILE='danis-table.profile.v1',RUN='danis-table.run.v1',SETTINGS='danis-table.settings.v1',STREAK='danis-table.daily-streak.v1',TASKS='danis-table.daily-tasks.v1';
  const KEYS=Object.freeze([PROFILE,RUN,SETTINGS,STREAK,TASKS]),SESSION_PREFIX='danis-table.survey-session.',SESSION_KEY='danis-table.cloud-auth.v1',BACKUP_KEY='danis-table.cloud-local-backup.v1',JOURNAL_KEY='danis-table.cloud-restore-journal.v1',RESET_KEY='danis-table.survey-reset.v1',MAX_BYTES=4*1024*1024;
@@ -9149,9 +9641,10 @@ return Object.freeze({clips:clips,get:function(id){return typeof id==='string'&&
  }
  function validatePassive(p){version(p,[1,2,3],'passive XP');for(const k of ['sequence','creditedTicks','totalTicks','sessionsStarted','sessionsCompleted'])check(count(p[k]),'Invalid passive XP cursor.');check(amount(p.totalXp),'Invalid passive XP total.');if(p.version===3)for(const k of ['creditedMs','totalCreditedMs'])check(count(p[k]),'Invalid passive XP elapsed time.');const n=requireModel('PX').normalize(p);if(p.version===3)subset(p,n,'passive XP');else {check(n.sequence===p.sequence&&n.totalXp===p.totalXp,'Malformed legacy passive XP.');if(p.sequence>0)check(n.startedAt===p.startedAt&&n.endsAt===p.endsAt&&n.creditedTicks===p.creditedTicks,'Malformed legacy passive session.');}}
  function validateProfile(p){
-  const counters=['runs','wins','losses','hands','discards','cardsPlayed','cardsDiscarded','blinds','money','best','ante'];fields(p,counters.concat(['handCounts','deckWins','deckStakeWins','originalDeckStakeWins','jokerStakeWins','challengeWins','achievements','progression','advancedStats','passiveXp','stockMarket','potions','expInterest','economy','dailyStreak','dailyTasks','discovery']),'profile');
+  const counters=['runs','wins','losses','hands','discards','cardsPlayed','cardsDiscarded','blinds','money','best','ante'];fields(p,counters.concat(['handCounts','deckWins','deckStakeWins','originalDeckStakeWins','jokerStakeWins','challengeWins','achievements','progression','advancedStats','passiveXp','stockMarket','potions','expInterest','economy','dailyStreak','dailyTasks','discovery','emerald','frenzy']),'profile');
   for(const key of counters)check(amount(p[key]),'Invalid profile counter: '+key+'.');check(Array.isArray(p.achievements)&&p.achievements.every(x=>typeof x==='string'),'Invalid achievements.');for(const k of ['handCounts','deckWins','deckStakeWins','jokerStakeWins','challengeWins'])check(record(p[k]),'Invalid profile history.');for(const k of ['handCounts','deckWins'])check(Object.values(p[k]).every(count),'Invalid saved win or hand count.');for(const k of ['deckStakeWins','jokerStakeWins'])check(Object.values(p[k]).every(n=>Number.isInteger(n)&&n>=0&&n<=9),'Invalid saved Stake history.');check(Object.values(p.challengeWins).every(v=>v===true),'Invalid challenge win history.');
   if(own(p,'originalDeckStakeWins'))check(record(p.originalDeckStakeWins)&&Object.values(p.originalDeckStakeWins).every(n=>Number.isInteger(n)&&n>=0&&n<=7),'Invalid original Stake ladder history.');
+  if(own(p,'emerald'))check(requireModel('EP','validate').validate(p.emerald),'Invalid Emerald profile progress.');if(own(p,'frenzy'))requireModel('FZ','normalize').normalize(p.frenzy);
   validateProgress(p.progression);if(own(p,'passiveXp'))validatePassive(p.passiveXp);if(own(p,'potions')){version(p.potions,[1],'potions');requireModel('PT').normalize(p.potions);check(!p.potions.blockedReason,'Potion ledger needs attention before cloud saving.');}if(own(p,'expInterest'))requireModel('EI').normalize(p.expInterest);
   if(own(p,'economy'))requireModel('SU','normalizeEconomy').normalizeEconomy(p.economy);if(own(p,'dailyStreak')){version(p.dailyStreak,[1],'Daily Streak');requireModel('DS').normalize(p.dailyStreak);}if(own(p,'dailyTasks')){version(p.dailyTasks,[1],'Daily Tasks');requireModel('DT').normalize(p.dailyTasks);}if(own(p,'stockMarket'))validateMarket(p.stockMarket);
   if(own(p,'advancedStats')){version(p.advancedStats,[1],'statistics');subset(p.advancedStats,requireModel('ST').normalize(p.advancedStats),'statistics');}
@@ -9161,6 +9654,7 @@ return Object.freeze({clips:clips,get:function(id){return typeof id==='string'&&
  function validateRun(r){
   version(r,[1],'run');check(['select','play','cashout','shop','pack','won','lost'].includes(r.phase),'Invalid run phase.');for(const k of ['cards','hand','drawPile','discardPile','jokers','consumables'])check(Array.isArray(r[k])&&r[k].length<=20000,'Invalid run '+k+'.');
   const validCard=c=>record(c)&&(typeof c.id==='string'&&c.id.length>0||count(c.id))&&Number.isInteger(c.rank)&&c.rank>=2&&c.rank<=14&&['S','H','D','C'].includes(c.suit);check(r.cards.every(validCard),'Invalid playing cards.');const ids=new Set(r.cards.map(c=>String(c.id))),used=new Set();check(ids.size===r.cards.length,'Duplicate saved playing card IDs.');for(const k of ['hand','drawPile','discardPile'])for(const c of r[k]){check(validCard(c)&&ids.has(String(c.id))&&!used.has(String(c.id)),'Invalid or duplicate saved pile card.');used.add(String(c.id));}for(const k of ['jokers','consumables'])check(r[k].every(c=>record(c)&&typeof c.id==='string'&&c.id.length>0),'Invalid saved owned card.');if(own(r,'jokerReserve'))check(Array.isArray(r.jokerReserve)&&r.jokerReserve.every(c=>record(c)&&typeof c.id==='string'),'Invalid Joker reserve.');check(typeof r.money==='number'&&Number.isFinite(r.money)&&Number.isInteger(r.ante)&&r.ante>=0&&record(r.stats)&&record(r.stats.handCounts)&&record(r.levels)&&['high','pair','two_pair','three','straight','flush','full_house','four','straight_flush','five','flush_house','flush_five'].every(k=>Number.isInteger(r.levels[k])&&r.levels[k]>=1),'Invalid saved run values.');if(own(r,'abandoned'))check(typeof r.abandoned==='boolean'&&(!r.abandoned||r.phase==='lost'),'Invalid abandoned run state.');for(const k of ['handsPlayed','discardsUsed','cardsPlayed','cardsDiscarded','blindsWon'])check(count(r.stats[k]),'Invalid run statistics.');check(amount(r.stats.moneyEarned)&&amount(r.stats.bestHand),'Invalid run score history.');for(const k of ['blindIndex','round','hands','discards','handSize','jokerSlots','consumableSlots'])check(count(r[k]),'Invalid run counters.');check(r.blindIndex<=2&&typeof r.deckId==='string'&&Array.isArray(r.blindTags)&&r.blindTags.every(x=>typeof x==='string')&&typeof r.bossId==='string','Invalid saved Blind.');check(record(r.vouchers)&&Array.isArray(r.tags)&&r.tags.every(t=>record(t)&&typeof t.id==='string')&&Array.isArray(r.log)&&r.log.every(x=>typeof x==='string'),'Invalid run containers.');check(record(r.shop)&&Array.isArray(r.shop.items)&&r.shop.items.every(x=>record(x)&&typeof x.id==='string')&&Array.isArray(r.shop.packs)&&r.shop.packs.every(x=>record(x)&&typeof x.id==='string')&&amount(r.shop.rerollCost)&&(r.shop.voucher===null||record(r.shop.voucher)),'Invalid saved shop.');check(record(r.payout)&&amount(r.payout.total)&&Array.isArray(r.payout.lines)&&r.payout.lines.every(x=>record(x)&&typeof x.label==='string'&&typeof x.amount==='number'&&Number.isFinite(x.amount)),'Invalid saved cashout.');if(r.phase==='pack')check(record(r.pack)&&Array.isArray(r.pack.choices)&&r.pack.choices.every(x=>record(x)&&typeof x.id==='string'),'Invalid saved pack.');if(own(r,'_dailyTaskPending'))check(Array.isArray(r._dailyTaskPending)&&r._dailyTaskPending.length<=256&&r._dailyTaskPending.every(x=>record(x)&&typeof x.runId==='string'&&count(x.at)&&record(x.before)&&record(x.after)),'Invalid pending Daily Tasks.');
+  if(own(r,'frenzy'))requireModel('FZ','normalize').normalize(r.frenzy);if(own(r,'_emeraldProfile'))check(requireModel('EP','validate').validate(r._emeraldProfile),'Invalid Emerald profile mirror.');if(own(r,'emeraldWorkshop'))check(requireModel('EW','validateRun').validateRun(r),'Invalid run-owned Emerald workshop or reserved card.');
   if(own(r,'wallet'))check(requireModel('RW','validate').validate(r.wallet),'Invalid run Wallet.');
   if(own(r,'potions')){version(r.potions,[1],'run potions');requireModel('PT').normalize(r.potions);}if(own(r,'_stockMarket'))validateMarket(r._stockMarket);if(own(r,'_potionProfile')){check(record(r._potionProfile)&&count(r._potionProfile.revision),'Invalid potion profile mirror.');validateProgress(r._potionProfile.progression);if(own(r._potionProfile,'passiveXp'))validatePassive(r._potionProfile.passiveXp);if(own(r._potionProfile,'expInterest'))requireModel('EI').normalize(r._potionProfile.expInterest);}
  }
@@ -9168,7 +9662,7 @@ return Object.freeze({clips:clips,get:function(id){return typeof id==='string'&&
  function validateSnapshot(value){
   fields(value,['version','capturedAt','keys'],'snapshot');check(value.version===1&&count(value.capturedAt)&&value.capturedAt<=8640000000000000&&record(value.keys),'Unsupported cloud save format.');check(new TextEncoder().encode(JSON.stringify(value)).length<=MAX_BYTES,'Cloud save exceeds the 4 MB limit.');check(KEYS.every(k=>own(value.keys,k))&&Object.keys(value.keys).every(k=>KEYS.includes(k)||sessionKey(k)),'Cloud save must contain the complete allowlisted save, not a partial merge.');
   const parsed={};for(const [key,raw]of Object.entries(value.keys)){check(raw===null||typeof raw==='string','Cloud values must be raw JSON strings or null.');if(raw===null){check(KEYS.includes(key),'Null survey session is unsupported.');parsed[key]=null;continue}parsed[key]=json(raw,key);}
-  check(parsed[PROFILE],'A complete player profile is required.');validateProfile(parsed[PROFILE]);if(parsed[RUN])validateRun(parsed[RUN]);if(parsed[SETTINGS])validateSettings(parsed[SETTINGS]);for(const [key,name]of [[STREAK,'DS'],[TASKS,'DT']])if(parsed[key]){version(parsed[key],[1],key);requireModel(name).normalize(parsed[key]);}
+  check(parsed[PROFILE],'A complete player profile is required.');validateProfile(parsed[PROFILE]);if(parsed[RUN])validateRun(parsed[RUN]);if(parsed[RUN]&&own(parsed[RUN],'_emeraldProfile')&&own(parsed[PROFILE],'emerald'))requireModel('EP','recover').recover(parsed[PROFILE].emerald,parsed[RUN]._emeraldProfile);if(parsed[SETTINGS])validateSettings(parsed[SETTINGS]);for(const [key,name]of [[STREAK,'DS'],[TASKS,'DT']])if(parsed[key]){version(parsed[key],[1],key);requireModel(name).normalize(parsed[key]);}
   for(const [key,name,mirror]of [[STREAK,'DS','dailyStreak'],[TASKS,'DT','dailyTasks']])if(own(parsed[PROFILE],mirror)){const model=requireModel(name),canonical=parsed[key]?model.normalize(parsed[key]):model.create(),saved=model.normalize(parsed[PROFILE][mirror]);check(JSON.stringify(saved)===JSON.stringify(canonical),'The '+mirror+' profile mirror does not match its canonical bank. Reload and save again before cloud transfer.');}
   const e=parsed[PROFILE].economy,attempts=e?.attempts||[];
   for(const [key,s]of Object.entries(parsed))if(sessionKey(key)){const id=key.slice(SESSION_PREFIX.length),normalized=requireModel('SR','normalizeSession').normalizeSession(s,id);subset(s,normalized,'survey session');check(['completed','disqualified'].includes(s.status),'Finish pending surveys and bank their rewards before using cloud saves.');check(s.returnUrl===REDIRECT_URL+'#survey-return='+encodeURIComponent(id),'Unsupported survey return URL.');const a=attempts.find(a=>a.sessionId===id);check(a&&a.epoch===s.epoch&&s.economyGeneration===e.generation&&a.offerId===s.offer.id,'Survey session does not match its durable attempt.');check(s.status==='completed'?a.status==='completed'&&e.receipts.some(r=>r.id===id):a.status==='started','Unbanked survey reward. Finish pending surveys first.');}
@@ -9836,28 +10330,48 @@ function advice(E,state){
  else if(run.phase==='pack')messages.push('Check your free inventory slots and your build before choosing from this pack.');
  else if(run.phase==='won')messages.push('You did it! An excellent run — ready for endless?');
  else if(run.phase==='lost')messages.push('Every run teaches you something. I’ll be here for your next one!');
- messages.push('One thoughtful hand at a time. I’m cheering you on!');return out;
+ messages.push('One thoughtful hand at a time. I’m cheering you on!');
+  if(state.capabilities?.facts)messages.push(...(globalThis.BOEmeraldProgress?.FACTS||['My favourite number is 6!','I love green spaces and greenery.','In this fictional casino, I like pretend scratch tickets — no real money or real gambling.']));
+  if(state.capabilities?.adviceRichness===1.2){const extra=[];if(run.phase==='play'&&Number.isFinite(run.target)&&Number.isFinite(run.score)&&run.hands>0)extra.push('A planning average is '+number(Math.max(0,run.target-run.score)/run.hands)+' points per remaining hand — not a prediction of your next score.');if(run.phase==='play')extra.push('Within the same scoring phase, earlier +Mult can help later ×Mult. Read each effect’s trigger before changing Joker order.');if(run.phase==='shop')extra.push('Check your free Joker and consumable slots before buying. You can keep your cash if nothing suits your build.');extra.push('No rush — we can work through this together. A careful choice matters more than a fast one.');messages.push(...extra.slice(0,Math.max(1,Math.ceil(messages.length*.2))))}return out;
 }
 return Object.freeze({advice,number});
 });
 
 </script><script>
-/* A game-only, presentation-only companion. Never writes a save or takes a turn. */
+/* Public-state presentation. Manual browsing/rendering never rolls gifts or
+ * advances progression. Only a timed, guarded, durably committed automatic
+ * speech asks the native controller for one roll; quiet/busy views stay silent.
+ */
 (function(root){'use strict';
-function mount(host){let stage=null,group=null,bubble=null,index=0,lastKey='',messages=[],lastTurn=0,timer=null,compact=false;
- function remove(){stage?.remove();stage=null;group=null;bubble=null;lastKey='';messages=[]}
- function paint(){if(!bubble||!messages.length)return;bubble.textContent=messages[index%messages.length];bubble.hidden=compact;stage.classList.toggle('emerald-compact',compact)}
- function update(){let state;try{state=host.state()}catch(_){remove();return}
- if(!state||state.suspended||state.survey||state.page!=='game'||!state.run||!Number.isInteger(state.level)||state.level<35||state.level>100){remove();return}
- const parent=document.querySelector('#app');if(!parent||!root.BOEmerald||!root.BOEmeraldAsset){remove();return}
- if(!stage?.isConnected){remove();stage=document.createElement('section');stage.id='emerald-companion';stage.className='emerald-stage';stage.setAttribute('aria-label','Emerald game companion');group=document.createElement('div');group.className='emerald-group';bubble=document.createElement('p');bubble.className='emerald-bubble';bubble.setAttribute('role','status');bubble.setAttribute('aria-live','polite');const img=document.createElement('img');img.src=root.BOEmeraldAsset;img.alt='Emerald, your green beetle companion';img.width=98;img.height=64;img.draggable=false;const controls=document.createElement('div');controls.className='emerald-controls';const next=document.createElement('button');next.type='button';next.textContent='Emerald · next tip';next.addEventListener('click',()=>{index++;lastTurn=Date.now();paint()});const hide=document.createElement('button');hide.type='button';hide.textContent=compact?'Show tips':'Quiet';hide.addEventListener('click',()=>{compact=!compact;hide.textContent=compact?'Show tips':'Quiet';hide.setAttribute('aria-pressed',String(compact));paint()});controls.append(next,hide);group.append(bubble,img,controls);stage.append(group);parent.append(stage);lastTurn=Date.now()}
- stage.classList.toggle('emerald-motion-off',state.motion===false);stage.dataset.position=['bob','glide','corner'][Math.floor(Date.now()/24000)%3];
- // Public state only. Excludes draw pile, seed and RNG, so advice cannot peek.
- const r=state.run,key=JSON.stringify([state.level,r.phase,r.hand,r.levels,r.jokers,r.target,r.score,r.hands,r.blindIndex,r.bossId,r.shop,r.lastResult?.total,state.selected,state.faucetReady,state.xp]);
- if(key!==lastKey){const advice=root.BOEmerald.advice(root.BO,state);messages=advice.messages;lastKey=key;index=0;paint()}
- if(Date.now()-lastTurn>=10000){index++;lastTurn=Date.now();paint()}
+function mount(host){let stage=null,group=null,bubble=null,photo=null,controls=null,levelBar=null,workshopButton=null,meter=null,index=0,lastKey='',messages=[],lastTurn=0,lastCheck=0,timer=null,compact=false,lastFrenzy=null,override=null,latestState=null;
+ function releaseNotice(){const n=meter?.querySelector('#faucet-ready-notice');if(n){n.classList.remove('frenzy-inline-notice');document.body.append(n)}}
+ function remove(){stage?.remove();stage=null;group=null;bubble=null;photo=null;controls=null;levelBar=null;workshopButton=null;lastKey='';messages=[];override=null}
+ function paint(state){state=latestState||state;if(!bubble)return;const silent=state?.workshop?.silent===true;bubble.textContent=override||messages[index%Math.max(1,messages.length)]||'One thoughtful hand at a time. I’m cheering you on!';bubble.hidden=compact||silent;stage.classList.toggle('emerald-compact',compact);stage.classList.toggle('emerald-working',silent);stage.setAttribute('aria-label',silent?'Emerald is working silently on your card':'Emerald game companion')}
+ function updateFrenzy(state){
+  const visible=state&&state.page==='game'&&state.run&&state.level>=33&&!state.protected&&!state.survey,active=!!state?.frenzy?.active&&state?.page==='game'&&!state.survey;
+  if(!visible){releaseNotice();meter?.remove();meter=null}else{const parent=document.querySelector('#app .table-column')||document.querySelector('#app');if(parent){if(!meter?.isConnected){meter=document.createElement('section');meter.id='frenzy-meter';meter.className='frenzy-meter';meter.setAttribute('aria-label','Frenzy scoring-card charge');meter.innerHTML='<div class="frenzy-title">FRENZY</div><div class="frenzy-track" role="progressbar" aria-label="Frenzy scored cards" aria-valuemin="0" aria-valuemax="500"><span class="frenzy-fill"></span></div><div class="frenzy-count"></div>';parent.prepend(meter)}const f=state.frenzy||{active:false,meter:0,charge:0},track=meter.querySelector('.frenzy-track');meter.classList.toggle('is-active',f.active);meter.querySelector('.frenzy-title').textContent=f.active?'FRENZY!!! · +50% Mult':'FRENZY';meter.querySelector('.frenzy-fill').style.width=(Math.max(0,Math.min(500,f.meter||0))/5)+'%';track.setAttribute('aria-valuenow',String(Math.round(f.meter||0)));track.setAttribute('aria-valuetext',f.active?'Frenzy active, '+(f.remainingMs/1000).toFixed(1)+' seconds remaining':(f.charge||0)+' of 500 scored cards');meter.querySelector('.frenzy-count').textContent=f.active?Math.round(f.meter||0)+'/500 · '+(f.remainingMs/1000).toFixed(1)+'s · rainbow rush':(f.charge||0)+'/500 scored cards';const notice=document.querySelector('#faucet-ready-notice');if(notice){notice.classList.add('frenzy-inline-notice');if(notice.parentNode!==meter)meter.append(notice)}}}
+  document.body.classList.toggle('frenzy-active',active);document.body.classList.toggle('frenzy-motion-off',state?.motion===false);
+  if(active!==lastFrenzy){lastFrenzy=active;host.frenzyChanged?.(active)}
  }
- timer=setInterval(update,1000);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});update();return Object.freeze({update,destroy(){clearInterval(timer);remove()},status(){return {visible:!!stage?.isConnected,messages:messages.slice(),compact}}});
+ function createStage(parent,state,now){
+  remove();stage=document.createElement('section');stage.id='emerald-companion';stage.className='emerald-stage';group=document.createElement('div');group.className='emerald-group';bubble=document.createElement('p');bubble.className='emerald-bubble';bubble.setAttribute('role','status');bubble.setAttribute('aria-live','polite');photo=document.createElement('img');photo.src=root.BOEmeraldAsset;photo.alt='Emerald, your green beetle companion';photo.width=98;photo.height=64;photo.draggable=false;controls=document.createElement('div');controls.className='emerald-controls';const next=document.createElement('button');next.type='button';next.textContent='Emerald · next tip';next.title='Browse tips only — no extra gift rolls';next.addEventListener('click',()=>{index++;override=null;lastTurn=Date.now();paint(state)});const hide=document.createElement('button');hide.type='button';hide.textContent=compact?'Show tips':'Quiet';hide.addEventListener('click',()=>{compact=!compact;hide.textContent=compact?'Show tips':'Quiet';hide.setAttribute('aria-pressed',String(compact));lastTurn=Date.now();paint(state)});controls.append(next,hide);group.append(bubble,photo,controls);stage.append(group);parent.append(stage);if(!lastTurn)lastTurn=now;override=host.welcome?.()||null;
+ }
+ function update(force=true){let state;try{state=host.state()}catch(_){remove();releaseNotice();meter?.remove();meter=null;document.body.classList.remove('frenzy-active');return}
+  latestState=state;updateFrenzy(state);const now=Date.now();if(!force&&now-lastCheck<900)return;lastCheck=now;
+  if(!state||state.suspended||state.survey||state.page!=='game'||!state.run||!Number.isInteger(state.level)||state.level<35||state.level>100){remove();return}
+  const parent=document.querySelector('#app');if(!parent||!root.BOEmerald||!root.BOEmeraldAsset){remove();return}
+  if(!stage?.isConnected)createStage(parent,state,now);
+  const caps=state.capabilities||{},pet=state.pet;stage.classList.toggle('emerald-motion-off',state.motion===false);stage.classList.toggle('emerald-aura',caps.greenAura===true);stage.style.setProperty('--emerald-scale',String(caps.photoScale||1));stage.style.setProperty('--emerald-speed',String(caps.movementSpeed||1));stage.dataset.emeraldLevel=String(pet?.level||0);stage.dataset.position=['bob','glide','corner'][Math.floor(now/24000)%3];
+  if(pet?.unlocked){if(!levelBar){levelBar=document.createElement('section');levelBar.className='emerald-level-bar';levelBar.innerHTML='<div class="emerald-level-label"></div><div class="emerald-level-track" role="progressbar" aria-label="Emerald fresh game wins" aria-valuemin="0"><span class="emerald-level-fill"></span></div>';group.insertBefore(levelBar,controls)}levelBar.querySelector('.emerald-level-label').textContent='Emerald E'+pet.level+' · '+(pet.max?'MAX':pet.wins+'/'+pet.nextWins+' fresh wins');const track=levelBar.querySelector('.emerald-level-track');track.setAttribute('aria-valuemax',String(pet.nextWins||1));track.setAttribute('aria-valuenow',String(pet.max?1:pet.wins));track.setAttribute('aria-valuetext',pet.max?'Emerald Level 10, MAX':pet.wins+' of '+pet.nextWins+' fresh game wins toward Emerald Level '+pet.nextLevel);levelBar.querySelector('.emerald-level-fill').style.width=(pet.max?100:100*pet.wins/pet.nextWins)+'%'}else{levelBar?.remove();levelBar=null}
+  if(caps.workshop){if(!workshopButton){workshopButton=document.createElement('button');workshopButton.type='button';workshopButton.dataset.emeraldAction='open-workshop';controls.append(workshopButton)}const w=state.workshop;workshopButton.disabled=state.run.phase!=='shop';workshopButton.textContent=w?.silent?'Working silently · '+Math.ceil(w.workRemainingMs/1000)+'s':w?.ready?'Collect upgraded card':w?.cooldownRemainingMs>0?'Workshop cooldown · '+Math.ceil(w.cooldownRemainingMs/1000)+'s':'Give Emerald a card';workshopButton.title='Give or collect in the shop of this run'}else{workshopButton?.remove();workshopButton=null}
+  // Digest excludes deck/draw order/seed/RNG. Adviser sees only public facts.
+  const r=state.run,key=JSON.stringify([state.level,pet?.level,r.phase,r.hand,r.levels,r.jokers,r.target,r.score,r.hands,r.blindIndex,r.bossId,r.shop,r.lastResult?.total,state.selected,state.faucetReady,state.xp]);
+  if(key!==lastKey){messages=root.BOEmerald.advice(root.BO,state).messages;lastKey=key;index=0;paint(state)}
+  const silent=state.workshop?.silent===true;controls.querySelector('button').disabled=silent;
+  if(!silent&&!compact&&now-lastTurn>=10000){const speech=caps.speedGift?host.automaticSpeech?.():{ok:true};if(speech?.ok){index++;override=speech.message||host.takeEvent?.()||null;lastTurn=now}}
+  paint(state);
+ }
+ timer=setInterval(()=>update(false),100);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});update();return Object.freeze({update,destroy(){clearInterval(timer);remove();releaseNotice();meter?.remove();document.body.classList.remove('frenzy-active','frenzy-motion-off')},status(){return {visible:!!stage?.isConnected,messages:messages.slice(),compact}}});
 }
 root.BOEmeraldUI=Object.freeze({mount});
 })(window);
@@ -9898,7 +10412,7 @@ function surveyViewActive(){return !!window.BOSurveyRunner?.isMounted?.()}
 const $=s=>document.querySelector(s), E=window.BO;
 const SAVE='danis-table.run.v1', PROFILE='danis-table.profile.v1', SETTINGS='danis-table.settings.v1';
 const CI=window.BOCustomImages,JA=window.BOJokerArt,TC=window.BOTextCustomization;
-const RW=window.BORunWallet;let pendingWalletPurchase=null;
+const RW=window.BORunWallet,FZ=window.BOFrenzy,ER=window.BOEmeraldRuntime;let pendingWalletPurchase=null,emeraldActions=null;
 let customImageBusy=false,customImageFeedback='',textStyleFeedback='';
 let usernameContext=null,slotRenameContext=null;
 const SAVE_READ_PREFIX='danis-table.save-seen.v1:',saveReadBaseMarker=saveReadEntryMarker();let saveReadMarker=saveReadBaseMarker;
@@ -9959,7 +10473,7 @@ function defaultPreferences(){return {motion:true,sound:true,music:true,sfxVolum
 function freshProfile(){const p={runs:0,wins:0,losses:0,hands:0,discards:0,cardsPlayed:0,cardsDiscarded:0,blinds:0,money:0,best:0,ante:0,handCounts:{},deckWins:{},deckStakeWins:{},originalDeckStakeWins:{},jokerStakeWins:{},challengeWins:{},achievements:[]};if(PG)p.progression=PG.create();if(window.BOStats)p.advancedStats=window.BOStats.create();if(PX)p.passiveXp=PX.create();if(SM)p.stockMarket=SM.create();if(PT)p.potions=PT.create();return p}
 let prefs=defaultPreferences(),profile=null; // No profile models are created before slot choice.
 let storageOK=true;
-function validRun(s){return !!(s&&s.version===1&&['select','play','cashout','shop','pack','won','lost'].includes(s.phase)&&Array.isArray(s.cards)&&Array.isArray(s.hand)&&Array.isArray(s.drawPile)&&Array.isArray(s.discardPile)&&Array.isArray(s.jokers)&&Array.isArray(s.consumables)&&s.stats&&s.levels&&Number.isFinite(s.money)&&Number.isInteger(s.ante)&&s.ante>=0&&s.cards.length<=20000&&(!Object.prototype.hasOwnProperty.call(s,'wallet')||RW?.validate(s.wallet)===true))}
+function validRun(s){try{return !!(s&&s.version===1&&['select','play','cashout','shop','pack','won','lost'].includes(s.phase)&&Array.isArray(s.cards)&&Array.isArray(s.hand)&&Array.isArray(s.drawPile)&&Array.isArray(s.discardPile)&&Array.isArray(s.jokers)&&Array.isArray(s.consumables)&&s.stats&&s.levels&&Number.isFinite(s.money)&&Number.isInteger(s.ante)&&s.ante>=0&&s.cards.length<=20000&&(!Object.prototype.hasOwnProperty.call(s,'wallet')||RW?.validate(s.wallet)===true)&&(!Object.prototype.hasOwnProperty.call(s,'frenzy')||FZ?.validate(s.frenzy)===true)&&(!Object.prototype.hasOwnProperty.call(s,'_emeraldProfile')||window.BOEmeraldProgress?.validate(s._emeraldProfile)===true)&&(!Object.prototype.hasOwnProperty.call(s,'emeraldWorkshop')||window.BOEmeraldWorkshop?.validateRun(s)===true))}catch(_){return false}}
 function load(key){try{return JSON.parse(localStorage.getItem(key)||'null')}catch(e){storageOK=false;return null}}
 function store(key,data){if(!slotChosen||saveReadBlocked||cloudRestoring)return false;if(writerGuard&&!writerGuard.canWrite())return false;try{slotStore?.assertCurrent();const raw=JSON.stringify(data);localStorage.setItem(key,raw);if(key===PROFILE){rememberSaveReadWitness();slotStore.confirmProfileWrite(raw);lastProfileWriteRaw=raw;}if(key===SAVE)lastRunWriteRaw=raw;return true}catch(e){storageOK=false;return false}}
 // Chrome can temporarily expose an empty file: storage area across a reload.
@@ -10097,7 +10611,7 @@ if(!savedProfile||!Object.prototype.hasOwnProperty.call(savedProfile,'originalDe
 if(window.BOStats)profile.advancedStats=window.BOStats.normalize(profile.advancedStats);
 let statsClock=performance.now(),statsVisible=!document.hidden;
 function flushVisibleTime(){const now=performance.now();if(statsVisible&&profile.advancedStats)profile.advancedStats.visibleSeconds=(profile.advancedStats.visibleSeconds||0)+Math.max(0,now-statsClock)/1000;statsClock=now;statsVisible=!document.hidden}
-const savedRun=load(SAVE);if(savedRun&&Object.prototype.hasOwnProperty.call(savedRun,'wallet')&&(!RW||!RW.validate(savedRun.wallet))){slotFailure(new Error('Wallet save needs attention. Keep your data and backup; no default run was loaded.'));return}if(validRun(savedRun))run=savedRun;
+const savedRun=load(SAVE);try{if(!ER||!FZ||!window.BOEmeraldActions)throw new Error('Frenzy and Emerald modules are missing. Keep all website files together.');ER.recover(profile,null);if(savedRun&&['frenzy','_emeraldProfile','emeraldWorkshop'].some(k=>Object.prototype.hasOwnProperty.call(savedRun,k))){if(!validRun(savedRun))throw new Error('The upgraded run save needs attention. No default run was loaded.');ER.recover(profile,savedRun)}}catch(error){slotFailure(error);return}if(savedRun&&Object.prototype.hasOwnProperty.call(savedRun,'wallet')&&(!RW||!RW.validate(savedRun.wallet))){slotFailure(new Error('Wallet save needs attention. Keep your data and backup; no default run was loaded.'));return}if(validRun(savedRun))run=savedRun;
 // Validate potion ledgers independently. Broken new data must not erase legacy
 // cash/progression, or be replaced with a free, empty potion ledger.
 if(EI)try{interestSignature(profile)}catch(error){interestLedgerError=error.message}
@@ -10198,9 +10712,9 @@ function settlePassiveResult(result){if(!result?.ok)return;queueLevelUp(result);
 function startPassiveXp(){if(playerLevel()>=20){openFaucet();return}if(!PX)return;try{assertEconomyWritable()}catch(error){toast(error.message);return}syncPotionClock();const result=PX.start(profile,Date.now(),playerXpConfig());if(!result.ok){toast(result.reason||'Passive XP cannot start.');return}settlePassiveResult(result);window.BOAudio?.sfx('click');const s=PX.status(profile,Date.now(),playerXpConfig());toast((result.resumed?'Passive Exp continued after a duration upgrade: ':'Passive Exp started: ')+fmtXp(s.rateXp)+' XP every '+((s.intervalMs||1000)===1000?'second':Math.round(s.intervalMs/1000)+' seconds')+' for '+Math.round(s.durationMs/60000)+' minutes.')}
 function passiveHeartbeat(){if(!PX||!PG||passivePolling)return;try{assertEconomyWritable()}catch(error){return}pullPotionState();const now=Date.now(),s=PX.status(profile,now,playerXpConfig(now));updatePassiveButton(s);if(!s.unlocked||!(s.pendingTicks>0||s.needsDurationUpdate||s.needsRateUpdate||profile.passiveXp.sequence>0&&!profile.passiveXp.completionCounted&&now>=profile.passiveXp.endsAt))return;passivePolling=true;try{const result=PX.poll(profile,now,playerXpConfig(now));if(result.ok&&(result.ticks>0||result.stopped||s.needsDurationUpdate||s.needsRateUpdate)){settlePassiveResult(result);if(result.stopped){const stoppedStatus=PX.status(profile,Date.now(),playerXpConfig());toast(stoppedStatus.coolingDown?'Passive Exp finished. '+Math.round(stoppedStatus.cooldownMs/60000)+'-minute cooldown started.':'Passive Exp finished; the cooldown has already passed. You can start another session.')}}}finally{passivePolling=false}}
 function trackUnlocked(id){return id==='poker_lounge'||id==='casino_lounge'&&playerBuffs().casinoTrack||['starlight_felt','copper_groove'].includes(id)&&playerBuffs().moreTracks||!['casino_lounge','starlight_felt','copper_groove'].includes(id)&&!!window.BOMusicData?.tracks?.some(t=>t.id===id)&&playerBuffs().music}
-function musicScene(){if(page!=='game'||!run||!(run.phase==='play'||animating))return 'table';if(playerLevel()>=5&&run.hands===1&&run.discards===0)return 'last_chance';return run.blindIndex===2?(run.ante>=8?'final_boss':'boss'):'table'}
+function musicScene(){if(page==='game'&&run&&FZ&&playerLevel()>=33&&FZ.info(run.frenzy??profile.frenzy,playerLevel(),Date.now()).active)return 'frenzy';if(page!=='game'||!run||!(run.phase==='play'||animating))return 'table';if(playerLevel()>=5&&run.hands===1&&run.discards===0)return 'last_chance';return run.blindIndex===2?(run.ante>=8?'final_boss':'boss'):'table'}
 function effectiveAudioPrefs(){return {...prefs,music:!!prefs.music&&playerBuffs().music,track:trackUnlocked(prefs.track)?prefs.track:'poker_lounge',scene:musicScene()}}
-function refreshMusicStatus(){const el=$('#music-now-playing'),s=window.BOAudio?.status();if(!el||!s)return;const mode=s.scene==='last_chance'?'Last Chance · dramatic piano, strings and a heartbeat':s.scene==='final_boss'?'Final Boss · deeper bass, heavy drums and a climax':s.scene==='boss'?'Boss Blind · dark, heavy arrangement':'Table · original arrangement',asset=typeof s.assetStatus==='string'?s.assetStatus:'';el.textContent=(s.playingMusic?'Playing: ':'Selected: ')+s.trackName+' · '+mode+(s.track==='deadly_roulette'&&/loading|decoding/.test(asset)?' · Loading local recording…':s.track==='deadly_roulette'&&/error|fail|fallback/.test(asset)?' · Recording unavailable; original roulette fallback':'');}
+function refreshMusicStatus(){const el=$('#music-now-playing'),s=window.BOAudio?.status();if(!el||!s)return;const mode=s.scene==='frenzy'?'Emerald Frenzy · 10-second original rainbow rush':s.scene==='last_chance'?'Last Chance · dramatic piano, strings and a heartbeat':s.scene==='final_boss'?'Final Boss · deeper bass, heavy drums and a climax':s.scene==='boss'?'Boss Blind · dark, heavy arrangement':'Table · original arrangement',asset=typeof s.assetStatus==='string'?s.assetStatus:'';el.textContent=(s.playingMusic?'Playing: ':'Selected: ')+s.trackName+' · '+mode+(s.track==='deadly_roulette'&&/loading|decoding/.test(asset)?' · Loading local recording…':s.track==='deadly_roulette'&&/error|fail|fallback/.test(asset)?' · Recording unavailable; original roulette fallback':'');}
 function soundtrackCreditsHTML(){return '<p id="music-now-playing" class="build-note" aria-live="polite"></p><p class="build-note">12 new original arcade, roulette, casino, poker and blackjack compositions. Boss Blinds automatically switch to darker arrangements; Ante 8+ Boss Blinds add a final-boss climax. Level 5 unlocks emotional Last Chance music when you have 1 hand and no discards left. Your selected track returns afterward.</p><p class="build-note" id="music-attribution">“Deadly Roulette” by Kevin MacLeod (<a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1600033" target="_blank" rel="noopener noreferrer">incompetech.com</a>), licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution 4.0</a>. Original recording included locally; boss and Last Chance modes add original backing and playback processing. No endorsement implied. The other tracks are original compositions for this fan game, not the official Balatro soundtrack.</p>';}
 window.addEventListener('bo-audio-status',refreshMusicStatus);
 function coinUnlockIds(){return [...new Set((profile.progression?.unlockedJokers||[]).filter(id=>E.jokers.some(j=>j.id===id&&j.requiresCoinUnlock)))].sort()}
@@ -10308,7 +10822,7 @@ function confirmRunPurchase(source){
  },runPurchaseSound(c.kind),c.meta);
 }
 
-function persist(){progressSaveCommitted=false;try{assertEconomyWritable()}catch(error){settleXpAwards(false);return false}try{dailyTasks?.prepare(run);pullPotionState();syncStats();if(run&&SM)run._stockMarket=profile.stockMarket;mirrorPotionProfile();reconcileRunWallet();const saved=!run||store(SAVE,run),profileSaved=saved&&store(PROFILE,profile);if(profileSaved){economyMayCreate=false;if(recoveredInterestSignature!==null){interestCanonicalSignature=interestSignature(profile);recoveredInterestSignature=null}}progressSaveCommitted=!!profileSaved;const settingsSaved=store(SETTINGS,prefs);return saved&&profileSaved&&settingsSaved}finally{settleXpAwards(progressSaveCommitted)}}
+function persist(){progressSaveCommitted=false;try{assertEconomyWritable()}catch(error){settleXpAwards(false);return false}try{dailyTasks?.prepare(run);pullPotionState();syncStats();if(run&&SM)run._stockMarket=profile.stockMarket;mirrorPotionProfile();reconcileRunWallet();ER.mirror(profile,run);const saved=!run||store(SAVE,run),profileSaved=saved&&store(PROFILE,profile);if(profileSaved){economyMayCreate=false;if(recoveredInterestSignature!==null){interestCanonicalSignature=interestSignature(profile);recoveredInterestSignature=null}}progressSaveCommitted=!!profileSaved;const settingsSaved=store(SETTINGS,prefs);return saved&&profileSaved&&settingsSaved}finally{settleXpAwards(progressSaveCommitted)}}
 // Faucet's receipt is already mutated when save is requested. Report its actual
 // run/PROFILE durability, not an unrelated SETTINGS failure; keep persist's API.
 function saveLevelProgress(){persist();return progressSaveCommitted}
@@ -10332,7 +10846,7 @@ function marketHeartbeat(){if(cloudRestoring)return;market?.tick();decorateMoney
 function pendingMarket(){return !!profile.stockMarket?.active}
 function forfeitMarketForReplacement(reason='Confirmed replacement of origin run: stake and possible return forfeited.'){if(!SM||!pendingMarket())return;const s=SM.forfeit(profile.stockMarket,reason,Date.now());if(!commitMarket(s,0,marketContext()))throw new Error('The origin run changed. Please retry.')}
 // Expose the existing run-save result for honest action-specific feedback.
-function act(fn,effect='',statsMeta={}){if(animating)return false;try{assertEconomyWritable();passiveHeartbeat();syncPotionClock();syncRunOptions();capturePassiveJoker();flushVisibleTime();const storedPotionUids=new Set((profile.potions?.inventory||[]).map(p=>p.uid));dailyTasks?.ensureCapacity();const taskBefore=dailyTasks?.capture(run),metricsBefore=window.BOStats?.capture(run);const motion=window.BOMotion,before=effect&&motion?.enabled(prefs)?motion.capture(run,selected):null;fn();capturePassiveJoker();dailyTasks?.enqueue(taskBefore,dailyTasks.capture(run),Date.now());pullPotionState();if(window.BOStats)window.BOStats.recordAction(profile,metricsBefore,window.BOStats.capture(run),{effect,...statsMeta});selected=selected.filter(id=>(run?.phase==='play'?run.hand:run?.cards||[]).some(c=>String(c.id)===String(id)));if(run?.phase==='play'&&run.forcedCardId&&!selected.includes(String(run.forcedCardId))){if(selected.length===5)selected.pop();selected.push(String(run.forcedCardId))}const saved=persist();void dailyTasks?.retry();const gained=(profile.potions?.inventory||[]).filter(p=>!storedPotionUids.has(p.uid));if(saved&&gained.length)toast('Boss drop: '+gained.map(p=>PT.CATALOG.find(x=>x.id===p.potionId)?.name||'Potion').join(', ')+' · stored in Potions.');soundEffect(effect);if(effect==='play'&&!before&&['cashout','won'].includes(run.phase))window.BOAudio?.sfx('win');if(effect==='play'&&!before&&run.phase==='lost')window.BOAudio?.sfx('lose');if(effect==='play'&&before){animating=true;document.body.classList.add('is-scoring');const epoch=++animationEpoch,scoredRun=run;motion.play({before,run,cardHTML,fmt,esc,handLevelHTML:pokerHandLevelHTML,formatLine:formatLogLine,effectTextHTML:moneyEffectTextHTML,prefs,jokerName:j=>jokerDef(j).name}).catch(e=>console.warn('Animation skipped:',e.message)).finally(()=>{if(epoch!==animationEpoch)return;animating=false;document.body.classList.remove('is-scoring');if(run===scoredRun&&page==='game'){render();motion.entrance('play',before,run,prefs);decorateMotionMoney()}})}else{render();if(before){motion.entrance(effect,before,run,prefs);decorateMotionMoney()}}return saved}catch(e){toast(e.message||'That action is unavailable.');console.warn('Action rejected:',e.message);window.BOAudio?.sfx('error',{intensity:.4});return false}}
+function act(fn,effect='',statsMeta={}){if(animating)return false;try{assertEconomyWritable();passiveHeartbeat();syncPotionClock();syncRunOptions();capturePassiveJoker();flushVisibleTime();const storedPotionUids=new Set((profile.potions?.inventory||[]).map(p=>p.uid));dailyTasks?.ensureCapacity();const taskBefore=dailyTasks?.capture(run),metricsBefore=window.BOStats?.capture(run);const motion=window.BOMotion,before=effect&&motion?.enabled(prefs)?motion.capture(run,selected):null;const emeraldBefore=ER.capture(run,playerLevel(),effect);fn();emeraldActions?.queue(ER.afterAction(profile,run,emeraldBefore));capturePassiveJoker();dailyTasks?.enqueue(taskBefore,dailyTasks.capture(run),Date.now());pullPotionState();if(window.BOStats)window.BOStats.recordAction(profile,metricsBefore,window.BOStats.capture(run),{effect,...statsMeta});selected=selected.filter(id=>(run?.phase==='play'?run.hand:run?.cards||[]).some(c=>String(c.id)===String(id)));if(run?.phase==='play'&&run.forcedCardId&&!selected.includes(String(run.forcedCardId))){if(selected.length===5)selected.pop();selected.push(String(run.forcedCardId))}const saved=persist();void dailyTasks?.retry();const gained=(profile.potions?.inventory||[]).filter(p=>!storedPotionUids.has(p.uid));if(saved&&gained.length)toast('Boss drop: '+gained.map(p=>PT.CATALOG.find(x=>x.id===p.potionId)?.name||'Potion').join(', ')+' · stored in Potions.');soundEffect(effect);if(effect==='play'&&!before&&['cashout','won'].includes(run.phase))window.BOAudio?.sfx('win');if(effect==='play'&&!before&&run.phase==='lost')window.BOAudio?.sfx('lose');if(effect==='play'&&before){animating=true;document.body.classList.add('is-scoring');const epoch=++animationEpoch,scoredRun=run;motion.play({before,run,cardHTML,fmt,esc,handLevelHTML:pokerHandLevelHTML,formatLine:formatLogLine,effectTextHTML:moneyEffectTextHTML,prefs,jokerName:j=>jokerDef(j).name}).catch(e=>console.warn('Animation skipped:',e.message)).finally(()=>{if(epoch!==animationEpoch)return;animating=false;document.body.classList.remove('is-scoring');if(run===scoredRun&&page==='game'){render();motion.entrance('play',before,run,prefs);decorateMotionMoney()}})}else{render();if(before){motion.entrance(effect,before,run,prefs);decorateMotionMoney()}}return saved}catch(e){toast(e.message||'That action is unavailable.');console.warn('Action rejected:',e.message);window.BOAudio?.sfx('error',{intensity:.4});return false}}
 function cancelMotion(){animationEpoch++;window.BOMotion?.skip();animating=false;document.body.classList.remove('is-scoring')}
 function btn(text,action,cls='',disabled=false,extra=''){return `<button class="btn ${cls}" data-action="${action}" ${disabled?'disabled':''} ${extra}>${text}</button>`}
 function cardHTML(c,context='hand',i=0){if(c.faceDown){return `<button class="playing-card card-back ${['hand','deck'].includes(context)&&selected.includes(String(c.id))?'selected':''} ${run?.forcedCardId===c.id?'forced-card':''}" data-card="${esc(c.id)}" data-context="${context}" data-index="${i}" aria-label="Face-down card${run?.forcedCardId===c.id?' · must play':''}" ${context==='hand'?`aria-pressed="${selected.includes(String(c.id))}"`:''}><span class="card-back-glyph">♠</span><span class="mod-label">${run?.forcedCardId===c.id?'MUST PLAY':'FACE DOWN'}</span></button>`}const rank=ranks[c.rank]||c.rank,red=c.suit==='H'||c.suit==='D',isSelected=selected.includes(String(c.id));const enh=c.enhancement&&c.enhancement!=='none'?c.enhancement:'';const edition=c.edition==='polychrome'?'poly':c.edition==='holographic'?'holo':c.edition;const stone=enh==='stone';const desc=descriptionText(E?.describeCard?E.describeCard(c):rank+' of '+c.suit,c);return `<button class="playing-card ${red?'red':''} ${enh?'enh-'+esc(enh):''} ${edition?'edition-'+esc(edition):''} ${['hand','deck'].includes(context)&&isSelected?'selected':''} ${c.debuffed?'debuffed-card':''} ${run?.forcedCardId===c.id?'forced-card':''}" data-card="${esc(c.id)}" data-context="${context}" data-index="${i}" aria-label="${esc(desc)}" title="${esc(desc)}" ${context==='hand'?`aria-pressed="${isSelected}"`:''}><span class="corner">${stone?'◆':esc(rank)}<br>${stone?'':suits[c.suit]||'?'}</span><span class="suit-big">${stone?'◆':suits[c.suit]||'?'}</span>${!stone&&[11,12,13].includes(c.rank)?'<span class="custom-face-portrait" aria-hidden="true"></span>':''}<span class="corner bottom">${stone?'◆':esc(rank)}<br>${stone?'':suits[c.suit]||'?'}</span>${run?.forcedCardId===c.id?'<span class="mod-label">MUST PLAY</span>':c.debuffed?'<span class="mod-label">DEBUFFED</span>':enh?`<span class="mod-label">${esc(enh.toUpperCase())}</span>`:''}${c.seal?`<span class="seal seal-${esc(c.seal)}" title="${esc(c.seal)} seal"></span>`:''}</button>`}
@@ -10431,7 +10945,7 @@ function refreshDeckModal(){
  if(filter)$(`[data-deck-filter="${deckView}"]`)?.focus({preventScroll:true});else if(card!==null)$(`#dialog-body [data-card="${CSS.escape(card)}"]`)?.focus({preventScroll:true});sheet.scrollTop=scroll;decorateMoney($('#dialog-body'));
 }
 function viewDeck(){if(!run)return;deckView=run.phase==='play'?'remaining':'full';modal('Your deck · '+fmt(run.cards.length)+' cards',deckOverviewHTML())}
-function render(){if(cloudRestoring||surveyViewActive())return;if(!PG){$('#app').innerHTML='<div class="panel"><h2>The player-level module is missing.</h2><p>Keep progression.js next to the source files, or open the complete standalone HTML.</p></div>';return}if(!E){$('#app').innerHTML='<div class="panel"><h2>The engine is missing.</h2><p>Keep engine.js next to index.html, or open the standalone HTML file.</p></div>';return}syncPotionClockIfNeeded();syncLevel20Polish();document.body.classList.toggle('reduced-motion',!prefs.motion);$('#app').innerHTML=(playerLevel()>=31?'<nav class="fullscreen-toolbar" aria-label="Window controls">'+btn('Fullscreen','enter-fullscreen','ghost small')+btn('Exit fullscreen / minimize','exit-fullscreen','ghost small',false,'title="Returns to the browser. A webpage cannot minimize your OS window."')+'</nav>':'')+(page==='home'?(tab==='decks'?dailyStreak?.homeHTML()||'':'')+renderHome():renderGame());refreshProgressPresentation();refreshDeckModal();decorateMoney($('#app'));movingPanels?.refresh()}
+function render(){if(cloudRestoring||surveyViewActive())return;if(!PG){$('#app').innerHTML='<div class="panel"><h2>The player-level module is missing.</h2><p>Keep progression.js next to the source files, or open the complete standalone HTML.</p></div>';return}if(!E){$('#app').innerHTML='<div class="panel"><h2>The engine is missing.</h2><p>Keep engine.js next to index.html, or open the standalone HTML file.</p></div>';return}syncPotionClockIfNeeded();syncLevel20Polish();document.body.classList.toggle('reduced-motion',!prefs.motion);const readinessNotice=$('#faucet-ready-notice');if(readinessNotice?.closest('#frenzy-meter')){readinessNotice.classList.remove('frenzy-inline-notice');document.body.append(readinessNotice)}$('#app').innerHTML=(playerLevel()>=31?'<nav class="fullscreen-toolbar" aria-label="Window controls">'+btn('Fullscreen','enter-fullscreen','ghost small')+btn('Exit fullscreen / minimize','exit-fullscreen','ghost small',false,'title="Returns to the browser. A webpage cannot minimize your OS window."')+'</nav>':'')+(page==='home'?(tab==='decks'?dailyStreak?.homeHTML()||'':'')+renderHome():renderGame());refreshProgressPresentation();refreshDeckModal();decorateMoney($('#app'));movingPanels?.refresh()}
 function modal(title,html){pendingWalletPurchase=null;if(cloudRestoring||surveyViewActive()||movingPanels?.status().editing)return;closeCloud();syncLevel20Polish();lastFocus=document.activeElement;$('#dialog-title').textContent=title;$('#dialog-body').innerHTML=html;refreshMusicStatus();for(const p of $('#dialog-body').querySelectorAll('.collection-entry > p:not(.effect-description)')){if(p.children.length)continue;p.classList.add('effect-description');p.innerHTML=descriptionHTML(p.textContent)}decorateMoney($('#overlay'));$('#overlay').hidden=false;$('.sheet').scrollTop=0;$('.sheet').focus({preventScroll:true});emerald?.update()}
 function closeModal(){pendingWalletPurchase=null;if(cloudRestoring)return;usernameContext=null;slotRenameContext=null;pendingAbandonRun=null;closeCloud();pendingRunReplacement=null;suppressClickUntil=0;suppressedCardId=null;$('#overlay').hidden=true;$('#dialog-body').innerHTML='';if(lastFocus?.isConnected)lastFocus.focus()}
 function inspectCard(id,context){let c;if(context==='hand')c=run?.hand.find(c=>String(c.id)===String(id));else c=run?.cards.find(c=>String(c.id)===String(id));if(!c)return;if(c.faceDown||context==='deck'&&deckHiddenIds().has(String(c.id))){modal('Face-down card','<p>This Boss has hidden the card. Its rank, suit and modifiers stay hidden until it is revealed.</p>');return}const index=run.hand.findIndex(x=>x.id===c.id);modal((ranks[c.rank]||c.rank)+' '+(suits[c.suit]||'')+(c.enhancement?' · '+c.enhancement:''),`<div class="inspect-art">${cardHTML(c,'inspect')}</div><p class="effect-description">${descriptionHTML(E.describeCard(c),c)}</p><div class="row">${c.edition?`<span class="meta-badge">${esc(c.edition)}</span>`:''}${c.seal?`<span class="meta-badge">${esc(c.seal)} seal</span>`:''}</div>${context==='hand'?`<div class="sheet-actions">${btn(selected.includes(String(c.id))?'Deselect card':'Select card','toggle-inspected','primary',false,`data-id="${esc(c.id)}"`)}${btn('← Move left','move-card','ghost',index<=0,`data-index="${index}" data-dir="-1"`)}${btn('Move right →','move-card','ghost',index>=run.hand.length-1,`data-index="${index}" data-dir="1"`)}</div>`:''}`)}
@@ -10634,7 +11148,7 @@ function assertAbandonReady(){slotIdle();if(slotBusy||customImageBusy||movingPan
 function confirmAbandonRun(){try{assertAbandonReady();const context={run,market:JSON.stringify(profile.stockMarket?.active||null)};modal('Abandon this run?',`<p>This ends your current run and counts as a loss. Earned player XP, unlocks, save slots and settings stay saved. Uncollected cashout and pack choices are forfeited.</p>${pendingMarket()?'<p class="inline-note">Your pending Stock Market prediction, its stake and any possible return will also be forfeited.</p>':''}<div class="sheet-actions">${btn(pendingMarket()?'Forfeit prediction & abandon run':'Abandon run','confirm-abandon-run','danger')}${btn('Keep my run','close-modal','ghost')}</div>`);if(!$('#overlay').hidden)pendingAbandonRun=context}catch(error){toast(error.message)}}
 function abandonCurrentRun(){const context=pendingAbandonRun;let completed=false;const saved=act(()=>{assertAbandonReady();if(!context||context.run!==run||context.market!==JSON.stringify(profile.stockMarket?.active||null))throw new Error('The run or prediction changed. Reopen Abandon run to confirm the current state.');const next=JSON.parse(JSON.stringify(run));E.abandon(next);forfeitMarketForReplacement('Confirmed abandonment of origin run: stake and possible return forfeited.');market?.reset();run=next;selected=[];page='home';closeModal();completed=true},'',{action:'abandon'});if(completed)toast(saved?'Run abandoned. Earned XP and unlocks are saved.':'Run ended in this tab, but saving failed. Reload may restore the earlier run.')}
 function confirmNew(){pendingRunReplacement=null;if(pendingMarket()||run&&!['won','lost'].includes(run.phase)){modal('Start over?',`<p>Your current run will be replaced. Lifetime statistics stay saved.</p>${marketForfeitWarning()}<div class="sheet-actions">${btn(pendingMarket()?'Forfeit prediction & start new run':'Start new run','confirm-new','danger')}${btn('Keep my run','close-modal','ghost')}</div>`)}else startNew()}
-function startNew(confirmed=false){if(pendingMarket()&&confirmed!==true){confirmNew();return}act(()=>{if(!deckUnlocked(deckId))throw new Error('Win the previous deck to unlock this one.');const next=E.newRun(deckId,prefs.seed||undefined,{stake:chosenStake().id,playerLevel:playerLevel(),coinUnlocks:coinUnlockIds(),handSortMode:prefs.handSortMode,level10Deal:playerLevel()>=10&&prefs.level10Deal===true});if(PT&&playerLevel()>=12)E.setPotionState?.(next,profile.potions,Date.now());forfeitMarketForReplacement();market?.reset();run=next;run._uiSeeded=!!prefs.seed;run._uiId=newRunId();if(SM)run._stockMarket=profile.stockMarket;profile.runs++;selected=[];page='game';closeModal();window.scrollTo(0,0)})}
+function startNew(confirmed=false){if(pendingMarket()&&confirmed!==true){confirmNew();return}act(()=>{if(!deckUnlocked(deckId))throw new Error('Win the previous deck to unlock this one.');const next=E.newRun(deckId,prefs.seed||undefined,{stake:chosenStake().id,playerLevel:playerLevel(),coinUnlocks:coinUnlockIds(),handSortMode:prefs.handSortMode,level10Deal:playerLevel()>=10&&prefs.level10Deal===true});if(PT&&playerLevel()>=12)E.setPotionState?.(next,profile.potions,Date.now());forfeitMarketForReplacement();market?.reset();run=next;run._uiSeeded=!!prefs.seed;run._uiId=newRunId();ER.seedRun(profile,run);if(SM)run._stockMarket=profile.stockMarket;profile.runs++;selected=[];page='game';closeModal();window.scrollTo(0,0)})}
 function setAppRun(s,confirmed=false){if(!validRun(s))throw new Error('Invalid run.');assertEconomyWritable();if(pendingMarket()&&s!==run&&confirmed!==true){pendingRunReplacement=s;modal('Replace origin run?',`<p>This replacement changes your current run.</p>${marketForfeitWarning()}<div class="sheet-actions">${btn('Forfeit prediction & replace run','confirm-set-run','danger')}${btn('Keep my run','close-modal','ghost')}</div>`);return false}if(s!==run){forfeitMarketForReplacement();market?.reset()}passiveHeartbeat();capturePassiveJoker();cancelMotion();run=s;capturePassiveJoker();if(!run._uiId)run._uiId=newRunId();if(SM)run._stockMarket=profile.stockMarket;dailyTasks?.recover(run);pullPotionState();syncPotionClock();pendingRunReplacement=null;page='game';selected=[];persist();void dailyTasks?.retry();render();return true}
 const handlers={
  'save-slots':openSaveSlots,'slot-rename':el=>beginSlotRename(Number(el.dataset.slot)),'slot-confirm-rename':el=>confirmSlotRename(Number(el.dataset.slot)),'slot-cancel-rename':()=>{slotRenameContext=null;openSaveSlots()},'change-username':beginUsernameChange,'confirm-username':confirmUsername,'cancel-username':()=>{usernameContext=null;settings()},'slot-switch':el=>changeSlot(Number(el.dataset.slot)),'slot-delete':el=>confirmSlotDelete(Number(el.dataset.slot)),'slot-confirm-delete':el=>{const id=Number(el.dataset.slot);if($('#slot-delete-confirm')?.value==='DELETE '+id)void changeSlot(id,true)},
@@ -10645,7 +11159,7 @@ const handlers={
 'potions-open':openPotions,'market-open':openMarket,'market-guide':()=>modal('How to Use Stock Market',market?market.guideHTML():'<p>Market module unavailable.</p>'),'market-quote':()=>market?.refreshQuote(),'market-retry-graph':()=>market?.refreshGraph(true),'market-call':()=>market?.predict('call'),'market-put':()=>market?.predict('put'),
 'abandon-run':confirmAbandonRun,'confirm-abandon-run':abandonCurrentRun,'new-run':confirmNew,'confirm-new':()=>startNew(true),'confirm-set-run':()=>{if(pendingRunReplacement)setAppRun(pendingRunReplacement,true);closeModal()},'resume':()=>{page='game';render();window.scrollTo(0,0)},'menu':()=>{persist();page='home';render();window.scrollTo(0,0)},
 'start-blind':()=>act(()=>{E.startBlind(run);run._uiRoundsStarted=(run._uiRoundsStarted||0)+1},'deal'),'skip-blind':()=>{const b=safeBlind();modal('Skip this blind?',`<p>You will lose this round's payout and shop.</p><p><b>${esc(b.tag?.name||'Tag')}</b><br>${descriptionHTML(b.tag?.description||'Receive the skip reward.')}</p><div class="sheet-actions">${btn('Take the tag','confirm-skip','primary')}${btn('Keep the blind','close-modal','ghost')}</div>`)},'confirm-skip':()=>act(()=>{const tag=safeBlind().tag?.id;E.skipBlind(run);if(tag)window.BOCollection?.add(profile,'tags',tag);closeModal()}),
-'play':()=>act(()=>{const cards=run.hand.filter(c=>selected.includes(String(c.id)));const evaluation=E.evaluate(cards);E.play(run,nativeIds());if(evaluation.key==='straight_flush'&&cards.length===5&&new Set(cards.map(c=>c.rank)).size===5&&cards.every(c=>c.rank>=10))run._uiRoyal=true;if(evaluation.key==='flush'&&cards.length===5&&cards.every(c=>c.enhancement==='wild'))run._uiFlushed=true;selected=[]},'play'),'discard':()=>act(()=>{E.discard(run,nativeIds());selected=[]},'discard'),'cashout':()=>act(()=>E.cashout(run),'cashout'),'leave-shop':()=>act(()=>E.leaveShop(run)),
+'play':()=>act(()=>{const cards=run.hand.filter(c=>selected.includes(String(c.id)));const evaluation=E.evaluate(cards);E.play(run,nativeIds(),{actualLevel:playerLevel(),now:Date.now()});if(evaluation.key==='straight_flush'&&cards.length===5&&new Set(cards.map(c=>c.rank)).size===5&&cards.every(c=>c.rank>=10))run._uiRoyal=true;if(evaluation.key==='flush'&&cards.length===5&&cards.every(c=>c.enhancement==='wild'))run._uiFlushed=true;selected=[]},'play'),'discard':()=>act(()=>{E.discard(run,nativeIds());selected=[]},'discard'),'cashout':()=>act(()=>E.cashout(run),'cashout'),'leave-shop':()=>act(()=>E.leaveShop(run)),
 'reroll':()=>requestRunPurchase('reroll'),'buy':el=>requestRunPurchase('item',Number(el.dataset.index)),'buy-voucher':()=>requestRunPurchase('voucher'),'open-pack':el=>requestRunPurchase('pack',Number(el.dataset.index)),
 'wallet-pay-bank':()=>confirmRunPurchase('bank'),'wallet-pay-card':()=>confirmRunPurchase('card'),'reroll-boss':()=>requestRunPurchase('boss'),'choose-pack':el=>act(()=>E.choosePack(run,Number(el.dataset.index)),'purchase'),'skip-pack':()=>act(()=>E.choosePack(run,-1)),
 'mothim-attack':attackMothim,'move-joker':el=>act(()=>{const index=Number(el.dataset.index),direction=Number(el.dataset.dir);E.moveJoker(run,index,direction);inspectJoker(index+direction,'owned')}),'sell-joker':el=>{const i=Number(el.dataset.index),j=run.jokers[i];modal('Sell '+jokerDef(j).name+'?',`<p>This Joker will leave your run. Its scoring effect will be lost.</p><div class="sheet-actions">${btn('Confirm sale','confirm-sell-joker','danger',false,`data-index="${i}"`)}${btn('Keep Joker','close-modal','ghost')}</div>`)},'confirm-sell-joker':el=>act(()=>{E.sellJoker(run,Number(el.dataset.index));closeModal()},'',{action:'sell-joker'}),
@@ -10690,8 +11204,18 @@ if(window.BODailyTasks&&window.BODailyTasksUI)dailyTasks=window.BODailyTasksUI.m
 if(window.BODailyStreak&&window.BOStreakUI)dailyStreak=window.BOStreakUI.mount({assertWritable:assertEconomyWritable,openModal:modal,notify:toast,busy:()=>cloudRestoring||animating,mirror:state=>{profile.dailyStreak=state;surveys?.paint();void surveys?.observeMilestones()},totalMedalsHalf:SU?()=>{const w=surveys?.wallet();return w?.ok?w.availableHalf:null}:undefined,extraMedalsHalf:()=>dailyTasks?.info()?.earnedMedalsHalf??null,tasksHTML:view=>dailyTasks?.render(view)||'<p class="daily-tasks-warning" role="alert">Daily Tasks are unavailable. Keep daily-tasks.js and daily-tasks-ui.js with the game. The combined Medal bank cannot be verified.</p>'});
 if(EI)interest=EI.createController({getProfile:()=>profile,saveStatus:()=>writerGuard.status(),capture:captureEconomy,transact:commitEconomy,xpConfig:(now,next)=>playerXpConfig(now,next.potions),busy:()=>cloudRestoring||!!surveys?.status().pending,changed:result=>{if(surveyViewActive())return;if(result?.toLevel>result?.fromLevel)refreshProgressPresentation();else window.BOLevelUI?.refresh()}});
 movingPanels=window.BOMovingPanels?.init({getLevel:playerLevel,canEdit:movingPanelsReady,canContinue:()=>movingPanelsReady(true),getLayout:()=>prefs.panelLayout,saveLayout:saveMovingPanelLayout,notify:toast})||null;
-window.BOApp={saveSlots:{status:()=>slotStore.read()},cloud:{open:cloudOpen,forgot:cloudForgot,requestPasswordReset:cloudRequestReset,verifyRecovery:cloudVerifyRecovery,updatePassword:cloudUpdatePassword,cancelRecovery:cloudCancelRecovery,signup:(email,password)=>cloudCredentials('signup',email,password),login:(email,password)=>cloudCredentials('login',email,password),logout:cloudLogout,upload:()=>cloudUpload(),download:cloudDownload,restoreBackup:cloudBackup,confirm:cloudConfirm,cancel:()=>{cloudPending=null;$('#cloud-confirm')?.replaceChildren();},status:cloudStatus,capture:cloudCapture,_test:{setReload:fn=>{cloudReload=fn}}},dailyStreak,dailyTasks,surveys,movingPanels,saveStatus:()=>writerGuard?.status(),interestStatus:()=>interest?.status(),getRun:()=>run,getProfile:()=>profile,getProgress:()=>profile.progression,getPotions:()=>profile.potions,playerXpConfig,faucetConfig,potionInfo,openPotions,openFaucet,mergePotions,potions,isAnimating:()=>animating,render,decorateMoney,act,stockMarket:market,setRun:setAppRun,showHome:()=>{cancelMotion();page='home';render()},_test:{setInterestClock:fn=>interest?.setClock(fn),interestHeartbeat:()=>interest?.heartbeat(),interestStatus:()=>interest?.status(),setPotions:value=>{if(!PT)throw new Error('Potions model missing.');cancelMotion();profile.potions=PT.normalize(value);potionLedgerError=profile.potions.blockedReason||'';if(run)run.potions=PT.normalize(profile.potions);syncPotionClock();persist();render()},potionHeartbeat,setProgression:value=>{cancelMotion();document.querySelector('#level-celebration')?.remove();profile.progression=PG.normalize(value,playerXpConfig());if(run?._uiId)profile.progression.cursors[run._uiId]=run.progressSeq||0;pendingLevelCelebration=null;interest?.resetAnchor();persist();render()},configureRules:value=>{if(value.gateMode!==undefined)LEVEL_RULES.gateMode=value.gateMode;if(value.playerXpConfig){LEVEL_RULES.playerXpConfig={...value.playerXpConfig};const from=playerLevel();profile.progression=PG.normalize(profile.progression,playerXpConfig());queueLevelUp({fromLevel:from,toLevel:playerLevel()})}if(value.claimRequirements)LEVEL_RULES.claimRequirements={...value.claimRequirements};if(value.coinUnlocks)LEVEL_RULES.coinUnlocks=value.coinUnlocks;persist();render()}}};
-emerald=window.BOEmeraldUI?.mount({state:()=>{const now=Date.now(),p=PG.progress(profile.progression,playerXpConfig(now));return {level:playerLevel(),page,run,selected:nativeIds(),survey:surveyViewActive(),suspended:cloudRestoring||animating||document.hidden||movingPanels?.status().editing||!$('#overlay').hidden,motion:prefs.motion,faucetReady:PG.faucetInfo(profile.progression,now,faucetConfig(now)).claimable===true&&writerGuard?.status().writable!==false,xp:{capped:p.capped,remaining:p.remainingXp,required:p.required}}}})||null;
+emeraldActions=window.BOEmeraldActions.create({
+ get:()=>({profile,run,level:playerLevel(),page}),now:()=>Date.now(),
+ assertWritable:dialog=>{slotIdle();if(page!=='game'||!run||document.hidden||slotBusy||customImageBusy||cloudPending||passivePolling||movingPanels?.status().editing||!dialog&&!$('#overlay').hidden)throw new Error('Finish the current dialog, image, Moving Mode or save action before using Emerald.');writerGuard?.assert();walletSlotStamp()},
+ stamp:()=>JSON.stringify([walletSlotStamp(),cloudSerial,economyResetSignature]),
+ read:key=>localStorage.getItem(key==='profile'?PROFILE:SAVE),ownRaw:key=>key==='profile'?lastProfileWriteRaw:lastRunWriteRaw,
+ write:(key,value)=>store(key==='profile'?PROFILE:SAVE,value),
+ pause:message=>{saveReadBlocked=true;storageOK=false;closeModal();slotFailure(new Error(message))},
+ applyProfile:(next,now)=>{const changed=JSON.stringify(profile.potions)!==JSON.stringify(next.potions);Object.assign(profile,next);if(changed)syncRunPotionState(now);ER.mirror(profile,run);mirrorPotionProfile();if(run)store(SAVE,run)},
+ applyRun:next=>{run=next;selected=[]},modal,closeModal,render,notify:toast
+});
+window.BOApp={emerald:emeraldActions,saveSlots:{status:()=>slotStore.read()},cloud:{open:cloudOpen,forgot:cloudForgot,requestPasswordReset:cloudRequestReset,verifyRecovery:cloudVerifyRecovery,updatePassword:cloudUpdatePassword,cancelRecovery:cloudCancelRecovery,signup:(email,password)=>cloudCredentials('signup',email,password),login:(email,password)=>cloudCredentials('login',email,password),logout:cloudLogout,upload:()=>cloudUpload(),download:cloudDownload,restoreBackup:cloudBackup,confirm:cloudConfirm,cancel:()=>{cloudPending=null;$('#cloud-confirm')?.replaceChildren();},status:cloudStatus,capture:cloudCapture,_test:{setReload:fn=>{cloudReload=fn}}},dailyStreak,dailyTasks,surveys,movingPanels,saveStatus:()=>writerGuard?.status(),interestStatus:()=>interest?.status(),getRun:()=>run,getProfile:()=>profile,getProgress:()=>profile.progression,getPotions:()=>profile.potions,playerXpConfig,faucetConfig,potionInfo,openPotions,openFaucet,mergePotions,potions,isAnimating:()=>animating,render,decorateMoney,act,stockMarket:market,setRun:setAppRun,showHome:()=>{cancelMotion();page='home';render()},_test:{setInterestClock:fn=>interest?.setClock(fn),interestHeartbeat:()=>interest?.heartbeat(),interestStatus:()=>interest?.status(),setPotions:value=>{if(!PT)throw new Error('Potions model missing.');cancelMotion();profile.potions=PT.normalize(value);potionLedgerError=profile.potions.blockedReason||'';if(run)run.potions=PT.normalize(profile.potions);syncPotionClock();persist();render()},potionHeartbeat,setProgression:value=>{cancelMotion();document.querySelector('#level-celebration')?.remove();profile.progression=PG.normalize(value,playerXpConfig());if(run?._uiId)profile.progression.cursors[run._uiId]=run.progressSeq||0;pendingLevelCelebration=null;interest?.resetAnchor();persist();render()},configureRules:value=>{if(value.gateMode!==undefined)LEVEL_RULES.gateMode=value.gateMode;if(value.playerXpConfig){LEVEL_RULES.playerXpConfig={...value.playerXpConfig};const from=playerLevel();profile.progression=PG.normalize(profile.progression,playerXpConfig());queueLevelUp({fromLevel:from,toLevel:playerLevel()})}if(value.claimRequirements)LEVEL_RULES.claimRequirements={...value.claimRequirements};if(value.coinUnlocks)LEVEL_RULES.coinUnlocks=value.coinUnlocks;persist();render()}}};
+emerald=window.BOEmeraldUI?.mount({state:()=>{const now=Date.now(),p=PG.progress(profile.progression,playerXpConfig(now)),pet=emeraldActions.status(),protectedView=cloudRestoring||cloudBusy||saveReadBlocked||slotBusy||document.hidden||movingPanels?.status().editing||!$('#overlay').hidden;return {level:playerLevel(),page,run,selected:nativeIds(),survey:surveyViewActive(),protected:protectedView,suspended:protectedView||animating,motion:prefs.motion,pet:pet.progress,capabilities:pet.capabilities,workshop:pet.workshop,frenzy:FZ.info(run?.frenzy??profile.frenzy,playerLevel(),now),faucetReady:PG.faucetInfo(profile.progression,now,faucetConfig(now)).claimable===true&&writerGuard?.status().writable!==false,xp:{capped:p.capped,remaining:p.remainingXp,required:p.required}}},automaticSpeech:()=>emeraldActions.automaticSpeech(),welcome:()=>emeraldActions.welcome(),takeEvent:()=>emeraldActions.takeEvent(),frenzyChanged:()=>{window.BOAudio?.configure(effectiveAudioPrefs());refreshMusicStatus()}})||null;
 window.addEventListener('resize',syncHudSpace);if(typeof ResizeObserver==='function'){const hudObserver=new ResizeObserver(syncHudSpace);const hud=$('#level-hud');if(hud)hudObserver.observe(hud)}
 window.BOLevelUI?.init({openFaucet,canNotify:()=>writerGuard?.status().writable!==false&&!cloudRestoring,decorateMoney,motionEnabled:()=>!!prefs.motion,assertCurrent:assertEconomyWritable,getProgress:()=>profile.progression,getProfile:()=>profile,getSettings:()=>prefs,playerXpConfig,onCoinUnlock:()=>render(),onFaucetClaim:result=>{queueLevelUp(result,true);syncProgression();render()},format:fmt,save:saveLevelProgress,notify:toast,openModal:modal,closeModal,faucetConfig,coinCatalog:()=>LEVEL_RULES.coinUnlocks.map(item=>({...item,description:descriptionText(item.description,item)}))});
 if(PG)persist();
