@@ -44,7 +44,9 @@
   const max=level===10;
   return {unlocked:enabled,level:enabled?level:0,totalWins:total,wins:enabled?total:0,nextWins:enabled&&!max?CUMULATIVE_WINS[level-1]:null,nextLevel:enabled&&!max?level+1:null,cumulativeForNext:enabled&&!max?CUMULATIVE_WINS[level-1]:null,bar:!enabled?'Locked':max?'MAX':total+'/'+CUMULATIVE_WINS[level-1],max:enabled&&max};
  }
- function capabilities(state,actualLevel){const l=progress(state,actualLevel).level;return {level:l,facts:l>=2,photoScale:l>=3?1.2:1,movementSpeed:l>=3?1.2:1,speedGift:l>=4,greenAura:l>=5,eventCommentary:l>=6,welcome:l>=7,adviceRichness:l>=8?1.2:1,workshop:l>=9,workshopRankGain:l>=10?3:l>=9?1:0}}
+ // Computed presentation only: no saved field, replay change or default write.
+ function appearance(ownLevel){const level=Number.isInteger(ownLevel)&&ownLevel>=1&&ownLevel<=10?ownLevel:0,step=Math.max(0,level-1),photoScale=1+step/10,glowRadius=level?4+2*step:0,glowAlpha=level?Number((.18+.07*step).toFixed(2)):0;return Object.freeze({level,photoScale,glowRadius,glowAlpha,css:'--emerald-scale:'+photoScale+';--emerald-glow-radius:'+glowRadius+'px;--emerald-glow-alpha:'+glowAlpha+';'})}
+ function capabilities(state,actualLevel){const l=progress(state,actualLevel).level;return {level:l,facts:l>=2,photoScale:appearance(l).photoScale,movementSpeed:l>=3?1.2:1,speedGift:l>=4,greenAura:l>=5,eventCommentary:l>=6,welcome:l>=7,adviceRichness:l>=8?1.2:1,workshop:l>=9,workshopRankGain:l>=10?3:l>=9?1:0}}
  function creditWin(state,receipt,expectedRevision){
   const next=cas(state,expectedRevision);
   check(fields(receipt,['runId','actualLevel','beforePhase','afterPhase','endless','abandoned','source'])&&validRunId(receipt.runId)&&unlocked(receipt.actualLevel)&&['play','cashout'].includes(receipt.beforePhase)&&receipt.afterPhase==='won'&&receipt.endless===false&&receipt.abandoned===false&&receipt.source==='fresh-completion','Only a fresh completed GAME win at actual profile Level 10+ can credit Emerald.');
@@ -78,5 +80,5 @@
   check(high.speech.rng===advanceRng(low.speech.rng,delta)&&(delta===0?high.speech.lastAt===low.speech.lastAt:high.speech.lastAt-low.speech.lastAt>=Math.max(0,delta-(low.speech.sequence===0?1:0))*SPEECH_COOLDOWN_MS),'Divergent Emerald speech history. No replay was attempted.');
   return high;
  }
- return Object.freeze({VERSION,UNLOCK_LEVEL,MAX_WINS,MAX_TIME,SPEECH_COOLDOWN_MS,NEXT_WINS,CUMULATIVE_WINS,FACTS,validRunId,unlocked,validate,copy,create,progress,capabilities,creditWin,giftForRoll,recordSpeech,recover});
+ return Object.freeze({VERSION,UNLOCK_LEVEL,MAX_WINS,MAX_TIME,SPEECH_COOLDOWN_MS,NEXT_WINS,CUMULATIVE_WINS,FACTS,validRunId,unlocked,validate,copy,create,progress,appearance,capabilities,creditWin,giftForRoll,recordSpeech,recover});
 });

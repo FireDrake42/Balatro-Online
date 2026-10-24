@@ -106,6 +106,7 @@
    controls.append(nextButton,quietButton,first,second,talkButton,lookerButton);createChat();group.append(bubble,photo,controls,chatForm);stage.append(group);parent.append(stage);
   }
   function updateLevel(s){const caps=s.capabilities||{},pet=s.pet,enhanced=s.level>=36,canRoadmap=typeof host.openRoadmap==='function';
+   photo.style.cssText=root.BOEmeraldProgress.appearance(pet?.unlocked?pet.level:0).css;
    stage.classList.toggle('emerald-following',s.following===true&&pet?.level>=5);stage.classList.toggle('emerald-motion-off',s.motion===false);stage.classList.toggle('emerald-aura',s.level>=10&&caps.greenAura===true);stage.classList.toggle('emerald-rich-green',s.level>=38);stage.style.setProperty('--emerald-scale',String(s.level>=10&&caps.photoScale||1));stage.style.setProperty('--emerald-speed',String(s.level>=10&&caps.movementSpeed||1));stage.dataset.emeraldLevel=String(pet?.level||1);stage.dataset.position=['bob','glide','corner'][Math.floor(now()/24000)%3];
    if(enhanced){
     if(!photoLink){photoLink=button('',openRoadmap);photoLink.className='emerald-photo-link';photoLink.dataset.emeraldRoadmap='photo';group.insertBefore(photoLink,photo);photoLink.append(photo);const badge=document.createElement('span');badge.className='emerald-photo-level';photoLink.append(badge)}

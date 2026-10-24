@@ -20,7 +20,7 @@
    check(!c.hidden&&!c.protected&&!c.suspended&&!c.conductPaused&&!c.cloudRestoring&&!c.slotBusy&&!c.survey,'Blackjack is unavailable in this protected context.');
    check(!root.document?.hidden&&root.document?.visibilityState!=='hidden','Return to the visible Blackjack table before playing.');
    check(Number.isInteger(c.level)&&c.level>=10&&c.level<=100&&c.profile.progression?.level===c.level,'Use the actual, reconciled player level before playing.');
-   check(P.validate(c.profile.emerald)&&P.progress(c.profile.emerald,c.level).level>=10,'Blackjack unlocks at Emerald Level 10.');return c;
+   check(P.validate(c.profile.emerald)&&P.progress(c.profile.emerald,c.level).level>=3,'Blackjack unlocks at Emerald Level 3.');return c;
   }
   function assert(){const result=host.assertWritable();check(result!==false&&!thenable(result),'This save is not synchronously writable.');}
   function read(key){const value=host.read(key);check(value===null||typeof value==='string','The canonical '+key+' save could not be read.');return value;}

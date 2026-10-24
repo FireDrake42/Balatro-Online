@@ -2,7 +2,7 @@
  * never its private table. No listeners, DOM queries, clocks, RNG or save access.
  * Parent owns the persistent native HUD, settings, slot authority and actions.
  */
-(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldBlackjackUI=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+(function(root,factory){'use strict';const api=factory(typeof module==='object'&&module.exports?require('./emerald-progress'):root.BOEmeraldProgress);if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldBlackjackUI=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P){'use strict';
  const COLORS=Object.freeze(['blue','purple','pink','red','orange','gold']);
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const finite=(n,fallback=0)=>typeof n==='number'&&Number.isFinite(n)?n:fallback;
@@ -47,7 +47,7 @@
   const s=options.state||null,f=options.friendship||null,e=options.emerald||null,color=COLORS.includes(options.playerColor)?options.playerColor:'blue',can=s?.can||{deal:true},score=s?.score||{player:0,emerald:0};
   const p=s?.player||{cards:[],total:0},d=s?.emerald||{cards:[],total:0},bank=Number.isFinite(options.bank)?'$'+number(options.bank):'No active poker run';
   const asset=typeof options.emeraldAsset==='string'&&/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=\r\n]+$/.test(options.emeraldAsset)?options.emeraldAsset:null;
-  const portrait=asset?'<img class="blackjack-emerald-photo" src="'+esc(asset)+'" alt="Emerald, your green beetle companion" draggable="false">':'<span class="blackjack-emerald-symbol" aria-hidden="true">♣</span>';
+  const portrait=asset?'<img class="blackjack-emerald-photo" style="'+P.appearance(e?.level).css+'" src="'+esc(asset)+'" alt="Emerald, your green beetle companion" draggable="false">':'<span class="blackjack-emerald-symbol" aria-hidden="true">♣</span>';
   let controls='';for(const [key,action,label]of [['deal','deal','Deal'],['hit','hit','Hit'],['stand','stand','Stand'],['next','next','Next round'],['newMatch','new-match','New match']])if(can[key]===true)controls+='<button type="button" class="btn blackjack-'+action+'" data-blackjack-action="'+action+'" data-blackjack-revision="'+(Number.isSafeInteger(s?.revision)?s.revision:0)+'">'+label+'</button>';
   const playerTotal=p.cards?.length?number(p.total)+(p.soft?' · soft':'')+(p.bust?' · bust':''):'—',emeraldTotal=d.hidden?number(d.visibleTotal)+' + ?':d.cards?.length?number(d.total)+(d.soft?' · soft':'')+(d.bust?' · bust':''):'—';
   const events=(Array.isArray(s?.events)?s.events:[]).map(event=>'<li>'+esc(event.text)+'</li>').join('');
