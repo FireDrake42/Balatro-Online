@@ -1,0 +1,22 @@
+/* Semantic effect tokens only: never recolour prices, rarity frames or card art. */
+span.effect-text-mult{color:#ec8a83;font-weight:750}
+span.effect-text-chips{color:#68b9e0;font-weight:750}
+span.effect-text-probability{color:#74c365;font-weight:750}
+
+/* The run's real pending tags. All layout rules stay inside this small tray. */
+.owned-tags{min-width:0;padding:12px 15px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.owned-tags .owned-tags-heading{display:flex;align-items:baseline;justify-content:space-between;gap:5px 12px;flex-wrap:wrap;margin-bottom:8px}
+.owned-tags .owned-tags-heading h3{font-size:12px;letter-spacing:.2px;margin:0}
+.owned-tags .owned-tags-heading small{font-size:10px;line-height:1.5}
+.owned-tags .owned-tags-list{display:flex;flex-wrap:wrap;gap:7px;min-width:0}
+.owned-tags .owned-tag{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#ffffff08;text-align:left;font-size:11px;line-height:1.4}
+.owned-tags .owned-tag>span:not(.owned-tag-icon){overflow-wrap:anywhere}
+.owned-tags .owned-tag-icon{flex:none;color:var(--gold);font-size:17px}
+.owned-tags .owned-tag-count{flex:none;color:var(--gold);font-variant-numeric:tabular-nums}
+.owned-tags .owned-tag.is-double{border-style:dashed}
+.owned-tags .owned-tags-empty{margin:0;font-size:11px;line-height:1.5;color:var(--muted)}
+.owned-tags .owned-tag-redeem{margin-top:9px;max-width:100%;white-space:normal;font-size:11px;line-height:1.5}
+.owned-tags .owned-tag-wait{display:block;margin-top:6px;font-size:10px;line-height:1.5}
+.pack-tag-origin{margin:0 0 16px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#edc8780b;color:var(--gold);font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.pack-tag-origin>small{display:block;color:var(--muted);font-size:10px}
+@media(max-width:700px){.owned-tags{padding:10px 12px}.owned-tags .owned-tags-heading small{font-size:9px}.owned-tags .owned-tag{font-size:10px;padding:7px 9px}.pack-tag-origin{font-size:11px}}

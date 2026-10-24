@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="title desc">
+  <title id="title">Poker Table</title>
+  <desc id="desc">An original gold spade on a dark green poker chip.</desc>
+  <rect width="512" height="512" fill="#0b2427"/>
+  <circle cx="256" cy="256" r="215" fill="#143b3d" stroke="#edc878" stroke-width="10"/>
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#82ada2" stroke-width="3"/>
+  <g fill="#edc878">
+    <path d="M256 111c-26 35-50 62-80 92-28 28-42 47-42 73 0 34 26 57 57 57 25 0 45-14 56-38-3 35-12 63-32 83h82c-20-20-29-48-32-83 11 24 31 38 56 38 31 0 57-23 57-57 0-26-14-45-42-73-30-30-54-57-80-92Z"/>
+    <path d="M249 27h14v42h-14zM249 443h14v42h-14zM27 249h42v14H27zM443 249h42v14h-42z"/>
+  </g>
+  <g fill="#edc878" transform="rotate(45 256 256)">
+    <path d="M249 27h14v42h-14zM249 443h14v42h-14zM27 249h42v14H27zM443 249h42v14h-42z"/>
+  </g>
+</svg>

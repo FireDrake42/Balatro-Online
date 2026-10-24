@@ -1,0 +1,36 @@
+/* Additive Level 30 cosmetics. No unflagged global overrides or changes to theme colors. */
+.custom-images{margin:20px 0;padding-top:18px;border-top:1px solid var(--line,#2b4b4c);min-width:0}
+.custom-images h3{margin:0 0 10px;font-size:16px;line-height:1.4}
+.custom-images h3 span{font-size:11px;color:var(--gold,#edc878);font-weight:650;white-space:normal}
+.custom-images .custom-images-intro,.custom-images .custom-images-help,.custom-images .custom-images-privacy{font-size:11px;line-height:1.65;margin:0 0 12px;overflow-wrap:anywhere}
+.custom-images .custom-images-intro,.custom-images .custom-images-help{color:var(--muted,#a4bab7)}
+.custom-images .custom-images-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px;min-width:0}
+.custom-images .custom-images-item{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:start;gap:10px;padding:12px;border:1px solid var(--line,#2b4b4c);border-radius:11px;background:var(--panel,#102b30);min-width:0}
+.custom-images .custom-images-preview{width:68px;height:68px;border:1px solid var(--line,#2b4b4c);border-radius:8px;background:#07191e;display:grid;place-items:center;overflow:hidden;color:var(--gold,#edc878);font-size:28px}
+.custom-images .custom-images-preview--cardBack{width:47px;height:68px;justify-self:center}
+.custom-images .custom-images-preview img{display:block;width:100%;height:100%;object-fit:cover}
+.custom-images .custom-images-controls{min-width:0}
+.custom-images .custom-images-controls label{display:block;margin:0 0 7px;font-weight:750;font-size:12px;line-height:1.4}
+.custom-images .custom-images-controls input[type=file]{display:block;width:100%;max-width:100%;min-width:0;min-height:42px;padding:5px;border:1px solid var(--line,#2b4b4c);border-radius:7px;background:#0002;color:var(--text,#f2eee1);font-size:10px;line-height:1.5;overflow:hidden}
+.custom-images .custom-images-controls input[type=file]::file-selector-button{padding:6px 7px;max-width:100%;margin-right:6px;border:1px solid var(--line,#2b4b4c);border-radius:5px;background:var(--panel2,#17373b);color:var(--text,#f2eee1);font:inherit;font-weight:750;cursor:pointer}
+.custom-images .custom-images-controls input:disabled{opacity:.55;cursor:not-allowed}
+.custom-images .custom-images-status{font-size:10px;line-height:1.5;color:var(--muted,#a4bab7);margin:7px 0;min-height:1.5em;overflow-wrap:anywhere}
+.custom-images .custom-images-remove{min-height:38px;max-width:100%;padding:8px 12px;border:1px solid var(--line,#2b4b4c);border-radius:7px;background:#ffffff08;color:var(--text,#f2eee1);font-size:11px;font-weight:750}
+.custom-images .custom-images-remove:disabled{opacity:.45;cursor:not-allowed}
+.custom-images .custom-images-controls input:focus-visible,.custom-images .custom-images-remove:focus-visible{outline:3px solid var(--gold,#edc878);outline-offset:2px}
+.custom-images .custom-images-privacy{padding:10px 12px;margin-bottom:0;border-left:3px solid var(--gold,#edc878);border-radius:5px;background:var(--panel,#102b30);color:var(--text,#f2eee1)}
+/* A static 82% dark layer keeps the brightest photo below the ordinary light UI text.
+   [class] raises this flagged rule to match the Level 20 theme rule's specificity;
+   this later stylesheet wins for classic/missing theme as well as every other theme. */
+body.custom-images-background[class]{background-image:linear-gradient(rgba(4,12,18,.82),rgba(4,12,18,.82)),var(--bo-custom-background-image);background-position:center;background-size:cover;background-repeat:no-repeat;background-attachment:scroll}
+/* Never target faces or change border, outline, shadow, selection, size or card identity. */
+body.custom-images-card-back .playing-card.card-back{background-image:linear-gradient(#00000012,#00000012),var(--bo-custom-card-back-image);background-position:center;background-size:cover;background-repeat:no-repeat}
+body.custom-images-card-back .playing-card.card-back .card-back-glyph{visibility:hidden}
+body.custom-images-card-back .playing-card.card-back .mod-label{background:rgba(4,12,18,.92);color:#fff4dc;text-shadow:0 1px 2px #000;border-radius:3px;padding:2px 3px;font-size:7px;line-height:1.3;font-weight:850}
+@media(max-width:700px){.custom-images .custom-images-grid{grid-template-columns:minmax(0,1fr)}.custom-images .custom-images-item{grid-template-columns:58px minmax(0,1fr);padding:10px;gap:9px}.custom-images .custom-images-preview{width:58px;height:62px}.custom-images .custom-images-preview--cardBack{width:43px;height:62px}}
+
+/* Face portraits never cover corner identities, seals, modifiers or edition borders. */
+.playing-card .custom-face-portrait{display:none;pointer-events:none}
+body.custom-images-face-card .playing-card:not(.card-back) .custom-face-portrait{display:block;position:absolute;inset:23% 19%;border-radius:5px;background-image:var(--bo-custom-face-card-image);background-size:cover;background-position:center;pointer-events:none}
+body.custom-images-face-card .playing-card:has(.custom-face-portrait) .suit-big{visibility:hidden}
+.custom-images .custom-images-preview--faceCard{width:47px;height:68px;justify-self:center}

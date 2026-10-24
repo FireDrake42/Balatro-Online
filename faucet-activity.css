@@ -1,0 +1,21 @@
+/* Virtual faucet daily activity panel only; no game-table styling. */
+.faucet-activity{padding:18px;margin:0 0 18px;border:1px solid #7454a3;border-left:5px solid #74c365;border-radius:18px;background:linear-gradient(135deg,#123b35,#271b40);color:#fff}
+.faucet-activity h3{margin:0 0 8px;font-size:14px;letter-spacing:1px;text-transform:uppercase;color:#d0c0e5}
+.faucet-activity-rate{display:block;color:#74c365;font-size:42px;font-weight:850;line-height:1.1;margin:8px 0 14px}
+.faucet-activity-task{padding:12px;border-radius:12px;background:#0003;margin:12px 0}
+.faucet-activity-task strong{display:block;margin-bottom:7px;color:#b7f3a9}
+.faucet-activity-task progress{display:block;width:100%;height:12px;margin:8px 0;accent-color:#74c365}
+.faucet-activity small{display:block;font-size:11px;line-height:1.6;color:#d5d1df}
+.faucet-rate-tiers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin:12px 0}
+.faucet-rate-tier{min-width:0;padding:9px 2px;text-align:center;border:2px solid transparent;border-radius:6px;background:#0004;color:#d0c8dd;font-size:11px}
+.faucet-rate-tier strong{display:block;font-size:14px}
+.faucet-rate-tier small{font-size:8px;line-height:1.3;margin-top:4px}
+.faucet-rate-tier[data-tier="100"]{background:#087d47}.faucet-rate-tier[data-tier="80"]{background:#586c32}.faucet-rate-tier[data-tier="60"]{background:#80612b}.faucet-rate-tier[data-tier="40"]{background:#824a3d}.faucet-rate-tier[data-tier="20"]{background:#74324f}
+.faucet-rate-tier.is-active{border-color:#fff;box-shadow:0 0 0 1px #74c365;color:#fff}
+.faucet-activity-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.faucet-activity-stat{min-width:0;background:#25173f;border:1px solid #5e447c;border-radius:12px;padding:13px 8px;text-align:center}
+.faucet-activity-stat span{display:block;color:#d0c0e5;font-size:10px;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+.faucet-activity-stat strong{display:block;color:#fff;font-size:23px;overflow-wrap:anywhere;margin-top:6px}
+.faucet-activity .faucet-activity-reset{margin-top:12px;font-size:10px;color:#c6b9d8}
+.faucet-activity p{line-height:1.6;margin-bottom:9px;font-size:12px}
+@media(max-width:360px){.faucet-activity{padding:13px}.faucet-rate-tier strong{font-size:12px}.faucet-rate-tier small{font-size:7px}.faucet-activity-stat strong{font-size:20px}}

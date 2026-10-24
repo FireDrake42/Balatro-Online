@@ -1,0 +1,18 @@
+/* No rules apply to the normal layout unless this module explicitly marks it. */
+#app .game-grid[data-moving-canvas]{padding-bottom:var(--bo-moving-room,480px);overflow-x:clip}
+#app .game-grid [data-moving-offset]{translate:var(--bo-move-x,0px) var(--bo-move-y,0px)}
+#app .game-grid [data-moving-positioned]{position:relative}
+#app .game-grid [data-moving-edit]{outline:2px dashed #edc878b3;outline-offset:-2px}
+#app .game-grid [data-moving-edit]:focus-within,#app .game-grid [data-moving-edit][data-moving-dragged]{z-index:69}
+#app .game-grid [data-moving-edit]>.bo-moving-handle{position:absolute;top:3px;right:3px;z-index:68;display:block;max-width:calc(100% - 6px);min-height:30px;padding:5px 9px;border:1px solid #edc878;border-radius:7px;background:#102b30f5;color:#ffe0a0;font:750 11px/1.2 system-ui,sans-serif;white-space:normal;overflow-wrap:anywhere;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 2px 8px #0006}
+#app .game-grid [data-moving-edit]>.bo-moving-handle:active{cursor:grabbing;transform:none}
+#app .game-grid [data-moving-edit]>.bo-moving-handle:focus-visible{outline:3px solid #fff2c5;outline-offset:1px}
+[data-moving-toolbar].bo-moving-toolbar{position:fixed;z-index:90;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:calc(100vw - 20px);padding:10px;border:1px solid #edc878;border-radius:12px;background:#102b30fa;color:#f2eee1;box-shadow:0 5px 24px #0009;font:12px/1.35 system-ui,sans-serif}
+[data-moving-toolbar] .bo-moving-copy{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:360px}
+[data-moving-toolbar] .bo-moving-copy>strong{color:#edc878;font-size:13px}
+[data-moving-toolbar] .bo-moving-message{color:#bcd0c8;white-space:normal;overflow-wrap:anywhere}
+[data-moving-toolbar] .bo-moving-message[role=alert]{color:#ffc5bf;font-weight:750}
+[data-moving-toolbar] .bo-moving-button{flex:0 0 auto;min-height:42px;padding:9px 12px;border:1px solid #638079;border-radius:8px;background:#25443f;color:#f2eee1;font:750 12px system-ui,sans-serif;touch-action:manipulation}
+[data-moving-toolbar] [data-moving-action=save]{background:#edc878;color:#142e2c;border-color:#edc878}
+[data-moving-toolbar] .bo-moving-button:focus-visible{outline:3px solid #fff2c5;outline-offset:2px}
+@media(max-width:580px){[data-moving-toolbar].bo-moving-toolbar{flex-wrap:wrap;justify-content:center;gap:7px;padding:9px;bottom:calc(8px + env(safe-area-inset-bottom,0px))}[data-moving-toolbar] .bo-moving-copy{flex:1 0 100%;max-width:none}[data-moving-toolbar] .bo-moving-button{flex:1;min-width:64px}}

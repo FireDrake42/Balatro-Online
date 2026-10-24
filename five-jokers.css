@@ -1,0 +1,27 @@
+/* Five coin Jokers: original glyph art and Mothim-only presentation.
+   Keep the existing card buttons, responsive widths and horizontal tray scroll. */
+.tray.has-mothim{padding-top:30px}
+.mothim-owned{position:relative;display:flex;flex:0 0 93px;width:93px;min-width:0;align-self:flex-start}
+.mothim-owned>.joker-card{flex:1 1 auto;width:100%;min-width:0}
+.mothim-health{position:relative;isolation:isolate;width:100%;height:20px;flex:none;overflow:hidden;border:1px solid #b0dfc4;border-radius:6px;background:#112e2c;color:#fff;font-size:12px;font-weight:850;line-height:18px;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.1px;box-shadow:0 2px 5px #0004}
+.mothim-owned>.mothim-health{position:absolute;bottom:calc(100% + 5px);left:0}
+.mothim-health-fill{position:absolute;z-index:-1;inset:0 auto 0 0;background:linear-gradient(90deg,#26774d,#3e915d)}
+.mothim-health-label{position:relative;white-space:nowrap;text-shadow:0 1px 2px #000}
+.mothim-health[aria-valuenow="1"] .mothim-health-fill{background:#9a5527}
+.mothim-owned .joker-emblem{margin-bottom:3px}
+.mothim-attack-hint{display:block;max-width:100%;margin-top:4px;font-size:9px;line-height:1.15;font-weight:800;color:#334b3c;white-space:nowrap}
+.mothim-owned>.edition-negative .mothim-attack-hint{color:#e4d9ff}
+.mothim-inspect{display:flex;flex-direction:column;align-items:center;gap:7px;flex:0 0 auto;width:93px;max-width:100%}
+.mothim-inspect>.joker-card{flex:0 0 auto;width:100%;margin:0;transform:none}
+.mothim-attack-panel{margin-top:16px;padding:13px;border:1px solid #8abea266;border-radius:12px;background:#83bc9210}
+.mothim-attack-panel>.btn{width:100%;min-height:44px;white-space:normal}
+.mothim-attack-panel>p{margin:9px 0 0;font-size:12px;line-height:1.6}
+.mothim-attack-panel>.mothim-attack-unavailable{color:var(--muted);font-size:11px}
+.mothim-attack-panel>.btn:disabled{opacity:.65}
+.mothim-hit{animation:mothim-health-hit .42s ease-out}
+.reduced-motion .mothim-hit{animation:none}
+@keyframes mothim-health-hit{0%,45%{box-shadow:0 0 0 3px #ec8a8388;background:#713d35}100%{box-shadow:0 2px 5px #0004}}
+@media(min-width:1400px){.mothim-owned,.mothim-inspect{flex-basis:107px;width:107px}.mothim-inspect{flex-basis:auto}}
+@media(max-width:1050px){.mothim-owned,.mothim-inspect{flex-basis:80px;width:80px}.mothim-inspect{flex-basis:auto}}
+@media(max-width:700px){.mothim-owned,.mothim-inspect{flex-basis:72px;width:72px}.mothim-inspect{flex-basis:auto}.mothim-attack-hint{font-size:8px;margin-top:3px}.mothim-owned .joker-emblem{font-size:26px}}
+@media(prefers-reduced-motion:reduce){.mothim-hit{animation:none}}

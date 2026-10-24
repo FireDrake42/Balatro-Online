@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Poker Table",
+  "short_name": "Poker Table",
+  "description": "A local-first poker-card game. Original browser implementation; no real-money gambling.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0b2427",
+  "background_color": "#0b2427",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "prefer_related_applications": false
+}
