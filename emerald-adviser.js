@@ -78,17 +78,19 @@
   if(s.capabilities?.adviceRichness===1.2){const extra=[];if(run.phase==='play'&&Number.isFinite(run.target)&&Number.isFinite(run.score)&&run.hands>0)extra.push('A planning average is '+number(Math.max(0,run.target-run.score)/run.hands)+' points per remaining hand — not a prediction of your next score.');if(run.phase==='play')extra.push('Within the same scoring phase, earlier +Mult can help later ×Mult. Read each effect’s trigger before changing Joker order.');if(run.phase==='shop')extra.push('Check your free Joker and consumable slots before buying. You can keep your cash if nothing suits your build.');extra.push('No rush — we can work through this together. A careful choice matters more than a fast one.');messages.push(...extra.slice(0,Math.max(1,Math.ceil(messages.length*.2))))}
   return out;
  }
- function catalog(E,s,preference){if(!presentationVisible(s))return [];const t=tips(preference===undefined?s.tips:preference),out=[];
+ function looker(E,s){if(!visible(s)||s.run.phase!=='play')return null;const r=recommendation(E,s);return r?{...r,message:'Try looking for a “'+r.name+'”. It leads my visible base-hand comparison'+(r.limited?' among the first 12 visible cards':'')+'.'}:null}
+ function kinder(entries,s){const fp=Math.max(0,Math.min(1000,Number(s?.friendship?.fp)||0));if(!fp)return entries;return entries.map(entry=>{let h=2166136261;for(const c of entry.id)h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0)%1000<fp?{...entry,message:entry.message+' I’m on your side — take your time.'}:entry})}
+ function catalog(E,s,preference){if(s?.looker===true){const r=looker(E,s);return r?[{id:'looker:'+r.ids.map(String).join(','),source:'looker',message:r.message}]:[]}if(!presentationVisible(s))return [];const t=tips(preference===undefined?s.tips:preference),out=[];
   if(!visible(s)){
    // Home/collection/settings share page='home'. Never inspect a parked run,
    // readiness, money, Frenzy or selected cards while outside its game context.
    const add=(source,id,message)=>out.push({id:source+':menu:'+id,source,message});
    if(t.first){add('first','explore','Take your time exploring the game menus — I’ll keep you company.');add('first','score','Balatro tip: Chips × Mult makes your score. Read each effect before choosing.');add('first','fictional','Everything here uses fictional game currency. Nothing can be cashed out.');}
    if(t.second){add('second','hello','I’m right here with you!');add('second','team','Your Level is Level '+s.level+', and I’m level '+ownLevel(s)+'! We make a great team!');add('second','pace','One thing at a time. You’ve got this!');}
-   return out;
+   return kinder(out,s);
   }
   if(t.first)advice(E,s).messages.forEach(message=>out.push({id:'first:'+message,source:'first',message}));
-  if(t.second)out.push(...quoteEntries(E,s));return out;
+  if(t.second)out.push(...quoteEntries(E,s));return kinder(out,s);
  }
- return Object.freeze({DEFAULT_TIPS,MAX_POOL,MAX_SELECTION,advice,number,visible,presentationVisible,validateTips,tips,publicRun,selectionLimit,frenzyInfo,royalOnTable,quotes,catalog});
+ return Object.freeze({DEFAULT_TIPS,MAX_POOL,MAX_SELECTION,advice,number,visible,presentationVisible,validateTips,tips,publicRun,selectionLimit,frenzyInfo,royalOnTable,quotes,looker,catalog});
 });

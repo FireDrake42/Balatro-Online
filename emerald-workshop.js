@@ -57,10 +57,13 @@
  function create(id){check(runId(id),'Workshop needs the existing stable run id.');return {version:VERSION,runId:id,revision:0,sequence:0,availableAt:0,job:null}}
  function jobId(id,sequence){return id+':emerald:'+sequence}
  function validate(state){try{
-  check(fields(state,['version','runId','revision','sequence','availableAt','job'])&&state.version===VERSION&&runId(state.runId)&&count(state.revision)&&count(state.sequence)&&state.sequence<=Math.floor(Number.MAX_SAFE_INTEGER/2)&&timestamp(state.availableAt),'Invalid workshop state.');
+  const keys=['version','runId','revision','sequence','availableAt','job'];if(own(state,'workMs'))keys.push('workMs');
+  check(fields(state,keys)&&state.version===VERSION&&runId(state.runId)&&count(state.revision)&&count(state.sequence)&&state.sequence<=Math.floor(Number.MAX_SAFE_INTEGER/2)&&timestamp(state.availableAt),'Invalid workshop state.');
+  // Absence is the exact legacy120s branch. New timing stays frozen through claim.
+  const workMs=own(state,'workMs')?state.workMs:WORK_MS;check(count(workMs)&&workMs>=66000&&workMs<=WORK_MS&&(WORK_MS-workMs)%6000===0,'Invalid frozen workshop duration.');
   check(state.revision===state.sequence*2-(state.job===null?0:1),'Invalid workshop revision or sequence.');
-  if(state.job===null){check(state.sequence===0?state.availableAt===0:state.availableAt>=WORK_MS+COOLDOWN_MS,'Invalid workshop cooldown.');return true}
-  const j=state.job;check(fields(j,['id','runId','level','startedAt','completedAt','input','result','rolls'])&&state.sequence>0&&j.id===jobId(state.runId,state.sequence)&&j.runId===state.runId&&(j.level===9||j.level===10)&&timestamp(j.startedAt)&&j.startedAt<=MAX_TIME-WORK_MS-COOLDOWN_MS&&j.completedAt===j.startedAt+WORK_MS&&state.availableAt===j.completedAt+COOLDOWN_MS,'Invalid run-owned workshop job or timestamps.');
+  if(state.job===null){check(state.sequence===0?state.availableAt===0:state.availableAt>=workMs+COOLDOWN_MS,'Invalid workshop cooldown.');return true}
+  const j=state.job;check(fields(j,['id','runId','level','startedAt','completedAt','input','result','rolls'])&&state.sequence>0&&j.id===jobId(state.runId,state.sequence)&&j.runId===state.runId&&(j.level===9||j.level===10)&&timestamp(j.startedAt)&&j.startedAt<=MAX_TIME-workMs-COOLDOWN_MS&&j.completedAt===j.startedAt+workMs&&state.availableAt===j.completedAt+COOLDOWN_MS,'Invalid run-owned workshop job or timestamps.');
   const before=cardData(j.input),after=cardData(j.result),expected=transform(before,j.level,j.rolls);check(same(after,expected),'Stored workshop result does not match its one-time dice.');return true;
  }catch(_){return false}}
  function copy(state){check(validate(state),'Emerald workshop save needs attention. No card was moved.');return jsonCopy(state)}
@@ -90,14 +93,17 @@
   const s=own(r,'emeraldWorkshop')?r.emeraldWorkshop:create(r._uiId);check(count(options.expectedRevision)&&options.expectedRevision===s.revision,'Workshop revision changed. Reopen the current action.');return {run:r,state:s};
  }
  function give(run,options){
-  const a=authorize(run,options,['progress','actualLevel','expectedRevision','now','cardId','rolls']),r=a.run,s=a.state;
-  check(!s.job,'Claim the existing workshop job before giving another card.');check(options.now>=s.availableAt,'Emerald workshop is cooling down after completion.');check(options.now<=MAX_TIME-WORK_MS-COOLDOWN_MS,'Workshop completion timestamp would overflow.');
+  const keys=['progress','actualLevel','expectedRevision','now','cardId','rolls'];if(options&&own(options,'friendshipLevel'))keys.push('friendshipLevel');
+  const a=authorize(run,options,keys),r=a.run,s=a.state,friendshipLevel=own(options,'friendshipLevel')?options.friendshipLevel:1;
+  check(Number.isInteger(friendshipLevel)&&friendshipLevel>=1&&friendshipLevel<=10,'Invalid workshop friendship level.');const workMs=WORK_MS-6000*(friendshipLevel-1);
+  check(!s.job,'Claim the existing workshop job before giving another card.');check(options.now>=s.availableAt,'Emerald workshop is cooling down after completion.');check(options.now<=MAX_TIME-workMs-COOLDOWN_MS,'Workshop completion timestamp would overflow.');
   check(cardId(options.cardId),'Choose an owned playing-card id.');const card=r.cards.find(c=>String(c.id)===String(options.cardId));check(card,'That playing card is not owned or is unavailable.');check(s.sequence<Math.floor(Number.MAX_SAFE_INTEGER/2),'Workshop sequence overflow.');
   const rolls=dice(options.rolls),level=P.progress(options.progress,options.actualLevel).level>=10?10:9,input=cardData(card),result=transform(input,level,rolls),id=String(card.id);
   for(const key of ['cards','hand','drawPile','discardPile'])r[key]=r[key].filter(c=>String(c.id)!==id);
   if(own(r,'handDrawOrder'))r.handDrawOrder=r.handDrawOrder.filter(x=>String(x)!==id);
   if(own(r,'forcedCardId')&&String(r.forcedCardId)===id)r.forcedCardId=null;
-  s.sequence++;s.revision++;s.availableAt=options.now+WORK_MS+COOLDOWN_MS;s.job={id:jobId(r._uiId,s.sequence),runId:r._uiId,level,startedAt:options.now,completedAt:options.now+WORK_MS,input,result,rolls};r.emeraldWorkshop=s;
+  s.sequence++;s.revision++;s.availableAt=options.now+workMs+COOLDOWN_MS;s.job={id:jobId(r._uiId,s.sequence),runId:r._uiId,level,startedAt:options.now,completedAt:options.now+workMs,input,result,rolls};
+  if(workMs!==WORK_MS||own(s,'workMs'))s.workMs=workMs;r.emeraldWorkshop=s;
   check(validateRun(r),'Workshop give proposal violates card ownership.');return {run:r,changed:true,jobId:s.job.id};
  }
  function claim(run,options){

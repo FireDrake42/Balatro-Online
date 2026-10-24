@@ -67,4 +67,13 @@ body.frenzy-active .emerald-photo-link{border-color:#d8ffeb}
 .emerald-motion-off .emerald-photo-link,.emerald-motion-off button.emerald-level-bar{animation:none!important;transition:none!important}
 .emerald-motion-off .emerald-photo-link:is(:hover,:active),.emerald-motion-off button.emerald-level-bar:is(:hover,:active){transform:none!important}
 @media(prefers-reduced-motion:reduce){.emerald-photo-link,button.emerald-level-bar{animation:none!important;transition:none!important}.emerald-photo-link:is(:hover,:active),button.emerald-level-bar:is(:hover,:active){transform:none!important}}
+/* Friendship is a separate ledger, presented above the unchanged wins bar. */
+.emerald-friendship-bar{border-color:#ffa8db;background:#361b31;color:#fff0fa!important}
+.emerald-friendship-bar .emerald-level-track{border-color:#f18dcb;background:#210c1d}
+.emerald-friendship-bar .emerald-level-fill{background:linear-gradient(90deg,#d94c9b,#ffade0);box-shadow:inset 0 1px 0 #fff5}
+/* Explicitly opt-in floating companion; normal flow/layout remains the default. */
+.emerald-following{z-index:26}
+.emerald-following .emerald-group{position:fixed;right:max(8px,env(safe-area-inset-right,0px));bottom:max(8px,env(safe-area-inset-bottom,0px));box-sizing:border-box;width:min(310px,calc(100vw - 16px));max-height:min(470px,calc(100svh - var(--bo-hud-space,152px) - 60px));overflow:auto;overscroll-behavior:contain;padding:10px;border:1px solid #a2f59d;border-radius:14px;background:#0c251bf5;box-shadow:0 4px 24px #0007;animation:none}
+.emerald-faucet-assist{display:block;box-sizing:border-box;min-height:44px!important;width:100%;max-width:100%;margin:4px 0 2px;white-space:normal;overflow-wrap:anywhere}
+.emerald-controls [data-emerald-looker][aria-pressed=true]{border-color:#ffd7f1;background:#513047}
 

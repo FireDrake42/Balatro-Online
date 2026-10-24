@@ -1,0 +1,57 @@
+/* Pure standalone Blackjack presentation. Input is BOEmeraldBlackjack.publicState,
+ * never its private table. No listeners, DOM queries, clocks, RNG or save access.
+ * Parent owns the persistent native HUD, settings, slot authority and actions.
+ */
+(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldBlackjackUI=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+ const COLORS=Object.freeze(['blue','purple','pink','red','orange','gold']);
+ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const finite=(n,fallback=0)=>typeof n==='number'&&Number.isFinite(n)?n:fallback;
+ const bounded=(n,a,b)=>Math.max(a,Math.min(b,finite(n,a)));
+ function number(n){return finite(n).toLocaleString('en-US',{maximumFractionDigits:2});}
+ function card(c){
+  if(c?.hidden)return '<div class="blackjack-card blackjack-card-back" role="img" aria-label="Face-down card"><span aria-hidden="true">♠</span></div>';
+  const suits={S:'♠',H:'♥',D:'♦',C:'♣'},rank=c?.rank,label=rank===14?'A':rank===13?'K':rank===12?'Q':rank===11?'J':Number.isInteger(rank)&&rank>=2&&rank<=10?String(rank):'?',suit=suits[c?.suit]||'?';
+  return '<div class="blackjack-card'+(['H','D'].includes(c?.suit)?' blackjack-card-red':'')+'" role="img" aria-label="'+esc(label+suit)+'"><span class="blackjack-card-corner" aria-hidden="true">'+esc(label)+'<small>'+esc(suit)+'</small></span><strong aria-hidden="true">'+esc(suit)+'</strong><span class="blackjack-card-corner blackjack-card-bottom" aria-hidden="true">'+esc(label)+'<small>'+esc(suit)+'</small></span></div>';
+ }
+ function hand(cards){return (Array.isArray(cards)?cards:[]).map(card).join('')||'<span class="blackjack-empty-hand">Ready for the deal</span>';}
+ function hash(text){let n=2166136261;for(let i=0;i<text.length;i++)n=Math.imul(n^text.charCodeAt(i),16777619)>>>0;return n;}
+ function reaction(state,friendship){
+  const fact=!state||state.phase==='ready'?'Ready when you are. Win a round to earn 1 point.':typeof state.message==='string'?state.message:'Beat Emerald without going over 21 to earn 1 point.';
+  if(!state||state.lastAction===null||state.lastAction==='new-match')return fact;
+  // 47 FP = 47 of 1,000 stable buckets (4.7%); no rerender roll or speech RNG.
+  const fp=bounded(friendship?.fp,0,1000),kind=hash(String(state.roundId||'ready')+':'+state.revision+':'+state.lastAction)%1000<fp;
+  const supportive=state.winner==='player'?' Lovely playing together — that was your round!':state.winner==='emerald'?' I’m glad we’re playing together. Take your time on the next one.':' You’ve got this. Let’s enjoy the next move together.';
+  const competitive=state.winner==='player'?' Your move paid off!':state.winner==='emerald'?' My round! Ready for another?':' Let’s see what your next move brings.';
+  return fact+(kind?supportive:competitive);
+ }
+ function friendshipBars(friendship,emerald){
+  const f=friendship||{},e=emerald||{},level=Math.trunc(bounded(f.level||1,1,10)),fp=Math.trunc(bounded(f.fp,0,1000)),required=Math.trunc(bounded(f.required||100,1,1000)),remaining=Math.max(0,Math.trunc(finite(f.remaining,Math.max(0,required-fp)))),percent=bounded(f.percent,0,100),capped=f.capped===true;
+  const friendText=capped?'MAX · '+number(fp)+' FP':number(fp)+'/'+number(required)+' FP',petLevel=Math.trunc(bounded(e.level||10,1,10)),petBar=typeof e.bar==='string'?e.bar:e.max?'MAX':number(e.wins||0)+'/'+number(e.nextWins||10),petPercent=e.max?100:e.nextWins?bounded(finite(e.wins)/e.nextWins*100,0,100):0;
+  return '<div class="blackjack-companion-bars"><div class="blackjack-progress blackjack-friendship"><div><strong>Friendship Lv '+level+'</strong><span>'+esc(friendText)+'</span></div><div class="blackjack-meter" role="progressbar" aria-label="Friendship progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+percent+'"><i style="width:'+percent+'%"></i></div><small>'+esc(capped?'0 FP remaining · Maximum friendship reached':number(remaining)+(level===10?' FP remaining to maximum friendship':' FP remaining to Friendship Lv '+(level+1)))+'</small></div><div class="blackjack-progress blackjack-emerald-progress"><div><strong>Emerald Lv '+petLevel+'</strong><span>'+esc(petBar)+'</span></div><div class="blackjack-meter" role="progressbar" aria-label="Emerald win progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+petPercent+'"><i style="width:'+petPercent+'%"></i></div></div></div>';
+ }
+ function rules(state){
+  const legacy=state?.version===1&&state.roundId?'<p class="blackjack-rules" role="note"><strong>Saved earlier round:</strong> this round keeps its original 21-only scoring and saved result. Normal Blackjack starts with your next deal; your existing match points and friendship are kept.</p>':'';
+  return legacy+'<details class="blackjack-rules" id="blackjack-how-to-play">'+
+   '<summary style="min-height:44px;padding:12px 0;cursor:pointer"><strong>How to play Blackjack</strong></summary>'+
+   '<p><strong>Goal:</strong> beat Emerald by getting closer to 21 without going over. A higher non-bust total wins; if your opponent busts, you win. Going over 21 is a bust and immediately loses your round. Equal totals are a push (tie).</p>'+
+   '<p><strong>Card values:</strong> number cards 2–10 count at face value; Jack, Queen and King count as 10. An Ace counts as 11 or 1, whichever keeps your best total without busting. A soft hand has an Ace still counted as 11.</p>'+
+   '<p><strong>The deal:</strong> you and Emerald receive two cards each, with one Emerald card face down. An opening Ace plus a 10-value card is a natural Blackjack: it beats an ordinary 21 made with more cards. Two natural Blackjacks push; a sole natural wins immediately.</p>'+
+   '<p><strong>Your turn:</strong> Hit takes another card. Stand keeps your hand and ends your turn. You may hit again until you stand, bust, or reach 21. Reaching 21 ends your turn and resolves Emerald’s hand; it is not an automatic win if Emerald also reaches 21.</p>'+
+   '<p><strong>Emerald’s turn:</strong> the hidden card is revealed; Emerald hits below 17 and stands on 17 or higher, including soft 17. After both hands finish, the higher non-bust total wins. If you already bust, the round ends without another Emerald turn.</p>'+
+   '<p><strong>Match scoring:</strong> every round win earns 1 point, even below 21. A push earns no point. First to 10 points wins the match. Every completed round—win, loss or push—earns you +1 Friendship Point (FP). Opening a tab, leaving or reloading never grants another FP.</p>'+
+   '<p><strong>Friendly table, no wagers:</strong> the casino bets, 1:1 or 3:2 payouts, Double Down, Split, Surrender and Insurance shown in the reference rules are not used here. Blackjack never spends or awards your poker Bank.</p>'+
+   '<p><strong>Passive Money:</strong> when unlocked and activated, it still adds $0.01 per eligible foreground second to your poker Bank, including in this tab. Hidden or locked-screen time and save/modal-protected pauses do not earn money.</p>'+
+   '</details>';
+ }
+ function html(options={}){
+  const s=options.state||null,f=options.friendship||null,e=options.emerald||null,color=COLORS.includes(options.playerColor)?options.playerColor:'blue',can=s?.can||{deal:true},score=s?.score||{player:0,emerald:0};
+  const p=s?.player||{cards:[],total:0},d=s?.emerald||{cards:[],total:0},bank=Number.isFinite(options.bank)?'$'+number(options.bank):'No active poker run';
+  const asset=typeof options.emeraldAsset==='string'&&/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=\r\n]+$/.test(options.emeraldAsset)?options.emeraldAsset:null;
+  const portrait=asset?'<img class="blackjack-emerald-photo" src="'+esc(asset)+'" alt="Emerald, your green beetle companion" draggable="false">':'<span class="blackjack-emerald-symbol" aria-hidden="true">♣</span>';
+  let controls='';for(const [key,action,label]of [['deal','deal','Deal'],['hit','hit','Hit'],['stand','stand','Stand'],['next','next','Next round'],['newMatch','new-match','New match']])if(can[key]===true)controls+='<button type="button" class="btn blackjack-'+action+'" data-blackjack-action="'+action+'" data-blackjack-revision="'+(Number.isSafeInteger(s?.revision)?s.revision:0)+'">'+label+'</button>';
+  const playerTotal=p.cards?.length?number(p.total)+(p.soft?' · soft':'')+(p.bust?' · bust':''):'—',emeraldTotal=d.hidden?number(d.visibleTotal)+' + ?':d.cards?.length?number(d.total)+(d.soft?' · soft':'')+(d.bust?' · bust':''):'—';
+  const events=(Array.isArray(s?.events)?s.events:[]).map(event=>'<li>'+esc(event.text)+'</li>').join('');
+  return '<section id="emerald-blackjack-table" class="blackjack-table" data-player-color="'+color+'" aria-labelledby="blackjack-title"><header class="blackjack-heading"><div><p class="blackjack-eyebrow">Emerald’s table · no wagers</p><h1 id="blackjack-title">Blackjack <span>to 10</span></h1></div><button type="button" class="icon-button blackjack-close" data-action="close-blackjack" aria-label="Leave Blackjack and keep this table" title="Leave · your table is saved">×</button></header><p class="blackjack-rules">Normal Blackjack · win a round for 1 point · first to 10. Ties earn no point. Every completed round earns +1 FP. Emerald stands on 17, including soft 17.</p>'+rules(s)+'<div class="blackjack-bank-row"><span>Current poker Bank <strong id="blackjack-bank">'+esc(bank)+'</strong></span><span>Same native HUD, faucet and passive progress above</span></div><div class="blackjack-felt"><section class="blackjack-seat blackjack-emerald-seat" aria-label="Emerald’s hand"><div class="blackjack-seat-heading"><div class="blackjack-identity">'+portrait+'<div><h2>Emerald</h2><span class="blackjack-total">'+esc(emeraldTotal)+'</span></div></div><strong class="blackjack-score" aria-label="Emerald points">'+number(score.emerald)+'<small>/10</small></strong></div>'+friendshipBars(f,e)+'<div class="blackjack-hand">'+hand(d.cards)+'</div></section><div class="blackjack-center"><div class="blackjack-deck" role="img" aria-label="Central deck, '+number(s?.deckRemaining??52)+' cards remaining"><span aria-hidden="true">♠</span><small>'+number(s?.deckRemaining??52)+' cards</small></div><p class="blackjack-reaction" role="status" aria-live="polite">'+esc(reaction(s,f))+'</p></div><section class="blackjack-seat blackjack-player-seat" aria-label="Your hand"><div class="blackjack-seat-heading"><div><h2>You</h2><span class="blackjack-total">'+esc(playerTotal)+'</span></div><strong class="blackjack-score" aria-label="Your points">'+number(score.player)+'<small>/10</small></strong></div><div class="blackjack-hand">'+hand(p.cards)+'</div><div class="blackjack-actions" aria-label="Blackjack moves">'+controls+'</div></section></div><footer class="blackjack-footer"><fieldset class="blackjack-colors"><legend>Your color · Emerald keeps green</legend>'+COLORS.map(c=>'<button type="button" data-action="blackjack-color" data-color="'+c+'" class="blackjack-color" aria-label="Use '+c+' for your seat" aria-pressed="'+(c===color)+'" title="'+c+'"><span aria-hidden="true"></span></button>').join('')+'</fieldset><p class="blackjack-save-note">Leaving or reloading keeps the same cards and score. No coins are wagered or awarded.</p>'+(events?'<details class="blackjack-move-log"><summary>Actual moves this turn</summary><ol>'+events+'</ol></details>':'')+'</footer></section>';
+ }
+ return Object.freeze({COLORS,html,reaction});
+});

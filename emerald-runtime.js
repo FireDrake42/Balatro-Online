@@ -32,7 +32,7 @@
   if(own(profile,'emerald'))run._emeraldProfile=P.copy(profile.emerald);
  }
  function seedRun(profile,run){if(own(profile,'frenzy'))run.frenzy=F.normalize(profile.frenzy)}
- function capture(run,actualLevel,effect){return {run,id:run?._uiId,phase:run?.phase,ante:run?.ante,blindIndex:run?.blindIndex,endless:run?.endless===true,abandoned:run?.abandoned===true,outcome:!!run?._uiOutcome,actualLevel,effect,jokers:(run?.jokers||[]).map(j=>({uid:j.uid,id:j.id,eternal:j.eternal===true})),levels:clone(run?.levels||{})}}
+ function capture(run,actualLevel,effect,handNames){return {...(handNames?{handNames:Object.fromEntries(Object.entries(handNames).map(([k,v])=>[k,v[0]]))}:{}),run,id:run?._uiId,phase:run?.phase,ante:run?.ante,blindIndex:run?.blindIndex,endless:run?.endless===true,abandoned:run?.abandoned===true,outcome:!!run?._uiOutcome,actualLevel,effect,jokers:(run?.jokers||[]).map(j=>({uid:j.uid,id:j.id,eternal:j.eternal===true})),levels:clone(run?.levels||{})}}
  function afterAction(profile,run,before){
   const messages=[];if(!before||before.run!==run||before.id!==run?._uiId)return messages;
   // The engine completes a GAME at final cashout, never at a blind/old won load.
@@ -40,6 +40,7 @@
    const state=own(profile,'emerald')?profile.emerald:P.create(seed(run._uiId));
    profile.emerald=P.creditWin(state,{runId:run._uiId,actualLevel:before.actualLevel,beforePhase:'cashout',afterPhase:'won',endless:false,abandoned:false,source:'fresh-completion'},state.revision).state;
   }
+  if(before.actualLevel>=5)for(const [key,n]of Object.entries(run.levels||{})){if(![10,20,30,40,50].includes(n)||before.levels[key]===n)continue;const name=before.handNames?.[key]||key;const message=n===10?'Your poker hand is level 10. Nice.':n===20?'Your '+name+' is level 20!? WOW!!!':n===30?'Your poker hand is level 30, but how!?!?':n===40?'LEVEL 40!!! YOURE UNSTOPPABLE!!!!!':'LEVEL 50!! The legendary poker hand!!!';messages.push({message,handKey:key,handLevel:n})}
   if(before.effect!=='play'||!capabilities(profile,before.actualLevel).eventCommentary)return messages;
   const lines=run.lastResult?.lines||[];
   if(lines.includes('Lucky +20 Mult'))messages.push('Lucky landed +20 Mult! That reward really triggered.');

@@ -22,8 +22,10 @@
   const actualPlayerLevel = value => Number.isInteger(value) && value >= 1 && value <= 100 ? value : 1;
   const tracksForPlayerLevel = actual => MUSIC_DATA && MUSIC_DATA.tracksForPlayerLevel ?
     MUSIC_DATA.tracksForPlayerLevel(actual) : TRACKS;
-  const SCENES = Object.freeze(['table', 'boss', 'final_boss', 'last_chance', 'frenzy']);
+  const SCENES = Object.freeze(['table', 'boss', 'final_boss', 'last_chance', 'frenzy', 'blackjack']);
   const sceneId = value => SCENES.includes(value) ? value : 'table';
+  const recordingScene = value => value !== 'frenzy' && value !== 'blackjack';
+  const BLACKJACK_ID = 'blackjack_playlist', BLACKJACK_NAME = 'Original Blackjack Playlist — After Hours';
   const DEFAULTS = Object.freeze({ sound: true, music: true, sfxVolume: 0.62,
     musicVolume: 0.44, muted: false, track: 'poker_lounge', bossDrama: false, playerLevel: 1 });
   const BPM = 92, BEAT = 60 / BPM, LOOP_BEATS = 64;
@@ -123,6 +125,21 @@
       lowpass.type = 'lowpass'; lowpass.frequency.value = 3200; lowpass.Q.value = 0.5;
       wet.gain.value = level;
       input.connect(verb); verb.connect(lowpass); lowpass.connect(wet); wet.connect(destination);
+      // Only entry into Blackjack flushes old music (including licensed backing
+      // sent to this room). Reuse its bus/input/impulse; never touch the SFX room.
+      if (destination === graph.musicBus) {
+        let currentVerb = verb, currentFilter = lowpass;
+        graph.resetMusicRoom = () => {
+          const nextVerb = ctx.createConvolver(), nextFilter = ctx.createBiquadFilter();
+          nextVerb.buffer = currentVerb.buffer;
+          nextFilter.type = 'lowpass'; nextFilter.frequency.value = 3200; nextFilter.Q.value = 0.5;
+          disconnect(input); disconnect(currentVerb); disconnect(currentFilter);
+          graph.nodes[graph.nodes.indexOf(currentVerb)] = nextVerb;
+          graph.nodes[graph.nodes.indexOf(currentFilter)] = nextFilter;
+          input.connect(nextVerb); nextVerb.connect(nextFilter); nextFilter.connect(wet);
+          currentVerb = nextVerb; currentFilter = nextFilter;
+        };
+      }
       return input;
     }
     graph.fxRoom = room(0.31, 0x12d04ad, graph.fxBus, 0.17);
@@ -741,8 +758,106 @@
     const harmony=oldHarmony[metadata.id]||MUSIC_DATA.scores[isLicensed(metadata.id)?licensedFor(metadata.id).fallback:metadata.id].harmony;
     lastChanceCompositions[metadata.id]=lastChanceComposition(metadata,harmony,index);
   });
+  // After Hours: three newly authored sixteen-bar movements, sequential at 88 BPM.
+  // I. Midnight Count: D-minor ninths, swung brushes, low felt piano and upright bass.
+  // II. Glass on Green: G-minor/E-flat half-time, bowed suspensions and spacious replies.
+  // III. The Quiet Tell: restrained D-minor pulse, rising counterline, A7(b9) -> Dm9.
+  // Literal harmony/hooks are original, not catalog-track variations or song transcriptions.
+  // The 192-beat suite lives only in this transient scene, never in the saved catalog.
+  function blackjackStrings(graph, v, at, notes, velocity, length) {
+    const ctx=graph.ctx, gain=v.own(ctx.createGain()), filter=v.own(ctx.createBiquadFilter());
+    const end=at+length, level=.095*velocity/Math.sqrt(notes.length);
+    gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(level,at+Math.min(.42,length*.2));
+    gain.gain.linearRampToValueAtTime(level*.82,at+length*.82);
+    gain.gain.exponentialRampToValueAtTime(.00001,end-.045);gain.gain.linearRampToValueAtTime(0,end);
+    filter.type='lowpass';filter.frequency.value=1250;filter.Q.value=.45;filter.connect(gain);gain.connect(v.output);
+    for(const note of notes)for(const [shape,cents,weight]of [['triangle',-3,.78],['sawtooth',3,.22]]) {
+      const osc=ctx.createOscillator(),mix=v.own(ctx.createGain());mix.gain.value=weight;
+      osc.type=shape;osc.frequency.setValueAtTime(hz(note),at);osc.detune.setValueAtTime(cents,at);
+      osc.connect(mix);mix.connect(filter);v.source(osc,at,end+.012);
+    }
+  }
+  function blackjackComposition() {
+    const beat=60/88,score=[];
+    const harmony=[
+      [[38,[53,57,60,64]],[31,[46,53,57,62]],[36,[52,58,62,69]],[41,[45,52,55,60]],
+       [34,[48,53,57,62]],[40,[43,46,50,57]],[33,[49,55,58,64]],[38,[53,57,60,64]],
+       [31,[46,53,57,62]],[36,[52,58,62,67]],[41,[45,52,55,60]],[34,[48,53,57,62]],
+       [40,[46,50,55,57]],[33,[49,55,58,64]],[38,[53,57,60,64]],[38,[54,60,63,69]]],
+      [[31,[46,53,57,62]],[39,[46,53,55,62]],[34,[45,53,60,62]],[38,[48,54,57,63]],
+       [31,[46,53,57,62]],[36,[51,55,58,62]],[41,[45,51,55,62]],[34,[45,53,57,60]],
+       [39,[46,53,55,62]],[40,[46,50,55,58]],[33,[49,55,58,64]],[38,[53,57,60,64]],
+       [31,[46,53,57,62]],[39,[46,53,55,62]],[40,[46,50,55,57]],[33,[49,55,58,64]]],
+      [[38,[53,57,60,64]],[38,[52,57,60,65]],[34,[48,53,57,62]],[33,[49,55,58,64]],
+       [31,[46,53,57,62]],[36,[52,58,62,69]],[41,[45,52,55,60]],[33,[49,55,58,64]],
+       [38,[53,57,60,64]],[34,[48,53,57,62]],[31,[46,53,57,62]],[40,[46,50,55,57]],
+       [38,[53,57,60,64]],[34,[48,53,57,62]],[40,[46,50,55,57]],[33,[49,55,58,64]]]
+    ];
+    // Each tuple is [quarter-note offset, MIDI pitch, quarter-note duration].
+    const hooks=[
+      [[[.625,69,1.1],[2.5,64,.9]],[[1.25,65,.6],[2.625,62,.9]],[[.625,64,.7],[2,69,.8],[3.25,67,.5]],[[1,67,1.1],[2.625,64,.8]],
+       [[.625,65,.75],[2.5,62,1]],[[1.25,62,.65],[2.625,58,.8]],[[.625,61,.8],[2,64,.6],[3.25,67,.5]],[[1.25,65,.8],[2.625,64,.8]],
+       [[.625,69,.8],[2.5,65,1]],[[1.25,64,.65],[2.625,62,.8]],[[.625,60,.8],[2,64,.6],[3.25,67,.5]],[[1.25,65,.8],[2.625,69,.8]],
+       [[.625,67,.8],[2.5,62,1]],[[1.25,61,.65],[2.625,58,.8]],[[.625,64,1],[2.5,69,.9]],[[1.25,66,.65],[2.625,63,.8]]],
+      [[[1.25,70,1.6]],[[.75,67,1.4],[2.75,65,.85]],[[1.25,65,1.5]],[[.75,66,1.2],[2.75,63,.8]],
+       [[1.25,62,1.6]],[[.75,63,1.4],[2.75,67,.85]],[[1.25,69,1.5]],[[.75,65,1.2],[2.75,62,.8]],
+       [[1.25,67,1.6]],[[.75,70,1.4],[2.75,67,.85]],[[1.25,64,1.5]],[[.75,65,1.2],[2.75,69,.8]],
+       [[1.25,70,1.6]],[[.75,67,1.4],[2.75,65,.85]],[[1.25,62,1.5]],[[.75,61,1.2],[2.75,64,.8]]],
+      [[[.25,62,.8],[1.75,65,.7],[3,69,.65]],[[.5,64,.65],[2,65,.9],[3.25,69,.5]],[[.25,65,.8],[1.75,69,.7],[3,72,.65]],[[.5,70,.65],[2,67,.9],[3.25,64,.5]],
+       [[.25,69,.8],[1.75,70,.7],[3,74,.65]],[[.5,76,.65],[2,74,.9],[3.25,69,.5]],[[.25,72,.8],[1.75,67,.7],[3,64,.65]],[[.5,67,.65],[2,64,.9],[3.25,61,.5]],
+       [[.25,74,.8],[1.75,77,.7],[3,76,.65]],[[.5,74,.65],[2,72,.9],[3.25,69,.5]],[[.25,70,.8],[1.75,69,.7],[3,65,.65]],[[.5,67,.65],[2,62,.9],[3.25,58,.5]],
+       [[.25,65,.8],[1.75,69,.7],[3,74,.65]],[[.5,72,.65],[2,69,.9],[3.25,65,.5]],[[.25,67,.8],[1.75,62,.7],[3,58,.65]],[[.5,64,.75],[2,58,.65],[3,61,.7]]]
+    ];
+    const add=(bar,b,type,data)=>score.push({beat:bar*4+b,bar,type,...data});
+    for(let movement=0;movement<3;movement++)for(let local=0;local<16;local++) {
+      const bar=movement*16+local,[rootNote,notes]=harmony[movement][local];
+      const next=local===15?harmony[(movement+1)%3][0][0]:harmony[movement][local+1][0];
+      add(bar,movement===1?.12:0,'piano',{notes,length:movement===1?2.8:movement===2?1.45:1.9,velocity:movement===1?.47:.53});
+      if(movement!==1)add(bar,movement===0?2.625:2.5,'piano',{notes:notes.slice(1),length:1.05,velocity:movement===0?.32:.36});
+      add(bar,.012,'bass',{note:rootNote,length:movement===1?3.55:.92,velocity:movement===1?.48:.63,soft:movement===1});
+      if(movement!==1) {
+        add(bar,movement===0?1.625:1.5,'bass',{note:rootNote+7,length:.52,velocity:.4});
+        add(bar,2,'bass',{note:rootNote+(local%4===2?12:0),length:.8,velocity:.51});
+        add(bar,3.5,'bass',{note:next+(next>=rootNote?-1:1),length:bar===47?.9:.36,velocity:bar===47?.48:.35});
+      }
+      hooks[movement][local].forEach(([b,n,length],i)=>add(bar,b,'melody',{note:n,length,velocity:(movement===1?.56:.66)*(i?.86:1)}));
+      const brushes=movement===0?[.125,1,1.625,2.125,3,3.625]:movement===1?[1.5,3.5]:[.5,1.5,2.5,3.5];
+      brushes.forEach((b,i)=>add(bar,b,'brush',{velocity:movement===1?.22:i%3===1?.42:.27}));
+      if(movement===1||movement===2&&local>=8)add(bar,.06,'strings',{
+        // Carry common A/C/E tones into the Dm9 restart, rather than a silent gap.
+        notes:bar===47?[57,60,64]:movement===1?[notes[1],notes[2],notes[3]]:[notes[0]+12,notes[2],notes[3]],
+        length:bar===47?4.8:3.7,velocity:movement===1?.54:.34});
+      if(movement===2) {
+        // 3+3+2 accents in a quiet, low-register eighth-note figure, not a dance lead.
+        const cell=[notes[0],notes[2],notes[1],notes[3],notes[2],notes[1],notes[3],notes[1]];
+        for(let i=0;i<8;i++)add(bar,i*.5+.025,'pulse',{note:cell[(i+local%2*2)%8]-12,length:.32,velocity:[0,3,6].includes(i)?.3:.19});
+      }
+    }
+    score.sort((a,b)=>a.beat-b.beat);
+    return {beat,loopBeats:192,score,play(graph,event,at) {
+      const type=event.type,vel=event.velocity,length=(event.length||.2)*beat;
+      const v=voice(graph,'music',at,type==='piano'?-.19:type==='melody'?.2:type==='strings'?-.07:type==='pulse'?.12:0,
+        type==='piano'?.26:type==='melody'?.32:type==='strings'?.23:.025);
+      if(type==='piano'||type==='melody') {
+        const notes=event.notes||[event.note],level=vel/Math.sqrt(notes.length);
+        for(let i=0;i<notes.length;i++) {
+          const t=at+i*.009;
+          tone(graph,v,t,notes[i],length,level*.29,'piano',type==='piano'?1450:1850,.012,.46);
+          tone(graph,v,t,notes[i]+12.01,length*.6,level*.016,'sine',2100,.01,.3);
+        }
+      } else if(type==='bass') {
+        if(event.soft)expandedBass(graph,v,at,event.note,vel,length,'subtle_sub');
+        else bass(graph,v,at,event.note,vel*.78,length);
+      } else if(type==='strings')blackjackStrings(graph,v,at,event.notes,vel,length);
+      else if(type==='pulse') {
+        tone(graph,v,at,event.note,length,vel*.16,'triangle',850,.012,.38);
+        tone(graph,v,at,event.note+12.02,length*.65,vel*.026,'sine',1100,.01,.25);
+      } else noise(graph,v,at,.18,vel*.105,1900,.55,false);
+    }};
+  }
+  const blackjackPiece=blackjackComposition(),blackjackCompositions=Object.freeze(Object.fromEntries(TRACKS.map(t=>[t.id,blackjackPiece])));
   const ARRANGEMENTS=Object.freeze({table:Object.freeze(tableCompositions),boss:Object.freeze(bossCompositions),
-    final_boss:Object.freeze(finalCompositions),last_chance:Object.freeze(lastChanceCompositions),frenzy:frenzyCompositions});
+    final_boss:Object.freeze(finalCompositions),last_chance:Object.freeze(lastChanceCompositions),frenzy:frenzyCompositions,blackjack:blackjackCompositions});
   // Actual Level 37 is decided by the caller, never by audio reading a profile.
   // This strict, transient option selects an independent score. The original
   // arrangements/DSP above remain exact for false, and for every nonboss scene.
@@ -960,6 +1075,7 @@
   }
   function recordingRate(scene) { return scene==='last_chance'?Math.pow(2,-5/12):scene==='final_boss'?Math.pow(2,-3/12):scene==='boss'?Math.pow(2,-2/12):1; }
   function recordingVoice(target, buffer, at, position, scene, beat, endAt) {
+    if(!recordingScene(scene)) return null;
     if(scene==='last_chance') return lastChanceRecording(target,buffer,at,position,beat,endAt);
     const rate=recordingRate(scene);
     const v=voice(target,'music',at,0,0), source=target.ctx.createBufferSource();
@@ -1034,6 +1150,7 @@
     cancelKind(graph, 'music', false);
   }
   function prepareRecording(token, current, selectedScene) {
+    if(!recordingScene(selectedScene)) return;
     recordingDemand={token,current,scene:selectedScene,id:prefs.track};pumpRecording();
   }
   function pumpRecording() {
@@ -1041,7 +1158,7 @@
     // Only a current, explicitly authorized transport demand may start/restart.
     // Cache completion by itself never creates a context, resumes or autoplays.
     if(!demand || demand.token!==transportGeneration || demand.current!==context || demand.id!==prefs.track ||
-      demand.scene!==scene || scene==='frenzy' || !isLicensed(demand.id) || !musicAllowed())return;
+      demand.scene!==scene || !recordingScene(scene) || !isLicensed(demand.id) || !musicAllowed())return;
     const id=demand.id,state=assetStates.get(id);
     if(bufferFor(id)) {pauseMusic();musicPosition=0;startMusic();notifyStatus();return;}
     if(activeDecode) {
@@ -1084,7 +1201,7 @@
         const nextBeat = cycle * track.loopBeats + track.score[scoreIndex].beat;
         if (baseTime + (nextBeat - baseBeat) * track.beat < now - 0.1) locate(baseBeat + (now - baseTime) / track.beat);
       }
-      if (scene!=='frenzy' && isLicensed(prefs.track) && activeTrackId === prefs.track && bufferFor(prefs.track) && (!assetVoice || !graph.music.has(assetVoice))) {
+      if (recordingScene(scene) && isLicensed(prefs.track) && activeTrackId === prefs.track && bufferFor(prefs.track) && (!assetVoice || !graph.music.has(assetVoice))) {
         assetVoice = recordingVoice(graph,bufferFor(prefs.track),now+.035,baseBeat+(now-baseTime)/track.beat,
           scene,track.beat,now+86400);
       }
@@ -1104,15 +1221,15 @@
     // A decode completed while hidden/muted may replace an unheard fallback.
     // Start that first real recording at its beginning, but preserve subsequent
     // pauses of an already-playing recording exactly like the original tracks.
-    const recording=bufferFor(prefs.track);
+    const recording=scene==='blackjack'?null:bufferFor(prefs.track);
     if (isLicensed(prefs.track) && recording && activeTrackId !== prefs.track) musicPosition = 0;
-    activeTrackId = effectiveId(prefs.track,!!recording);
+    activeTrackId = scene==='blackjack'?BLACKJACK_ID:effectiveId(prefs.track,!!recording);
     activeComposition = compositionFor(prefs.track,scene,!!recording,prefs.bossDrama);
     baseBeat = musicPosition; baseTime = context.currentTime + 0.035;
     locate(baseBeat); playingMusic = true;
-    if (scene!=='frenzy' && isLicensed(prefs.track) && recording) assetVoice = recordingVoice(graph,recording,baseTime,baseBeat,scene,activeComposition.beat,baseTime+86400);
+    if (recordingScene(scene) && isLicensed(prefs.track) && recording) assetVoice = recordingVoice(graph,recording,baseTime,baseBeat,scene,activeComposition.beat,baseTime+86400);
     tick();
-    if (scene!=='frenzy' && isLicensed(prefs.track) && !recording && assetStates.get(prefs.track).status !== 'failed') prepareRecording(transportGeneration,context,scene);
+    if (recordingScene(scene) && isLicensed(prefs.track) && !recording && assetStates.get(prefs.track).status !== 'failed') prepareRecording(transportGeneration,context,scene);
   }
   function sync() {
     if (!context || !graph) return;
@@ -1153,6 +1270,12 @@
       // startMusic's 35-ms lead clears the 22-ms voice fade; begin at bar one,
       // never reinterpret the old beat position in the new composition.
       pauseMusic(); musicPosition = 0; scoreIndex = 0; cycle = 0;
+      if (selectedScene === 'blackjack' && scene !== 'blackjack' && graph) {
+        // No previous music source/fade or licensed room tail may cross into the
+        // original-only playlist. Keep the same context, graph, buses and SFX.
+        for (const v of [...graph.musicAll]) v.cancel(true);
+        graph.resetMusicRoom();
+      }
     }
     for (const key of ['sound', 'music', 'muted', 'bossDrama']) if (typeof next[key] === 'boolean') prefs[key] = next[key];
     for (const key of ['sfxVolume', 'musicVolume']) if (next[key] !== undefined) prefs[key] = unit(next[key], prefs[key]);
@@ -1256,9 +1379,9 @@
   }
   function moneyGain(bank) { return sfx('money_gain',{bank}); }
   function status() {
-    const effectiveTrack = playingMusic ? activeTrackId : effectiveId(prefs.track,!!bufferFor(prefs.track));
+    const effectiveTrack = scene==='blackjack'?BLACKJACK_ID:playingMusic ? activeTrackId : effectiveId(prefs.track,!!bufferFor(prefs.track));
     const assetState = assetStates.get(prefs.track);
-    const licensedPlaying = !!(scene!=='frenzy' && playingMusic && isLicensed(prefs.track) && assetVoice && graph &&
+    const licensedPlaying = !!(recordingScene(scene) && playingMusic && isLicensed(prefs.track) && assetVoice && graph &&
       graph.music.has(assetVoice) && context && context.currentTime >= assetVoice.at);
     return { available: typeof audioConstructor() === 'function', unlocked,
       contextState: context ? context.state : lastContextState, playingMusic,
@@ -1267,14 +1390,14 @@
       lastSfx, eventsTriggered, track: prefs.track,
       bossDrama: prefs.bossDrama, bossDramaActive: prefs.bossDrama === true && bossScene(scene),
       trackName: TRACKS.find(track => track.id === prefs.track).name,
-      scene, effectiveArrangement:scene, arrangementName:scene==='frenzy'?'Emerald Frenzy':scene==='last_chance'?'Last Chance':scene==='final_boss'?'Final Boss':scene==='boss'?'Boss Blind':'Table',
-      effectiveTrack, effectiveTrackName:scene==='frenzy'?'Emerald Frenzy':TRACKS.find(track=>track.id===effectiveTrack).name,
+      scene, effectiveArrangement:scene, arrangementName:scene==='blackjack'?BLACKJACK_NAME:scene==='frenzy'?'Emerald Frenzy':scene==='last_chance'?'Last Chance':scene==='final_boss'?'Final Boss':scene==='boss'?'Boss Blind':'Table',
+      effectiveTrack, effectiveTrackName:scene==='blackjack'?BLACKJACK_NAME:scene==='frenzy'?'Emerald Frenzy':TRACKS.find(track=>track.id===effectiveTrack).name,
       assetStatus:assetState?assetState.status:'idle', assetError:assetState?assetState.error:null,
       assetTrackId:assetState?prefs.track:null, assetCacheTrackId:assetBufferId,
       assetCacheBytes:assetBuffer?assetBuffer.length*assetBuffer.numberOfChannels*4:0,
       assetLoadTrackId:activeDecode?activeDecode.id:null,
       assetStates:Object.fromEntries([...assetStates].map(([id,state])=>[id,{...state}])),playerLevel:prefs.playerLevel,
-      licensedPlaying, modified:licensedPlaying&&scene!=='table'&&scene!=='frenzy' };
+      licensedPlaying, modified:licensedPlaying&&scene!=='table'&&recordingScene(scene) };
   }
   function close() {
     pauseMusic();evictRecording();
@@ -1303,7 +1426,7 @@
     // recording. Empty/short previews have no source to play and need no decode.
     const available=offlineContext.length/offlineContext.sampleRate;
     const seconds=clamp(number(duration,available),0,available);
-    const selected=trackId(options.track,options.playerLevel), wantsRecording=sceneId(options.scene)!=='frenzy' && isLicensed(selected) && seconds>.045 && options.music!==false &&
+    const selected=trackId(options.track,options.playerLevel), wantsRecording=recordingScene(sceneId(options.scene)) && isLicensed(selected) && seconds>.045 && options.music!==false &&
       options.muted!==true && unit(options.musicVolume,DEFAULTS.musicVolume)>0;
     // One explicit recording preview at a time; it owns its buffer until rendering
     // finishes and never inserts it into the realtime cache or changes preferences.
@@ -1339,7 +1462,7 @@
       fade.setValueAtTime(0.9, Math.max(seconds * 0.5, seconds - 0.15));
       fade.linearRampToValueAtTime(0, seconds);
       const start = 0.045;
-      if(recording && offlinePrefs.music && !offlinePrefs.muted && seconds>start) {
+      if(recording && recordingScene(offlineScene) && offlinePrefs.music && !offlinePrefs.muted && seconds>start) {
         recordingVoice(offlineGraph,recording,start,0,offlineScene,track.beat,seconds);
       }
       for (let c = 0; offlinePrefs.music && !offlinePrefs.muted && c * track.loopBeats * track.beat < seconds; c++) {
