@@ -28,7 +28,8 @@
   '#passive-xp-button','#passive-money-button'
  ].join(',');
  const rules=Object.keys(source).filter(key=>!key.startsWith('catalog.')&&!key.startsWith('language.')).map(key=>({key,selector:scopes}));
- const attribute=(key,selector,name)=>rules.push({key,selector,attribute:name});
+ rules.push({key:'catalog.hands.royalFlush.name',selector:'#app .fx-scoring > h2'});
+  const attribute=(key,selector,name)=>rules.push({key,selector,attribute:name});
  attribute('nav.main','#home','aria-label');attribute('nav.help','#help','aria-label');attribute('nav.settings','#settings','aria-label');attribute('nav.close','#close-dialog','aria-label');attribute('nav.level','#level-hud','aria-label');
  attribute('collection.category','#collection-kind','aria-label');attribute('collection.search','#catalog-search','aria-label');attribute('collection.placeholder','#catalog-search','placeholder');attribute('settings.seedPlaceholder','#seed-input','placeholder');
  // FROZEN V2 BINDINGS: pure source metadata; no model access or arbitrary DOM walk.

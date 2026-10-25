@@ -1,5 +1,6 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['fr']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "catalog.hands.royalFlush.name": "Quinte flush royale",
   "language.title": "Langue préférée",
   "language.label": "Langue",
   "language.note": "Changer de langue enregistre uniquement cette préférence dans l’emplacement sélectionné. Votre partie, les valeurs et les autres paramètres restent inchangés.",

@@ -666,6 +666,7 @@
     best.contains=contains;
     // Stone extras always score, even if omitted from the winning five.
     cards.forEach(function(c,i){if(c.enhancement==='stone'&&best.indices.indexOf(i)<0)best.indices.push(i);});best.indices.sort(function(a,b){return a-b;});
+    if(best.key==='straight_flush'&&containsRoyalFlush(opts.state,cards))best.name='Royal Flush';
     return best;
   }
   function evaluate(cards,opts) {
@@ -687,7 +688,7 @@
     else if(gs[0]&&gs[0].length===2&&gs[1]&&gs[1].length===2){key='two_pair';indices=gs[0].concat(gs[1]);}else if(gs[0]&&gs[0].length===2){key='pair';indices=gs[0];}
     else {key='high';indices=gs.length?[gs[0][0]]:[];}
     cards.forEach(function(c,i){if(c.enhancement==='stone'&&indices.indexOf(i)<0)indices.push(i);});indices.sort(function(a,b){return a-b;});
-    var h=HANDS[key];return {name:h[0],key:key,indices:indices,chips:h[1],mult:h[2],contains:{pair:gs.some(function(g){return g.length>=2;}),two_pair:gs.filter(function(g){return g.length>=2;}).length>=2,three:gs.some(function(g){return g.length>=3;}),four:gs.some(function(g){return g.length>=4;}),straight:st.length>=needed,flush:flush.length>=needed}};
+    var h=HANDS[key];return {name:key==='straight_flush'&&containsRoyalFlush(opts.state,cards)?'Royal Flush':h[0],key:key,indices:indices,chips:h[1],mult:h[2],contains:{pair:gs.some(function(g){return g.length>=2;}),two_pair:gs.filter(function(g){return g.length>=2;}).length>=2,three:gs.some(function(g){return g.length>=3;}),four:gs.some(function(g){return g.length>=4;}),straight:st.length>=needed,flush:flush.length>=needed}};
   }
   function containsRoyalFlush(s,cards) {
     if(cards.length===6)return cards.some(function(c,omitted){return containsRoyalFlush(s,cards.filter(function(other,i){return i!==omitted;}));});

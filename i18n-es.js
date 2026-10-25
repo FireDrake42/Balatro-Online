@@ -1,5 +1,6 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['es']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "catalog.hands.royalFlush.name": "Escalera real",
   "language.title": "Idioma preferido",
   "language.label": "Idioma",
   "language.note": "Cambiar de idioma solo guarda esta preferencia en la ranura seleccionada. Tu partida, las cifras y los demás ajustes no cambian.",
