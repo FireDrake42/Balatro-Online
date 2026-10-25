@@ -26,8 +26,8 @@
   function read(key){const value=host.read(key);check(value===null||typeof value==='string','The canonical '+key+' save could not be read.');return value;}
   function ledgers(profile){
    const bj=own(profile,'emeraldBlackjack'),fp=own(profile,'emeraldFriendship');
-   check(bj===fp,'Blackjack and friendship saves must be reconciled together. No defaults were loaded.');
-   if(!bj)return {present:false,state:null,friendship:null};
+   check(!bj||fp,'Blackjack and friendship saves must be reconciled together. No defaults were loaded.');
+   if(!bj){check(!fp||F.validate(profile.emeraldFriendship)&&profile.emeraldFriendship.rounds===0&&profile.emeraldFriendship.chill&&(own(profile,'emeraldBaccarat')||own(profile,'emeraldHighLow')),'Unpaired friendship save needs attention.');return {present:false,state:null,friendship:fp?profile.emeraldFriendship:null};}
    check(B.validate(profile.emeraldBlackjack)&&F.validate(profile.emeraldFriendship),'Blackjack or friendship save needs attention. No round was changed.');
    check(profile.emeraldBlackjack.completedRounds===profile.emeraldFriendship.rounds,'Blackjack and friendship round counts disagree. No reward was changed.');
    if(profile.emeraldBlackjack.round?.outcome)check(profile.emeraldFriendship.lastRoundId===profile.emeraldBlackjack.round.id,'The completed Blackjack round and friendship receipt disagree.');
@@ -57,7 +57,7 @@
    check(typeof input.action==='string'&&Number.isSafeInteger(input.expectedRevision)&&input.expectedRevision>=0,'Invalid Blackjack action revision.');return input;
   }
   function status(){
-   try{const c=gate(host.get()),source=ledgers(c.profile);return {unlocked:true,blocked:false,reason:null,state:source.present?B.publicState(source.state):null,friendship:source.present?F.info(source.friendship):F.info()};}
+   try{const c=gate(host.get()),source=ledgers(c.profile);return {unlocked:true,blocked:false,reason:null,state:source.present?B.publicState(source.state):null,friendship:source.friendship?F.info(source.friendship):F.info()};}
    catch(error){return {unlocked:false,blocked:true,reason:error.message,state:null,friendship:null};}
   }
   function action(input){
@@ -68,7 +68,7 @@
     const {c,source}=capture();
     if(!source.present)check(request.action==='deal','Deal manually to start the first Blackjack table.');
     // No default ledger or RNG seed is created by mount/status/render/reopen.
-    const state=source.present?B.copy(source.state):B.create(host.seed()),friendship=source.present?F.copy(source.friendship):F.create();
+    const state=source.present?B.copy(source.state):B.create(host.seed()),friendship=source.friendship?F.copy(source.friendship):F.create();
     const revision=request.expectedRevision===null?state.revision:request.expectedRevision;
     const proposal=B.move(state,request.action,revision);let nextFriendship=friendship;
     if(proposal.completed){
