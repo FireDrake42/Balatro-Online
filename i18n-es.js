@@ -1,5 +1,12 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['es']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "emerald.quirk.clicking": "(hace clic)",
+  "emerald.quirk.squeaking": "(chilla)",
+  "emerald.quirk.humming": "(tararea)",
+  "emerald.quirk.hissing": "(sisea)",
+  "emerald.quirk.knocking": "(golpetea)",
+  "emerald.quirk.whirring": "(zumba)",
+  "emerald.quirk.unlock": "Desde el nivel 6 del jugador, cada mensaje nuevo de Emerald tiene una probabilidad de 1 entre 6 de incluir un tic de texto, elegido por igual entre seis sonidos, también en Blackjack. Sin audio.",
   "catalog.hands.royalFlush.name": "Escalera real",
   "language.title": "Idioma preferido",
   "language.label": "Idioma",

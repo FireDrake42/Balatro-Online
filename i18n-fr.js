@@ -1,5 +1,12 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['fr']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "emerald.quirk.clicking": "(cliquette)",
+  "emerald.quirk.squeaking": "(couine)",
+  "emerald.quirk.humming": "(fredonne)",
+  "emerald.quirk.hissing": "(siffle)",
+  "emerald.quirk.knocking": "(tapote)",
+  "emerald.quirk.whirring": "(ronronne)",
+  "emerald.quirk.unlock": "Dès le niveau 6 du joueur, chaque nouveau message d’Emerald a une chance sur 6 d’avoir un tic de texte, choisi à parts égales parmi six sons, y compris au Blackjack. Aucun audio.",
   "catalog.hands.royalFlush.name": "Quinte flush royale",
   "language.title": "Langue préférée",
   "language.label": "Langue",

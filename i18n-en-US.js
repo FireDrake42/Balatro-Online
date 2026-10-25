@@ -1,5 +1,12 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['en-US']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "emerald.quirk.clicking": "(clicks)",
+  "emerald.quirk.squeaking": "(squeaks)",
+  "emerald.quirk.humming": "(hums)",
+  "emerald.quirk.hissing": "(hiss)",
+  "emerald.quirk.knocking": "(knocks)",
+  "emerald.quirk.whirring": "(whirs)",
+  "emerald.quirk.unlock": "From player Level 6, each new Emerald message has a 1 in 6 chance of one text-only quirk, chosen equally from six sounds — including Blackjack. No audio.",
   "catalog.hands.royalFlush.name": "Royal Flush",
   "language.title": "Preferred language",
   "language.label": "Language",

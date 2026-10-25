@@ -351,12 +351,14 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
         var snapshot = presentation ? presentation.readSnapshot(w.localStorage, id, Date.now()) : null;
         var signature = JSON.stringify(snapshot) + ':' + (view.emeraldQuestion ? view.emeraldQuestion.type : 'none');
         d.body.classList.toggle('bo-survey-emerald-rich', !!snapshot && snapshot.level >= 41);
-        if (view.emeraldSignature === signature) return;
+        var utteranceKey = [id, view.emeraldQuestion ? view.emeraldQuestion.id : 'intro', state()?.intro?.phase || 'ready'];
+        if (view.emeraldSignature === signature) { presentation?.presentSpeech?.(target.querySelector('.emerald-survey-companion'), snapshot, view.emeraldQuestion, utteranceKey); return; }
         var sameOrigin = !!snapshot && view.emeraldOrigin === snapshot.identity;
         view.emeraldSignature = signature; view.emeraldOrigin = snapshot ? snapshot.identity : null; target.replaceChildren();
         if (snapshot) {
           if (!presentation.render(d, target, snapshot, view.emeraldQuestion)) throw Error('Emerald presentation unavailable.');
           var replacement = target.querySelector('details'); if (replacement) replacement.open = sameOrigin && wasOpen;
+          presentation.presentSpeech?.(target.querySelector('.emerald-survey-companion'), snapshot, view.emeraldQuestion, utteranceKey);
         }
         view.emeraldOpen = false; view.emeraldFocus = false; restoreFocus();
       } catch (_) {

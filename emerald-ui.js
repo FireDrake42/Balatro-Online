@@ -35,9 +35,13 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   let autoUntil=null,autoNextAt=null,autoCooldownUntil=0,autoWasEligible=false,contextSeen=false,contextIdentity=null,contextRun=null,contextRunId=null,contextPage=null;
   let lookerMode=false;
   let entries=[],current=null,cursor=0,digest='',latestState=null,compact=false,lastFrenzy=null,nextAt=null,lastSpeechAt=null,turnSource='none',autoDone=true,autoVisibleMs=0,lastObserved=null,wasEligible=false,retryAt=0,timer=null,destroyed=false,greeted=false,generation=0,sending=false,prefPending=false,chatOpen=false;
+  const quirks=root.BOEmeraldTextQuirks?.create();let utterance=0,lookerTurn=0,chatTurn=0,chatRaw=null,chatSpoken=false;
+  const speechText=(raw,s)=>root.BOEmerald.displayText(root.BOI18n?.projectText?.('emerald',raw)??raw,s.level);
+  function answer(raw,spoken=false){chatRaw=String(raw??'');chatSpoken=spoken;if(spoken)chatTurn++;if(chatAnswer)chatAnswer.textContent=chatRaw}
+  function paintAnswer(s){if(!chatAnswer||chatRaw===null)return;const raw=speechText(chatRaw,s);if(chatSpoken&&quirks)quirks.paint(chatAnswer,raw,'chat:'+chatTurn,s.level);else if(chatAnswer.textContent!==raw)chatAnswer.textContent=raw}
   const now=()=>typeof host.now==='function'?host.now():root.performance?.now?root.performance.now():Date.now();
   function releaseNotice(){const n=meter?.querySelector('#faucet-ready-notice');if(n){n.classList.remove('frenzy-inline-notice');document.body.append(n)}}
-  function remove(){stage?.remove();stage=null;group=null;bubble=null;photo=null;photoLink=null;controls=null;levelBar=null;friendshipBar=null;lookerButton=null;workshopButton=null;nextButton=null;quietButton=null;talkButton=null;autoButton=null;chatForm=null;chatInput=null;chatAnswer=null;generation++;sending=false;chatOpen=false}
+  function remove(){stage?.remove();stage=null;group=null;bubble=null;photo=null;photoLink=null;controls=null;levelBar=null;friendshipBar=null;lookerButton=null;workshopButton=null;nextButton=null;quietButton=null;talkButton=null;autoButton=null;chatForm=null;chatInput=null;chatAnswer=null;chatRaw=null;chatSpoken=false;generation++;sending=false;chatOpen=false}
   function tableStamp(s){const r=s?.run;return JSON.stringify([r?._uiId,r?.round,r?.roundHands,r?.phase,r?.lastResult?.key,r?.lastResult?.total])}
   function preferences(s){return root.BOEmerald.tips(s?.tips)}
   function suppressAutomatic(){turnSource='manual';autoDone=true;autoVisibleMs=0;wasEligible=false}
@@ -54,14 +58,14 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    else if(current?.kind==='event'&&(!game||current.stamp!==tableStamp(s)))current=null;
   }
   function begin(entry,s,at,source='automatic'){
-   current=entry;lastSpeechAt=at;nextAt=at+COOLDOWN;turnSource=source;autoDone=source!=='automatic';autoVisibleMs=0;lastObserved=at;wasEligible=speakingAllowed(s);retryAt=0;
+   utterance++;current=entry;lastSpeechAt=at;nextAt=at+COOLDOWN;turnSource=source;autoDone=source!=='automatic';autoVisibleMs=0;lastObserved=at;wasEligible=speakingAllowed(s);retryAt=0;
   }
   function selectEntry(s,at,source){if(!entries.length)return false;cursor=(cursor+1)%entries.length;begin({...entries[cursor],kind:'entry'},s,at,source);return true}
   function advanceTip(s,at){if(!speakingAllowed(s)||nextAt===null||at<nextAt)return false;refresh(s);return selectEntry(s,at,'manual')}
   function stopAuto(at){if(autoUntil!==null){const ended=Math.min(at,autoUntil);autoUntil=null;autoNextAt=null;autoCooldownUntil=ended+AUTO_REST;autoWasEligible=false;suppressAutomatic()}}
   function checkContext(s,at){
    const identity=s?.identity??null,run=s?.run||null,runId=run?._uiId??null,page=s?.page??null;
-   if(contextSeen&&(identity!==contextIdentity||run!==contextRun||runId!==contextRunId||page!==contextPage)){stopAuto(at);suppressAutomatic();lookerMode=false;digest='';current=null;generation++;sending=false;chatOpen=false;if(chatInput)chatInput.value='';if(chatAnswer)chatAnswer.textContent='';const send=chatForm?.querySelector('button');if(send)send.disabled=false}
+   if(contextSeen&&(identity!==contextIdentity||run!==contextRun||runId!==contextRunId||page!==contextPage)){stopAuto(at);suppressAutomatic();lookerMode=false;digest='';current=null;utterance++;if(identity!==contextIdentity||runId!==contextRunId)quirks?.clear();chatRaw=null;chatSpoken=false;generation++;sending=false;chatOpen=false;if(chatInput)chatInput.value='';if(chatAnswer)chatAnswer.textContent='';const send=chatForm?.querySelector('button');if(send)send.disabled=false}
    contextSeen=true;contextIdentity=identity;contextRun=run;contextRunId=runId;contextPage=page;
    if(!Number.isInteger(s?.level)||s.level<36||s.level>100)stopAuto(at);
   }
@@ -81,8 +85,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   function paint(s,at){if(!bubble)return;const t=preferences(s),silent=s.workshop?.silent===true,name=root.BOEmerald.displayName(s.level);
    const next=_aux("aux.emerald.ui.84c3ce0bf9e4","{value1} · next tip",{value1:(name)});if(nextButton.textContent!==next)nextButton.textContent=next;
    if(chatForm){const label=chatForm.querySelector('label'),text=_aux("aux.emerald.ui.b12d1e0f8a83","Ask {value1} about Balatro",{value1:(name)});if(label.textContent!==text)label.textContent=text}
-   if(chatAnswer){const text=root.BOEmerald.displayText(chatAnswer.textContent,s.level);if(chatAnswer.textContent!==text)chatAnswer.textContent=text}
-   const message=lookerMode?(entries[0]?.message||_aux("aux.emerald.ui.734ea89b5281","Looker Mode only compares fully visible cards in your current playable hand.")):!t.first&&!t.second?_aux("aux.emerald.ui.8a427667488a","Tips are paused. Choose 1st tips, 2nd tips, or both."):current?.message||(gameContext(s)?_aux("aux.emerald.ui.cf817f2e8fda","I’ll check the current table before my next tip."):_aux("aux.emerald.ui.a79ec42f931f","I’m here while you explore. Choose the next tip when you’re ready."));if(bubble.textContent!==message)bubble.textContent=message;
+   const message=lookerMode?(entries[0]?.message||_aux("aux.emerald.ui.734ea89b5281","Looker Mode only compares fully visible cards in your current playable hand.")):!t.first&&!t.second?_aux("aux.emerald.ui.8a427667488a","Tips are paused. Choose 1st tips, 2nd tips, or both."):current?.message||(gameContext(s)?_aux("aux.emerald.ui.cf817f2e8fda","I’ll check the current table before my next tip."):_aux("aux.emerald.ui.a79ec42f931f","I’m here while you explore. Choose the next tip when you’re ready."));
    if(lookerButton){lookerButton.hidden=!gameContext(s);lookerButton.disabled=silent;lookerButton.textContent=lookerMode?_aux("aux.emerald.ui.c6e9a2e83b70","Looker Mode · On"):_aux("aux.emerald.ui.030cd491bbd6","Looker Mode");lookerButton.setAttribute('aria-pressed',String(lookerMode))}
    bubble.hidden=compact||silent;stage.classList.toggle('emerald-compact',compact);stage.classList.toggle('emerald-working',silent);stage.setAttribute('aria-label',silent?_aux("aux.emerald.ui.88fdc3858ede","{value1} is working silently on your card",{value1:(name)}):_aux("aux.emerald.ui.2c77bcf64382","{value1} game companion",{value1:(name)}));
    if(nextButton){const remaining=nextAt===null?COOLDOWN:Math.max(0,nextAt-at);nextButton.disabled=silent||compact||!entries.length||remaining>0;nextButton.title=remaining>0?_aux("aux.emerald.ui.2c2156b41aec","This speech lasts ten seconds. Next tip in {value1}s.",{value1:(Math.ceil(remaining/1000))}):_aux("aux.emerald.ui.2f779cacb077","Browse tips only — no extra gift rolls");nextButton.setAttribute('aria-disabled',String(nextButton.disabled))}
@@ -90,6 +93,11 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    if(quietButton){quietButton.textContent=compact?_aux("aux.emerald.ui.754e196536fe","Show tips"):_aux("aux.emerald.ui.c0ebb7d6b693","Quiet");quietButton.setAttribute('aria-pressed',String(compact))}
    if(talkButton){talkButton.disabled=silent||lookerMode||!gameContext(s);talkButton.setAttribute('aria-expanded',String(chatOpen&&gameContext(s)))}
    if(chatForm)chatForm.hidden=!chatOpen||silent||!gameContext(s);
+   // Choose only after visibility is set. Keep the native begin identity outside
+   // refreshed catalog entries; reopening/rerendering is not another utterance.
+   const raw=speechText(message,s),key=lookerMode?'looker:'+lookerTurn+':'+tableStamp(s)+':'+(entries[0]?.id||'fallback'):'speech:'+utterance+':'+(current?'current':'fallback');
+   if(t.first||t.second){if(quirks)quirks.paint(bubble,raw,key,s.level);else if(bubble.textContent!==raw)bubble.textContent=raw}else if(bubble.textContent!==raw)bubble.textContent=raw;
+   paintAnswer(s);
    if(autoButton){const active=autoUntil!==null,rest=Math.max(0,autoCooldownUntil-at),remaining=active?Math.ceil((autoUntil-at)/1000):0;autoButton.textContent=active?_aux("aux.emerald.ui.a2343f19deb7","Auto Speak · {value1}{value2}s",{value1:(speakingAllowed(s)?'Stop ':'Paused · Stop '),value2:(remaining)}):rest>0?_aux("aux.emerald.ui.2a62a85a8a7d","Auto Speak · cooldown {value1}s",{value1:(Math.ceil(rest/1000))}):_aux("aux.emerald.ui.d1378b7a864d","Auto Speak");autoButton.disabled=!active&&(rest>0||!speakingAllowed(s)||!entries.length);autoButton.setAttribute('aria-pressed',String(active));_auxSetAttribute(autoButton,"title","aux.emerald.ui.a59ae4dc9c47","Auto Next every 10 seconds for 5 minutes, then 1 minute cooldown. Pauses when unavailable; the elapsed window still ends. No voice, chat or extra gifts. This tab only: reloading cancels.")}
   }
   function updateFrenzy(s){const visible=s&&s.page==='game'&&s.run&&Number.isInteger(s.level)&&s.level>=33&&!s.protected&&!s.survey&&!s.suspended,active=visible&&s.frenzy?.active===true;
@@ -105,7 +113,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   function button(text,handler){const b=document.createElement('button');b.type='button';b.textContent=text;if(handler)b.addEventListener('click',handler);return b}
   function changeTips(name){let s;try{s=host.state()}catch(_){return}if(!allowed(s)||!gameContext(s)||prefPending||typeof host.setTips!=='function')return;
    const next=preferences(s);next[name]=!next[name];prefPending=true;suppressAutomatic();paint(s,now());
-   function done(result){prefPending=false;if(destroyed)return;if(result?.ok!==true&&chatAnswer)chatAnswer.textContent=result?.reason||'Tip preferences were not saved. Keep your current save.';update()}
+   function done(result){prefPending=false;if(destroyed)return;if(result?.ok!==true&&chatAnswer)answer(result?.reason||'Tip preferences were not saved. Keep your current save.');update()}
    try{const result=host.setTips(next);if(result&&typeof result.then==='function')result.then(done,error=>done({ok:false,reason:error.message}));else done(result)}catch(error){done({ok:false,reason:error.message})}
   }
   function createChat(){
@@ -115,10 +123,10 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    chatInput=document.createElement('input');chatInput.id='emerald-chat-input';chatInput.name='emerald-question';chatInput.type='text';chatInput.maxLength=240;chatInput.autocomplete='off';chatInput.required=true;_auxSetAttribute(chatInput,"placeholder","aux.emerald.ui.21150783779b","How does Mult work?");
    const send=button(_aux("aux.emerald.ui.f6f4688ff23d","Send"));send.type='submit';chatAnswer=document.createElement('p');chatAnswer.id='emerald-chat-answer';chatAnswer.setAttribute('role','status');chatAnswer.setAttribute('aria-live','polite');chatForm.append(note,label,chatInput,send,chatAnswer);
    chatForm.addEventListener('submit',async event=>{event.preventDefault();let s;try{s=host.state()}catch(_){return}if(sending||!allowed(s)||!gameContext(s)||s.workshop?.silent)return;
-    suppressAutomatic();const text=chatInput.value;if(typeof host.sendChat!=='function'){chatAnswer.textContent=_aux("aux.emerald.ui.6178151b6f5f","The guarded local game chat is unavailable. Keep all game files together.");return}
-    if(!text.trim()||text.length>240){chatAnswer.textContent=_aux("aux.emerald.ui.fff56c1f49c9","Ask one Balatro question, using 1–240 characters.");return}
+    suppressAutomatic();const text=chatInput.value;if(typeof host.sendChat!=='function'){answer(_aux("aux.emerald.ui.6178151b6f5f","The guarded local game chat is unavailable. Keep all game files together."));return}
+    if(!text.trim()||text.length>240){answer(_aux("aux.emerald.ui.fff56c1f49c9","Ask one Balatro question, using 1–240 characters."));return}
     const token=generation,runId=s.run._uiId;sending=true;send.disabled=true;
-    try{const result=await host.sendChat(text);if(destroyed||generation!==token||host.state()?.run?._uiId!==runId)return;chatAnswer.textContent=root.BOEmerald.displayText(result?.message||result?.reason||_aux("aux.emerald.ui.889fb169a9c4","No answer was committed. Your saves are unchanged."),host.state()?.level);if(result?.ok)chatInput.value=''}catch(error){if(generation===token&&chatAnswer)chatAnswer.textContent=root.BOEmerald.displayText(error.message||_aux("aux.emerald.ui.561b0a986386","The guarded game chat is unavailable."),host.state()?.level)}finally{if(generation===token){sending=false;send.disabled=false}}
+    try{const result=await host.sendChat(text);if(destroyed||generation!==token||host.state()?.run?._uiId!==runId)return;answer(result?.message||result?.reason||_aux("aux.emerald.ui.889fb169a9c4","No answer was committed. Your saves are unchanged."),result?.ok===true&&typeof result.message==='string');paintAnswer(host.state());if(result?.ok)chatInput.value=''}catch(error){if(generation===token&&chatAnswer){answer(error.message||_aux("aux.emerald.ui.561b0a986386","The guarded game chat is unavailable."));paintAnswer(host.state())}}finally{if(generation===token){sending=false;send.disabled=false}}
    });
   }
   function createStage(parent,s){
@@ -128,7 +136,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    quietButton=button(compact?_aux("aux.emerald.ui.754e196536fe","Show tips"):_aux("aux.emerald.ui.c0ebb7d6b693","Quiet"),()=>{compact=!compact;if(compact)suppressAutomatic();update()});quietButton.dataset.emeraldQuiet='';
    const first=button(_aux("aux.emerald.ui.c97df97bd7b2","1st tips"),()=>changeTips('first')),second=button(_aux("aux.emerald.ui.4fdd92680f1c","2nd tips"),()=>changeTips("second"));first.dataset.emeraldTips='first';second.dataset.emeraldTips='second';
    talkButton=button(_aux("aux.emerald.ui.449f5a775762","Talk"),()=>{let live;try{live=host.state()}catch(_){return}if(!allowed(live)||!gameContext(live)||live.workshop?.silent)return;suppressAutomatic();chatOpen=!chatOpen;paint(live,now());if(chatOpen)chatInput?.focus()});talkButton.dataset.emeraldTalk='';talkButton.setAttribute('aria-controls','emerald-chat-form');
-   lookerButton=button(_aux("aux.emerald.ui.030cd491bbd6","Looker Mode"),()=>{let live;try{live=host.state()}catch(_){return}if(!allowed(live)||!gameContext(live)||live.workshop?.silent)return;const at=now();stopAuto(at);suppressAutomatic();lookerMode=!lookerMode;compact=false;chatOpen=false;current=null;digest='';refresh(live);if(!lookerMode&&entries[0])begin({...entries[0],kind:'entry'},live,at,'manual');update()});lookerButton.dataset.emeraldLooker='';
+   lookerButton=button(_aux("aux.emerald.ui.030cd491bbd6","Looker Mode"),()=>{let live;try{live=host.state()}catch(_){return}if(!allowed(live)||!gameContext(live)||live.workshop?.silent)return;const at=now();stopAuto(at);suppressAutomatic();lookerMode=!lookerMode;lookerTurn++;compact=false;chatOpen=false;current=null;digest='';refresh(live);if(!lookerMode&&entries[0])begin({...entries[0],kind:'entry'},live,at,'manual');update()});lookerButton.dataset.emeraldLooker='';
    controls.append(nextButton,quietButton,first,second,talkButton,lookerButton);createChat();group.append(bubble,photo,controls,chatForm);stage.append(group);parent.append(stage);
   }
   function updateLevel(s){const caps=s.capabilities||{},pet=s.pet,enhanced=s.level>=36,canRoadmap=typeof host.openRoadmap==='function';
@@ -157,7 +165,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
     // Exactly one opportunity belonging to THIS automatically begun utterance.
     // Keeping the same line, idling, manual turns or toggles cannot renew it.
     if(s.level<10||!s.capabilities?.speedGift)autoDone=true;
-    else{let result;try{result=host.automaticSpeech?.()}catch(_){result=null}if(result?.ok){autoDone=true;if(result.message)current={message:result.message,kind:'event',stamp:tableStamp(s)}}else retryAt=at+1000}
+    else{let result;try{result=host.automaticSpeech?.()}catch(_){result=null}if(result?.ok){autoDone=true;if(result.message){utterance++;current={message:result.message,kind:'event',stamp:tableStamp(s)}}}else retryAt=at+1000}
    }
    if(at>=nextAt&&preferences(s).first){let message;try{message=host.takeEvent?.()}catch(_){message=null}if(typeof message==='string'&&message)begin({message,kind:'event',stamp:tableStamp(s)},s,at,'automatic')}
   }

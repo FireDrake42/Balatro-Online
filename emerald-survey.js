@@ -1,5 +1,6 @@
-/* Read-only, runner-owned companion. No game/controller startup, answers, RNG,
- * storage writes, gifts, chat, timers, survey decisions or reward callbacks. */
+/* Read-only, runner-owned companion. No game/controller startup, answers,
+ * gameplay RNG, storage writes, gifts, chat, timers or reward callbacks.
+ * Text quirks use only separate ephemeral presentation entropy after display. */
 (function(root,factory){'use strict';const node=typeof module==='object'&&module.exports,api=factory(root,node?{SS:require('./save-slots'),EP:require('./emerald-progress'),PG:require('./progression'),EC:require('./emerald-conduct'),SR:require('./survey-runner'),RM:require('./emerald-roadmap')}:{SS:root.BOSaveSlots,EP:root.BOEmeraldProgress,PG:root.BOProgress,EC:root.BOEmeraldConduct,SR:root.BOSurveyRunner,RM:root.BOEmeraldRoadmap});if(node)module.exports=api;else root.BOEmeraldSurvey=api;})(typeof globalThis!=='undefined'?globalThis:this,function(root,M){'use strict';
  const PROFILE='danis-table.profile.v1',SETTINGS='danis-table.settings.v1',MAX=4*1024*1024;
  const record=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
@@ -32,5 +33,12 @@
   const roadmap=document.createElement('div');roadmap.className='emerald-survey-roadmap';roadmap.innerHTML=M.RM.html(snapshot.progress);details.appendChild(roadmap);stage.appendChild(details);
   const speech=document.createElement('p');speech.className='emerald-survey-speech';speech.textContent=line;if(question?.type==='attention'){speech.id='emerald-survey-trick-warning';speech.setAttribute('role','status')}stage.appendChild(speech);parent.appendChild(stage);return stage;
  }
- return Object.freeze({PROFILE,SETTINGS,readSnapshot,message,render});
+ // Rendering a detached/rejected view never chooses a quirk. The runner calls
+ // this only after all native checks and the final connected append succeed.
+ let speechQuirks=null,speechIdentity=null;
+ function presentSpeech(stage,snapshot,question,utteranceKey){const raw=message(snapshot,question),speech=stage?.querySelector('.emerald-survey-speech');if(!raw||!speech||!root.BOEmeraldTextQuirks)return false;
+  if(snapshot.identity!==speechIdentity){speechQuirks?.clear();speechIdentity=snapshot.identity}if(!speechQuirks)speechQuirks=root.BOEmeraldTextQuirks.create();
+  return speechQuirks.paint(speech,root.BOI18n?.projectText('emerald',raw)??raw,JSON.stringify([snapshot.identity,utteranceKey]),snapshot.level);
+ }
+ return Object.freeze({PROFILE,SETTINGS,readSnapshot,message,render,presentSpeech});
 });
