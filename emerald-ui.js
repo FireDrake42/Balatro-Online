@@ -52,7 +52,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    const game=gameContext(s),r=game?s.run:{},publicR=game?root.BOEmerald.publicRun(s):null,f=game?root.BOEmerald.frenzyInfo(s):{},t=preferences(s);
    // Digest ONLY public facts. In particular, never stringify run.hand, which
    // would read face-down rank/suit fields, or any deck/draw/seed/RNG fields.
-   const key=JSON.stringify(game?[lookerMode,s.friendship?.fp,s.level,s.page,s.survey,s.protected,s.suspended,publicR,r._uiId,r.phase,r.money,r.target,r.score,r.hands,r.shop,r.lastResult?.name,r.lastResult?.key,r.lastResult?.chips,r.lastResult?.mult,r.lastResult?.total,s.selected,s.pet,s.capabilities,s.faucetReady,s.faucetLevel,s.passiveReady,s.xp,t,f.active,f.charge,f.required,f.meterMax]:[s.friendship?.fp,s.level,s.page,s.pet,t]);
+   const key=JSON.stringify(game?[s.language,s.section,s.surveyCompletion,lookerMode,s.friendship?.fp,s.level,s.page,s.survey,s.protected,s.suspended,publicR,r._uiId,r.phase,r.money,r.target,r.score,r.hands,r.shop,r.lastResult?.name,r.lastResult?.key,r.lastResult?.chips,r.lastResult?.mult,r.lastResult?.total,s.selected,s.pet,s.capabilities,s.faucetReady,s.faucetLevel,s.passiveReady,s.xp,t,f.active,f.charge,f.required,f.meterMax]:[s.language,s.section,s.surveyCompletion,s.friendship?.fp,s.level,s.page,s.pet,t]);
    if(key!==digest){entries=root.BOEmerald.catalog(root.BO,lookerMode?{...s,looker:true}:s,t);digest=key}
    if(current?.kind==='entry'){const fresh=entries.find(e=>e.id===current.id);current=fresh?{...fresh,kind:'entry'}:null}
    else if(current?.kind==='event'&&(!game||current.stamp!==tableStamp(s)))current=null;

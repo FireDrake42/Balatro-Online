@@ -46,7 +46,7 @@
  }
  // Computed presentation only: no saved field, replay change or default write.
  function appearance(ownLevel){const level=Number.isInteger(ownLevel)&&ownLevel>=1&&ownLevel<=10?ownLevel:0,step=Math.max(0,level-1),photoScale=1+step/10,glowRadius=level?4+2*step:0,glowAlpha=level?Number((.18+.07*step).toFixed(2)):0;return Object.freeze({level,photoScale,glowRadius,glowAlpha,css:'--emerald-scale:'+photoScale+';--emerald-glow-radius:'+glowRadius+'px;--emerald-glow-alpha:'+glowAlpha+';'})}
- function capabilities(state,actualLevel){const l=progress(state,actualLevel).level;return {level:l,facts:l>=2,photoScale:appearance(l).photoScale,movementSpeed:l>=3?1.2:1,speedGift:l>=4,greenAura:l>=5,eventCommentary:l>=6,welcome:l>=7,adviceRichness:l>=8?1.2:1,workshop:l>=9,workshopRankGain:l>=10?3:l>=9?1:0}}
+ function capabilities(state,actualLevel){const l=progress(state,actualLevel).level;return {level:l,facts:l>=2,photoScale:appearance(l).photoScale,movementSpeed:Number(((l>=3?1.2:1)*(Number.isInteger(actualLevel)&&actualLevel>=48&&actualLevel<=100?1.5:1)).toFixed(5)),speedGift:l>=4,greenAura:l>=5,eventCommentary:l>=6,welcome:l>=7,adviceRichness:l>=8?1.2:1,workshop:l>=9,workshopRankGain:l>=10?3:l>=9?1:0}}
  function creditWin(state,receipt,expectedRevision){
   const next=cas(state,expectedRevision);
   check(fields(receipt,['runId','actualLevel','beforePhase','afterPhase','endless','abandoned','source'])&&validRunId(receipt.runId)&&unlocked(receipt.actualLevel)&&['play','cashout'].includes(receipt.beforePhase)&&receipt.afterPhase==='won'&&receipt.endless===false&&receipt.abandoned===false&&receipt.source==='fresh-completion','Only a fresh completed GAME win at actual profile Level 10+ can credit Emerald.');

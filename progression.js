@@ -148,7 +148,7 @@
       bossBonusHands: level >= 20 ? 1 : 0, bossBonusDiscards: level >= 20 ? 1 : 0,
       stockMarket: level >= 21, casinoTrack: level >= 24, moreTracks:level>=27, faucet: level >= 25, faucetNotifications:level>=28,
       animationDurationMultiplier:level>=22?.8:1,manualXpMultiplier:level>=22?1.2:1,roundCashoutBonus:level>=23?1:0,shopDiscount:level>=24?1:0,
-      interestRate:level>=30?.00025:level>=26?.00015:level>=20?.0001:0,interestCap:level>=30?5:level>=26?3:level>=20?2:0,fullscreen:level>=31,baseCritChance:level>=32?.01:0,potionMerging:level>=33,
+      interestRate:level>=100?0:level>=30?.00025:level>=26?.00015:level>=20?.0001:0,interestCap:level>=100?0:level>=43?10:level>=30?5:level>=26?3:level>=20?2:0,fullscreen:level>=31,baseCritChance:level>=32?.01:0,potionMerging:level>=33,
       enhancedUI: level >= 30, roundBonusMoney: (level >= 23 ? 1 : 0) + (level >= 35 ? 2 : 0)
     };
   }

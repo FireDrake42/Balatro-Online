@@ -434,7 +434,17 @@
       return q;
     });
   }
-  function generateQuestions(input, seed, version) {
+  function normalizeQuestionPlan(value,input){
+    var offer=normalizeOffer(input),keys=['version','actualLevel','originalCount','count'];
+    check(value&&typeof value==='object'&&[Object.prototype,null].indexOf(Object.getPrototypeOf(value))>=0&&Reflect.ownKeys(value).length===keys.length&&keys.every(function(k){var d=Object.getOwnPropertyDescriptor(value,k);return d&&d.enumerable&&own.call(d,'value');}),'Invalid questionnaire length snapshot.');
+    check(value.version===1&&Number.isInteger(value.actualLevel)&&value.actualLevel>=46&&value.actualLevel<=100&&value.originalCount===offer.questionCount&&value.count===questionTarget(value.originalCount),'Invalid questionnaire length or birth level.');
+    return {version:1,actualLevel:value.actualLevel,originalCount:value.originalCount,count:value.count};
+  }
+  function questionTarget(originalCount){check(Number.isSafeInteger(originalCount)&&originalCount>=1,'Invalid original questionnaire count.');return Math.max(1,Math.ceil(originalCount*.6));}
+  function questionPlan(input,actualLevel){check(Number.isInteger(actualLevel)&&actualLevel>=1&&actualLevel<=100,'Invalid actual player level.');if(actualLevel<46)return undefined;var offer=normalizeOffer(input);return normalizeQuestionPlan({version:1,actualLevel:actualLevel,originalCount:offer.questionCount,count:questionTarget(offer.questionCount)},offer);}
+  function sessionQuestionCount(session){return own.call(session,'questionPlan')?normalizeQuestionPlan(session.questionPlan,session.offer).count:normalizeOffer(session.offer).questionCount;}
+  function generateQuestions(input, seed, version, plan){var questions=generateFullQuestions(input,seed,version);return plan===undefined?questions:questions.slice(0,normalizeQuestionPlan(plan,input).count);}
+  function generateFullQuestions(input, seed, version) {
     check(version === undefined || version === 1 || version === 2 || version === QUESTIONNAIRE_VERSION, 'Unsupported questionnaire version.');
     if (version === undefined || version === 1) return generateFrozenQuestions(input, seed);
     var questions = generateQualityQuestions(input, seed);
@@ -500,5 +510,5 @@
     if (elapsedMs < SPEED_FLOORS[type]) return verdict(false, 'too-fast');
     return verdict(true, 'ok');
   }
-  return Object.freeze({QUESTIONNAIRE_VERSION: QUESTIONNAIRE_VERSION, VIDEO_OPTIONS: VIDEO_OPTIONS, runnerQuality: runnerQuality, captchaChallenge: captchaChallenge, ROLLING_FORMAT_VERSION: ROLLING_FORMAT_VERSION, providerEventKey: providerEventKey, cpxPromotion: cpxPromotion, generateRollingOffers: generateRollingOffers, createProviderInventory: createProviderInventory, normalizeProviderInventory: normalizeProviderInventory, providerInventoryOffers: providerInventoryOffers, refillProviderInventory: refillProviderInventory, EPOCH_MS: EPOCH_MS, FORMAT_VERSION: FORMAT_VERSION, HOT_CHANCE: HOT_CHANCE, TOP_CHANCE: TOP_CHANCE, TOP_MULTIPLIER: TOP_MULTIPLIER, PROVIDERS: PROVIDERS, TOPICS: Object.freeze(TOPICS), TYPES: Object.freeze(TYPES), SPEED_FLOORS: SPEED_FLOORS, generateOffers: generateOffers, generatePreviousOffers: generatePreviousOffers, generateLegacyOffers: generateLegacyOffers, generateQuestions: generateQuestions, qualify: qualify, answerQuality: answerQuality, normalizeOffer: normalizeOffer, createTheoremInventory: createTheoremInventory, normalizeTheoremInventory: normalizeTheoremInventory, theoremInventoryOffers: theoremInventoryOffers, refillTheoremInventory: refillTheoremInventory});
+  return Object.freeze({QUESTIONNAIRE_VERSION: QUESTIONNAIRE_VERSION, VIDEO_OPTIONS: VIDEO_OPTIONS, runnerQuality: runnerQuality, captchaChallenge: captchaChallenge, ROLLING_FORMAT_VERSION: ROLLING_FORMAT_VERSION, providerEventKey: providerEventKey, cpxPromotion: cpxPromotion, generateRollingOffers: generateRollingOffers, createProviderInventory: createProviderInventory, normalizeProviderInventory: normalizeProviderInventory, providerInventoryOffers: providerInventoryOffers, refillProviderInventory: refillProviderInventory, EPOCH_MS: EPOCH_MS, FORMAT_VERSION: FORMAT_VERSION, HOT_CHANCE: HOT_CHANCE, TOP_CHANCE: TOP_CHANCE, TOP_MULTIPLIER: TOP_MULTIPLIER, PROVIDERS: PROVIDERS, TOPICS: Object.freeze(TOPICS), TYPES: Object.freeze(TYPES), SPEED_FLOORS: SPEED_FLOORS, generateOffers: generateOffers, generatePreviousOffers: generatePreviousOffers, generateLegacyOffers: generateLegacyOffers, generateQuestions: generateQuestions, questionPlan: questionPlan, questionTarget: questionTarget, normalizeQuestionPlan: normalizeQuestionPlan, sessionQuestionCount: sessionQuestionCount, qualify: qualify, answerQuality: answerQuality, normalizeOffer: normalizeOffer, createTheoremInventory: createTheoremInventory, normalizeTheoremInventory: normalizeTheoremInventory, theoremInventoryOffers: theoremInventoryOffers, refillTheoremInventory: refillTheoremInventory});
 });

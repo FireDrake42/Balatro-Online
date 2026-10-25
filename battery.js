@@ -1,0 +1,36 @@
+/* FICTIONAL game battery. Pure explicit transitions; never the device Battery API.
+ * No storage, clocks, RNG, timers or default-write/migration side effects.
+ * Durations are remaining observed foreground milliseconds, not wall deadlines.
+ * Positive charging REPLACES drain and never uses discharge life multipliers. */
+(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOBattery=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+ const SESSION_MS=1800000,COOLDOWN_MS=600000,MAX=Number.MAX_SAFE_INTEGER,KEYS=['version','revision','charge','chargerLevel','mode','lowPower','adaptive','sessionMs','cooldownMs','notifiedMask'],own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+ const finite=n=>typeof n==='number'&&Number.isFinite(n),integer=n=>Number.isSafeInteger(n)&&n>=0;
+ function check(ok,message){if(!ok)throw Error('Fictional battery: '+message)}
+ function data(o,keys){if(!o||typeof o!=='object'||Array.isArray(o))return false;const proto=Object.getPrototypeOf(o);return (proto===Object.prototype||proto===null)&&Reflect.ownKeys(o).length===keys.length&&keys.every(k=>own(o,k)&&own(Object.getOwnPropertyDescriptor(o,k)||{},'value')&&Object.getOwnPropertyDescriptor(o,k).enumerable===true);}
+ function target(s){return s.adaptive?80:100}
+ function validate(s){try{return data(s,KEYS)&&s.version===1&&integer(s.revision)&&finite(s.charge)&&s.charge>=0&&s.charge<=100&&Number.isSafeInteger(s.chargerLevel)&&s.chargerLevel>=1&&['normal','light','dark'].includes(s.mode)&&typeof s.lowPower==='boolean'&&typeof s.adaptive==='boolean'&&finite(s.sessionMs)&&s.sessionMs>=0&&s.sessionMs<=SESSION_MS&&finite(s.cooldownMs)&&s.cooldownMs>=0&&s.cooldownMs<=COOLDOWN_MS&&integer(s.notifiedMask)&&s.notifiedMask<=7&&!(s.sessionMs>0&&(s.cooldownMs>0||s.charge>=target(s)))}catch(_){return false}}
+ function normalize(s){if(s===undefined)return null;check(validate(s),'saved shape needs attention; no default battery was loaded.');return {...s}}
+ function profileState(p){check(p&&typeof p==='object'&&!Array.isArray(p),'invalid profile.');if(!own(p,'battery'))return null;const d=Object.getOwnPropertyDescriptor(p,'battery');check(d&&own(d,'value')&&d.enumerable===true&&d.value!==undefined,'invalid optional saved battery.');return normalize(d.value)}
+ function create(){return {version:1,revision:0,charge:100,chargerLevel:1,mode:'normal',lowPower:false,adaptive:false,sessionMs:0,cooldownMs:0,notifiedMask:0}}
+ function current(s,revision){const n=normalize(s);check(n&&integer(revision)&&revision===n.revision,'stale battery action.');return n}
+ function finish(before,next,extra={}){const changed=KEYS.some(k=>k!=='revision'&&before[k]!==next[k]);if(changed){check(before.revision<MAX,'revision cannot advance safely; export your save.');next.revision=before.revision+1}check(validate(next),'transition cannot be represented safely.');return {state:next,changed,...extra}}
+ function drainRate(s){return s.lowPower?.2:s.mode==='light'?2:s.mode==='dark'?.5:1}
+ function chargeRate(level){check(Number.isSafeInteger(level)&&level>=1,'invalid charger level.');const rate=(80+2*(level-1))/100;check(finite(rate)&&rate>0,'charger rate cannot be represented safely.');return rate}
+ // Integrate through all four exact boundary bands. <=80 is normal; <=20 is
+ // /1.5; <=5 is /2. Every segment consumes only the time needed to its edge.
+ function discharge(charge,ms,base){let q=charge,left=ms;for(const [edge,factor] of [[80,2],[20,1],[5,1/1.5],[0,.5]]){if(q<=edge)continue;const rate=base*factor/60000,time=(q-edge)/rate;if(left<time){q-=left*rate;left=0;break}left-=time;q=edge}return Math.max(0,Math.min(100,q))}
+ function timeToEmpty(s){const n=normalize(s);check(n,'battery not activated.');let q=n.charge,ms=0;for(const [edge,factor]of [[80,2],[20,1],[5,1/1.5],[0,.5]])if(q>edge){ms+=(q-edge)/(drainRate(n)*factor)*60000;q=edge}return ms}
+ function advance(s,elapsedMs){const before=normalize(s);check(before,'activate explicitly first.');check(finite(elapsedMs)&&elapsedMs>=0&&elapsedMs<=MAX,'invalid observed elapsed time.');const next={...before},notifications=[];let left=elapsedMs,chargedMs=0;
+  if(next.sessionMs>0&&left>0){const rate=chargeRate(next.chargerLevel)/60000,toTarget=(target(next)-next.charge)/rate;chargedMs=Math.min(left,next.sessionMs,toTarget);next.charge=Math.min(target(next),next.charge+chargedMs*rate);next.sessionMs=Math.max(0,next.sessionMs-chargedMs);left-=chargedMs;
+   if(chargedMs===toTarget||next.sessionMs===0){if(chargedMs===toTarget)next.charge=target(next);next.sessionMs=0;next.cooldownMs=COOLDOWN_MS}
+   [10,5,3].forEach((n,i)=>{if(next.charge>n)next.notifiedMask&=~(1<<i)});
+  }
+  if(left>0&&next.sessionMs===0){next.cooldownMs=Math.max(0,next.cooldownMs-left);const from=next.charge;next.charge=discharge(from,left,drainRate(next));[10,5,3].forEach((n,i)=>{if(from>n&&next.charge<=n&&!(next.notifiedMask&(1<<i))){notifications.push(n);next.notifiedMask|=1<<i}})}
+  return finish(before,next,{chargedMs,notifications,elapsedMs});
+ }
+ function startCharge(s,revision){const before=current(s,revision);check(!before.sessionMs&&!before.cooldownMs,'session active or foreground cooldown remaining.');check(before.charge<target(before),'charge target already reached.');return finish(before,{...before,sessionMs:SESSION_MS},{notifications:[],chargedMs:0})}
+ function configure(s,patch,revision){const before=current(s,revision);check(patch&&typeof patch==='object'&&!Array.isArray(patch),'invalid settings.');const keys=Reflect.ownKeys(patch);check(keys.length>0&&keys.every(k=>['mode','lowPower','adaptive'].includes(k)&&own(Object.getOwnPropertyDescriptor(patch,k)||{},'value')&&Object.getOwnPropertyDescriptor(patch,k).enumerable===true),'unsupported settings.');const next={...before,...patch};check(['normal','light','dark'].includes(next.mode)&&typeof next.lowPower==='boolean'&&typeof next.adaptive==='boolean','invalid settings.');if(next.sessionMs>0&&next.charge>=target(next)){next.sessionMs=0;next.cooldownMs=COOLDOWN_MS}return finish(before,next,{notifications:[],chargedMs:0})}
+ function priceHalf(level){check(Number.isSafeInteger(level)&&level>=1&&Number.isSafeInteger(level+1)&&Number.isSafeInteger(20*(level+1)),'next upgrade price exceeds safe integer precision.');return 20*(level+1)}
+ function upgrade(s,coinsHalf,revision){const before=current(s,revision),price=priceHalf(before.chargerLevel);check(integer(coinsHalf),'invalid faucet coin balance.');check(coinsHalf>=price,'not enough faucet coins.');const next={...before,chargerLevel:before.chargerLevel+1};chargeRate(next.chargerLevel);return finish(before,next,{coinsHalf:coinsHalf-price,priceHalf:price,chargedMs:0,notifications:[]})}
+ return Object.freeze({SESSION_MS,COOLDOWN_MS,validate,normalize,profileState,create,advance,startCharge,configure,upgrade,chargeRate,drainRate,timeToEmpty,target,priceHalf});
+});

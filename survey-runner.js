@@ -81,11 +81,13 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
     var modern = Object.prototype.hasOwnProperty.call(value, 'questionnaireVersion');
     check(!modern || value.questionnaireVersion === 2 || value.questionnaireVersion === S.QUESTIONNAIRE_VERSION);
     check(modern || !Object.prototype.hasOwnProperty.call(value, 'intro'));
-    var questions = S.generateQuestions(offer, value.seed, value.questionnaireVersion), quality = value.quality === undefined ? [] : value.quality;
-    check(value.index >= 0 && value.index <= offer.questionCount && Array.isArray(quality) && quality.length === value.index);
+    var planned='questionPlan' in value,planDescriptor=planned?Object.getOwnPropertyDescriptor(value,'questionPlan'):null;check(!planned||planDescriptor&&planDescriptor.enumerable&&Object.prototype.hasOwnProperty.call(planDescriptor,'value'));
+    var plan=planned?S.normalizeQuestionPlan(planDescriptor.value,offer):undefined;
+    var questions = S.generateQuestions(offer, value.seed, value.questionnaireVersion,plan), count=questions.length, quality = value.quality === undefined ? [] : value.quality;
+    check(value.index >= 0 && value.index <= count && Array.isArray(quality) && quality.length === value.index);
     if (value.status === 'qualified') check(value.index === 0);
-    if (value.status === 'completed') check(value.index === offer.questionCount && time(value.completedAt) && value.completedAt >= value.createdAt);
-    else check(value.index < offer.questionCount);
+    if (value.status === 'completed') check(value.index === count && time(value.completedAt) && value.completedAt >= value.createdAt);
+    else check(value.index < count);
     var sum = 0;
     quality = quality.map(function (q, i) {
       check(q && q.questionId === questions[i].id && q.ok === true && time(q.elapsedMs) && q.elapsedMs >= S.SPEED_FLOORS[questions[i].type]);
@@ -97,6 +99,7 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
     var updated = value.updatedAt === undefined ? value.createdAt : value.updatedAt;
     check(time(updated) && updated >= value.createdAt);
     var out = {version: 1, id: id, offer: offer, seed: value.seed, createdAt: value.createdAt, returnUrl: value.returnUrl, status: value.status, index: value.index, revision: revision, elapsedMs: elapsed, quality: quality, updatedAt: updated};
+    if(planned)out.questionPlan=plan;
     if (modern) {
       var intro = value.intro;
       check(intro && typeof intro === 'object' && !Array.isArray(intro) && ['captcha', 'welcome', 'ready'].indexOf(intro.phase) >= 0);
@@ -125,7 +128,7 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
     if (value.status !== 'completed' && value.status !== 'disqualified' && value.lease !== undefined) { check(value.lease && identifier(value.lease.owner) && time(value.lease.expiresAt)); out.lease = {owner: value.lease.owner, expiresAt: value.lease.expiresAt}; }
     return out;
   }
-  function identity(s) { return JSON.stringify([s.id, s.offer, s.seed, s.createdAt, s.returnUrl, s.economyGeneration, s.epoch, s.questionnaireVersion]); }
+  function identity(s) { return JSON.stringify([s.id, s.offer, s.seed, s.createdAt, s.returnUrl, s.economyGeneration, s.epoch, s.questionnaireVersion, s.questionPlan]); }
   function safeReturnUrl(returnUrl, currentUrl, id) {
     var base;
     try { base = new URL(currentUrl); } catch (_) { return null; }
@@ -206,7 +209,7 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
       check(!s.intro || s.intro.phase === 'ready', 'intro');
       check(expectedIndex === s.index, 'stale');
       check(at >= s.questionStartedAt, 'clock');
-      var q = S.generateQuestions(s.offer, s.seed, s.questionnaireVersion)[s.index], elapsed = at - s.questionStartedAt, result = S.answerQuality(q, value, elapsed);
+      var q = S.generateQuestions(s.offer, s.seed, s.questionnaireVersion,s.questionPlan)[s.index], elapsed = at - s.questionStartedAt, result = S.answerQuality(q, value, elapsed);
       if (!result.ok) {
         if (SIGNALS.indexOf(result.reason) >= 0) {
           s.failures.push({index: s.index, reason: result.reason, at: at});
@@ -218,7 +221,7 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
         return {ok: false, reason: result.reason, session: clone(s)};
       }
       s.quality.push({questionId: q.id, elapsedMs: elapsed, ok: true}); s.elapsedMs += elapsed; s.index++;
-      if (s.index === s.offer.questionCount) { s.status = 'completed'; s.completedAt = at; delete s.lease; delete s.questionStartedAt; }
+      if (s.index === S.sessionQuestionCount(s)) { s.status = 'completed'; s.completedAt = at; delete s.lease; delete s.questionStartedAt; }
       else { s.questionStartedAt = at; s.lease.expiresAt = at + LEASE_MS; }
       return commit(previous, s, at);
     }
@@ -234,7 +237,7 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
       pending = task.then(function () {});
       return task;
     }
-    return Object.freeze({resume: function () { return run('resume'); }, submitCaptcha: function (value) { return run('captcha', undefined, value); }, acceptWelcome: function () { return run('welcome'); }, submit: function (index, value) { return run('submit', index, value); }, heartbeat: function () { return run('heartbeat'); }, release: function () { return run('release'); }, getState: function () { return clone(snapshot); }, getQuestion: function () { return snapshot && snapshot.status === 'in-progress' && (!snapshot.intro || snapshot.intro.phase === 'ready') ? S.generateQuestions(snapshot.offer, snapshot.seed, snapshot.questionnaireVersion)[snapshot.index] : null; }});
+    return Object.freeze({resume: function () { return run('resume'); }, submitCaptcha: function (value) { return run('captcha', undefined, value); }, acceptWelcome: function () { return run('welcome'); }, submit: function (index, value) { return run('submit', index, value); }, heartbeat: function () { return run('heartbeat'); }, release: function () { return run('release'); }, getState: function () { return clone(snapshot); }, getQuestion: function () { return snapshot && snapshot.status === 'in-progress' && (!snapshot.intro || snapshot.intro.phase === 'ready') ? S.generateQuestions(snapshot.offer, snapshot.seed, snapshot.questionnaireVersion,snapshot.questionPlan)[snapshot.index] : null; }});
   }
   var MESSAGES = {
     captcha: 'Try the local sum again. This game check never contacts a CAPTCHA service.', intro: 'Complete the local CAPTCHA and welcome screen before answering questions.',
@@ -589,7 +592,7 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
       var q = view.controller.getQuestion(); if (!q) return renderError('invalid');
       var shell = frame(s.offer.topic, q), meta = element('div', undefined, 'bo-survey-meta'), timer = element('span', elapsedText(s)); timer.id = 'bo-survey-timer'; meta.appendChild(timer); meta.appendChild(element('span', _auxValue("aux.survey.runner.c78cc8a6eb4a","Fictional questionnaire"))); shell.appendChild(meta);
       if (s.offer.showProgress) {
-        var progressWrap = element('div', undefined, 'bo-survey-progress'), label = element('span', _auxValue("aux.survey.runner.58856e13436c","{value1}% complete",{value1:(Math.floor(s.index / s.offer.questionCount * 100))}), 'bo-survey-progress-label'), progress = element('progress'); progress.id = 'bo-survey-progress'; progress.max = s.offer.questionCount; progress.value = s.index; _surveyAttribute(progress,'aria-label',_auxValue("aux.survey.runner.228253d5939c","Survey progress")); progressWrap.appendChild(label); progressWrap.appendChild(progress); shell.appendChild(progressWrap);
+        var progressWrap = element('div', undefined, 'bo-survey-progress'), label = element('span', _auxValue("aux.survey.runner.58856e13436c","{value1}% complete",{value1:(Math.floor(s.index / S.sessionQuestionCount(s) * 100))}), 'bo-survey-progress-label'), progress = element('progress'); progress.id = 'bo-survey-progress'; progress.max = S.sessionQuestionCount(s); progress.value = s.index; _surveyAttribute(progress,'aria-label',_auxValue("aux.survey.runner.228253d5939c","Survey progress")); progressWrap.appendChild(label); progressWrap.appendChild(progress); shell.appendChild(progressWrap);
       }
       var card = element('section', undefined, 'bo-survey-card'), form = element('form'); form.id = 'bo-survey-form'; form.dataset.questionType = q.type; form.noValidate = true;
       var heading = element('h2', q.prompt, q.type === 'attention' ? 'bo-survey-attention' : ''); heading.id = 'bo-survey-prompt'; form.setAttribute('aria-labelledby', heading.id); form.appendChild(heading);
@@ -609,7 +612,7 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
       }
       else q.options.forEach(function (o) { var label = element('label', undefined, 'bo-survey-choice'), input = element('input'), text = element('span', o.label, 'bo-survey-answer-text'); if (q.variant === 'word-length' || q.type === 'attention' && ['Red','Green','Blue'].includes(o.label)) { text.lang = 'en'; text.setAttribute('translate', 'no'); } input.type = 'radio'; input.name = 'answer'; input.value = o.value; if (q.type === 'attention' && Number.isInteger(o.fontSize)) { text.style.fontSize = o.fontSize + 'px'; text.style.lineHeight = '1.15'; _surveyAttributeParts(input,'aria-label',[(q.variant === 'word-length' ? _auxValue('aux.survey.runner.9a0283957922','Word ') : _auxValue('aux.survey.runner.4ada4ace3330','Numeric value ')),o.label]); } label.appendChild(input); label.appendChild(text); form.appendChild(label); });
       var message = element('p', '', 'bo-survey-error'); message.id = 'bo-survey-error'; message.setAttribute('role', 'alert'); form.appendChild(message);
-      var actions = element('div', undefined, 'bo-survey-actions'), next = element('button', s.index === s.offer.questionCount - 1 ? _auxValue("aux.survey.runner.a48ac90935cd","Finish survey") : _auxValue("common.continue","Continue")); next.id = 'bo-survey-continue'; next.type = 'submit'; actions.appendChild(next); form.appendChild(actions);
+      var actions = element('div', undefined, 'bo-survey-actions'), next = element('button', s.index === S.sessionQuestionCount(s) - 1 ? _auxValue("aux.survey.runner.a48ac90935cd","Finish survey") : _auxValue("common.continue","Continue")); next.id = 'bo-survey-continue'; next.type = 'submit'; actions.appendChild(next); form.appendChild(actions);
       form.addEventListener('submit', async function (event) {
         event.preventDefault(); if (!current() || view.busy) return; view.busy = true; next.disabled = true; _surveyBind(message,'');
         // Response values exist only for this call and the visible form. Only

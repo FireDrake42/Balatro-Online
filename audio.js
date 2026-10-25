@@ -37,9 +37,9 @@
   const LOOKAHEAD = 0.15, TICK_MS = 50, FX_LIMIT = 16, MUSIC_LIMIT = 36;
   const PENTATONIC = [0, 2, 4, 7, 9, 12, 14];
   const SFX_NAMES = new Set(['select', 'deselect', 'deal', 'discard', 'play', 'chip',
-    'mult', 'xmult', 'joker', 'coin', 'purchase', 'pack', 'win', 'lose', 'error', 'click', 'xp', 'money_gain']);
+    'mult', 'xmult', 'joker', 'coin', 'purchase', 'pack', 'win', 'lose', 'error', 'click', 'xp', 'money_gain', 'battery_charge']);
   const COALESCE = { deal: 0.018, chip: 0.027, mult: 0.035, xmult: 0.075,
-    joker: 0.05, win: 0.25, lose: 0.25, pack: 0.12, purchase: 0.08, xp: 0.4, money_gain: 0.1 };
+    joker: 0.05, win: 0.25, lose: 0.25, pack: 0.12, purchase: 0.08, xp: 0.4, money_gain: 0.1, battery_charge: 0.8 };
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   const number = (n, fallback) => {
     try { const v = Number(n); return Number.isFinite(v) ? v : fallback; }
@@ -457,6 +457,7 @@
 
   function effect(graph, name, at, options) {
     if(name==='money_gain')return moneyGainSound(graph,at,options);
+    if(name==='battery_charge')return batteryChargeSound(graph,at,options);
     const intensity = unit(options && options.intensity, 1);
     const rawPitch = number(options && options.pitch, 0);
     const step = PENTATONIC[clamp(Math.floor(rawPitch), 0, PENTATONIC.length - 1)];
@@ -1460,6 +1461,10 @@
     return v;
   }
   function moneyGain(bank) { return sfx('money_gain',{bank}); }
+  // Isolated original charging ping: the ordinary SFX bus supplies gesture,
+  // mute/volume/hidden guards. No track selection or music scheduling changes.
+  function batteryChargeSound(target,at,options){const v=voice(target,'fx',at,0,.1),intensity=unit(options&&options.intensity,1);tone(target,v,at,76,.09,.065*intensity,'sine',1800,.006,.35);tone(target,v,at+.035,83,.10,.035*intensity,'triangle',2200,.006,.35);return v;}
+  function batteryCharge(){return sfx('battery_charge');}
   function status() {
     const tableTrack = chillTableScene(scene) ? CHILL_TABLE_TRACKS[scene] : null;
     const effectiveTrack = tableTrack?tableTrack.id:scene==='blackjack'?BLACKJACK_ID:playingMusic ? activeTrackId : effectiveId(prefs.track,!!bufferFor(prefs.track));
@@ -1581,6 +1586,6 @@
     } catch (error) { disposeGraph(offlineGraph); return Promise.reject(error); }
   }
 
-  root.BOAudio = Object.freeze({ configure, unlock, sfx, moneyGain, cancelEffects, status, close,
+  root.BOAudio = Object.freeze({ configure, unlock, sfx, moneyGain, batteryCharge, cancelEffects, status, close,
     tracks: TRACKS, tracksForPlayerLevel, renderOffline });
 })(typeof window !== 'undefined' ? window : globalThis);

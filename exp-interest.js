@@ -9,17 +9,21 @@
  function normalize(value){
   if(value===undefined)return create();
   const keys=['version','revision','totalXp','lastTickAt'];
-  check(record(value)&&Object.keys(value).length===keys.length&&keys.every(k=>Object.prototype.hasOwnProperty.call(value,k)),'invalid saved ledger; stored data was not overwritten.');
-  check(value.version===1&&Number.isSafeInteger(value.revision)&&value.revision>=0&&finite(value.totalXp)&&Number.isSafeInteger(value.lastTickAt)&&value.lastTickAt>=0,'invalid saved ledger values.');
-  check(value.revision===0?value.totalXp===0&&value.lastTickAt===0:value.totalXp>0&&value.totalXp<=value.revision*10&&value.lastTickAt>0&&value.lastTickAt%INTERVAL_MS===0&&value.lastTickAt>=value.revision*INTERVAL_MS,'saved income does not match its highwater.');
-  return {version:1,revision:value.revision,totalXp:value.totalXp,lastTickAt:value.lastTickAt};
+  check(record(value)&&[Object.prototype,null].includes(Object.getPrototypeOf(value))&&Reflect.ownKeys(value).length===keys.length&&keys.every(k=>{const d=Object.getOwnPropertyDescriptor(value,k);return d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')}),'invalid saved ledger; stored data was not overwritten.');
+  check([1,2].includes(value.version)&&Number.isSafeInteger(value.revision)&&value.revision>=0&&finite(value.totalXp)&&Number.isSafeInteger(value.lastTickAt)&&value.lastTickAt>=0,'invalid saved ledger values.');
+  // V1 is never relaxed or migrated on read. V2 is born only on a paid fast
+  // tick; its highwater is a logical receipt clock, not offline entitlement.
+  const grid=value.version===1?INTERVAL_MS:100,minInterval=value.version===1?INTERVAL_MS:500;
+  check(value.revision===0?value.version===1&&value.totalXp===0&&value.lastTickAt===0:value.totalXp>0&&value.totalXp<=value.revision*10&&value.lastTickAt>0&&value.lastTickAt%grid===0&&value.lastTickAt>=value.revision*minInterval,'saved income does not match its highwater.');
+  return {version:value.version,revision:value.revision,totalXp:value.totalXp,lastTickAt:value.lastTickAt};
  }
  function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');return p.level>=20&&p.level<100?Math.min(p.level>=43?10:p.level>=30?5:p.level>=26?3:2,p.xp*(p.level>=30?.00025:p.level>=26?.00015:.0001)*PG.jokerXpMultiplier(config)):0}
+ function intervalMs(level){check(Number.isInteger(level)&&level>=1&&level<=100,'invalid actual player level.');return level>=50?500:level>=48?600:level>=46?700:level>=44?800:level>=42?900:INTERVAL_MS}
  function step(progression,ledger,at,config){
-  const state=normalize(ledger),amount=rate(progression,config),fromLevel=progression.level;
-  check(Number.isSafeInteger(at)&&at>=0,'invalid tick time.');const slot=Math.floor(at/INTERVAL_MS)*INTERVAL_MS;
+  const state=normalize(ledger),amount=rate(progression,config),fromLevel=progression.level,interval=intervalMs(fromLevel),version=state.version===2||interval<INTERVAL_MS?2:1,grid=version===1?INTERVAL_MS:100;
+  check(Number.isSafeInteger(at)&&at>=0,'invalid tick time.');const slot=Math.floor(at/grid)*grid;
   const unchanged=()=>({ok:true,unchanged:true,awardedXp:0,fromLevel,toLevel:fromLevel,state,progression:copy(progression)});
-  if(!amount||slot<INTERVAL_MS||slot-state.lastTickAt<INTERVAL_MS)return unchanged();
+  if(!amount||slot<interval||slot-state.lastTickAt<interval)return unchanged();
   check(state.revision<Number.MAX_SAFE_INTEGER,'receipt counter overflow.');
   check(finite(progression.totalXp)&&progression.xp+amount>progression.xp&&progression.totalXp+amount>progression.totalXp,'XP cannot represent this award safely; no income was changed.');
   const next=copy(progression),result=PG.addAwardedXp(next,amount,undefined,config);
@@ -28,7 +32,22 @@
   // not a lifetime-total subtraction, is the exact income receipt.
   check(!result.duplicate&&result.awardedXp===amount&&next.totalXp>progression.totalXp,'XP award did not match the explicit actual rate.');
   const total=state.totalXp+amount;check(finite(total)&&total>state.totalXp,'income total overflow.');
-  return {...result,ok:true,unchanged:false,progression:next,state:normalize({version:1,revision:state.revision+1,totalXp:total,lastTickAt:slot})};
+  return {...result,ok:true,unchanged:false,progression:next,state:normalize({version,revision:state.revision+1,totalXp:total,lastTickAt:slot})};
+ }
+ // The controller supplies ONLY captured foreground monotonic elapsed time.
+ // One durable whole-PROFILE transaction may contain several real payments;
+ // each compounds on the preceding native progression result and cap/interval.
+ // The bounded remainder is presentation-session memory, never wall catch-up.
+ function payEligible(progression,ledger,elapsedMs,at,config){
+  check(finite(elapsedMs)&&elapsedMs<=MAX_GAP_MS,'invalid eligible interval; never claim an offline gap.');check(Number.isSafeInteger(at)&&at>=0,'invalid captured receipt time.');
+  let next=copy(progression),state=normalize(ledger),consumedMs=0,awardedXp=0,payments=0,lastResult=null;
+  while(elapsedMs-consumedMs>=intervalMs(next.level)){
+   const c=typeof config==='function'?config(next):config,interval=intervalMs(next.level);if(!rate(next,c))break;
+   const grid=state.version===2||interval<INTERVAL_MS?100:INTERVAL_MS,receiptAt=state.revision?state.lastTickAt+interval:Math.max(interval,Math.floor(at/grid)*grid);
+   check(Number.isSafeInteger(receiptAt),'receipt clock overflow.');const r=step(next,state,receiptAt,c);check(!r.unchanged,'captured payment did not advance its receipt.');
+   next=r.progression;state=r.state;consumedMs+=interval;awardedXp+=r.awardedXp;payments++;lastResult=r;
+  }
+  return {...(lastResult||{}),ok:true,unchanged:payments===0,fromLevel:progression.level,toLevel:next.level,progression:next,state,awardedXp,payments,consumedMs,remainderMs:elapsedMs-consumedMs};
  }
  // A synchronous gameplay API cannot await a browser-lock-manager query at
  // every write. Keep one live writer permit instead. Losing, already-loaded
@@ -75,10 +94,10 @@
   const wall=()=>api.wallNow?api.wallNow():Date.now(),visible=()=>!destroyed&&!parked&&!env.document.hidden;
   function mono(){const value=clock();check(finite(value),'invalid visible-time clock.');return value}
   function currentRate(){try{const p=api.getProfile();return rate(p.progression,api.xpConfig?.(wall(),p))}catch(_){return 0}}
-  function status(){const save=api.saveStatus?.(),readonly=save?.writable===false;return {rateXp:readonly?0:currentRate(),pending:!!pending,blocked:!!error||readonly,reason:error||(readonly?save.reason:''),anchor,active:visible()&&!readonly,revision:api.getProfile().expInterest?.revision||0}}
+  function status(){const save=api.saveStatus?.(),readonly=save?.writable===false;return {rateXp:readonly||error?0:currentRate(),intervalMs:intervalMs(api.getProfile().progression.level),pending:!!pending,blocked:!!error||readonly,reason:error||(readonly?save.reason:''),anchor,active:visible()&&!readonly&&!error,revision:api.getProfile().expInterest?.revision||0}}
   function clearLease(){try{const value=JSON.parse(env.localStorage.getItem(LEASE)||'null');if(value?.owner===owner)env.localStorage.removeItem(LEASE)}catch(_){}}
   function invalidate(){epoch++;abort?.abort();abort=null;for(const [id,resolve]of waiters){env.clearTimeout(id);resolve(false)}waiters.clear();clearLease()}
-  function resetAnchor(){invalidate();anchor=mono();lastLevel=api.getProfile().progression.level;error=''}
+  function resetAnchor(){invalidate();anchor=mono();lastLevel=api.getProfile().progression.level}
   function releaseFence(){fenceRelease?.();fenceRelease=null;fenceName=''}
   function wait(ms){return new Promise(resolve=>{const id=env.setTimeout(()=>{waiters.delete(id);resolve(true)},ms);waiters.set(id,resolve)})}
   async function checkFence(context){
@@ -109,26 +128,27 @@
   }
   async function heartbeat(){
    if(pending)return pending;
+   if(error)return {ok:false,code:'blocked',reason:error};
    if(!visible())return {ok:true,unchanged:true,code:'hidden'};
    const now=mono(),level=api.getProfile().progression.level;
    if(level!==lastLevel){anchor=now;lastLevel=level;return {ok:true,unchanged:true,code:'level-anchor'}}
    if(!currentRate()){anchor=now;return {ok:true,unchanged:true,code:'zero'}}
    const elapsed=now-anchor;
    if(elapsed<0||elapsed>MAX_GAP_MS){anchor=now;return {ok:true,unchanged:true,code:'fresh-anchor'}}
-   if(elapsed<INTERVAL_MS)return {ok:true,unchanged:true,code:'not-due'};
+   if(elapsed<intervalMs(level))return {ok:true,unchanged:true,code:'not-due'};
    if(api.busy?.()){anchor=now;return {ok:false,code:'busy'}}
    let context;try{context=api.capture()}catch(e){error=e.message;api.changed?.();return {ok:false,code:'stale',reason:error}}
-   const requestEpoch=epoch,dueAnchor=anchor+INTERVAL_MS,tickAt=wall();abort=new env.AbortController();
+   const requestEpoch=epoch,tickAt=wall();abort=new env.AbortController();
    const commit=()=>{
     if(requestEpoch!==epoch||!visible())return {ok:false,code:'cancelled'};
     if(api.busy?.())return {ok:false,code:'busy'};
     if(mono()-now>MAX_GAP_MS){anchor=mono();return {ok:true,unchanged:true,code:'fresh-anchor'}}
-    const at=tickAt;return api.transact(next=>{const r=step(next.progression,next.expInterest,at,api.xpConfig?.(at,next));if(r.unchanged)return r;next.progression=r.progression;next.expInterest=r.state;return {...r,xpResult:r}},context);
+    const at=tickAt;return api.transact(next=>{const r=payEligible(next.progression,next.expInterest,elapsed,at,progression=>api.xpConfig?.(at,{...next,progression}));if(r.unchanged)return r;next.progression=r.progression;next.expInterest=r.state;return {...r,xpResult:r}},context);
    };
    const work=(async()=>{
     try{
      const locks=env.navigator?.locks,result=locks?.request?await locks.request(PROFILE,{mode:'exclusive',signal:abort.signal},async()=>{await checkFence(context);const r=commit();if(r?.ok&&!r.unchanged)try{await publishFence(context,requestEpoch)}catch(_){/* XP is already durable; never retry a saved second. */}return r}):await fallback(commit,requestEpoch);
-     if(result?.ok&&requestEpoch===epoch){if(result.code!=='fresh-anchor')anchor=dueAnchor;lastLevel=api.getProfile().progression.level;error='';if(!result.unchanged)api.changed?.(result)}
+     if(result?.ok&&requestEpoch===epoch){if(result.code!=='fresh-anchor')anchor+=result.consumedMs||0;lastLevel=api.getProfile().progression.level;error='';if(!result.unchanged)api.changed?.(result)}
      return result;
     }catch(e){if(requestEpoch!==epoch||e.name==='AbortError')return {ok:false,code:'cancelled'};error=e.message||'Exp Interest could not be saved.';api.changed?.();return {ok:false,code:'save-failed',reason:error}}
    })();pending=work;
@@ -145,5 +165,5 @@
   env.document.addEventListener('visibilitychange',visibility);env.addEventListener('pagehide',hide);env.addEventListener('pageshow',show);
   return {start,stop,reset,resetAnchor,setClock,heartbeat,status,destroy,assertFenceCurrent:checkFence,ownsLease:()=>owner};
  }
- return {create,normalize,rate,step,createController,createWriterGuard,INTERVAL_MS,MAX_GAP_MS,LEASE_KEY:LEASE};
+ return {create,normalize,rate,step,intervalMs,payEligible,createController,createWriterGuard,INTERVAL_MS,MAX_GAP_MS,LEASE_KEY:LEASE};
 });
