@@ -869,7 +869,7 @@
   // Blocked hands bypass normal scoring and use the same idempotent hook.
   // Vanilla excludes The Hook/The Tooth and debuffed non-scoring kickers.
   function payMatador(s,r,b,lines) {if(!r.bossTriggered||r.matadorPaid[b.source.uid])return;r.matadorPaid[b.source.uid]=true;addMoney(s,8);lines.push(abilityLabel(b)+': +$8');}
-  function scoreHand(s,cards,r,bindings,frenzyContext) {
+  function scoreHand(s,cards,r,bindings,frenzyContext,batteryChips) {
     var scoringTriggers=0,scoringCards=[];
     var lines=[],critEvents=[],critTotals=null,chips,mult,potion=potionEffects(s),scored=r.indices.map(function(i){return cards[i];}),held=s.hand.filter(function(c){return cards.indexOf(c)<0;}),firstFace;
     function C(n,label){chips=finite(chips+n);if(n)lines.push(label+' +'+n+' Chips');}function M(n,label){mult=finite(mult+n);if(n)lines.push(label+' +'+n+' Mult');}function X(n,label){mult=finite(mult*n);if(n!==1)lines.push(label+' X'+Number(n.toFixed(4))+' Mult');}
@@ -1001,9 +1001,11 @@
     // ignored, not banked, and cannot restart its anchored ten-second window.
     var frenzyReceipt=frenzyContext?commitFrenzy(s,frenzyContext,scoringTriggers,scoringCards):null;
     if(frenzyReceipt&&frenzyReceipt.active){mult=finite(mult*1.5);lines.push('Frenzy X1.5 FINAL Mult');}
-    // Keep both final stages visible even when a large retrigger log is capped.
+    // Flat Chips AFTER all chip transformations. Never a trigger or a Mult change.
+    if(batteryChips)C(batteryChips,'Emerald battery '+batteryChips+'%');
+    // Keep the original final stages AND battery visible in capped retrigger logs.
     var resultLines=deal&&lines.length>250?lines.slice(0,248).concat(lines.slice(-2)):lines.slice(0,250);
-    if(frenzyReceipt&&lines.length>250){var tail=(potion.daylightMult?1:0)+(deal?2:0)+(frenzyReceipt.active?1:0);if(tail)resultLines=lines.slice(0,250-tail).concat(lines.slice(-tail));}
+    if((frenzyReceipt||batteryChips)&&lines.length>250){var tail=(potion.daylightMult?1:0)+(deal?2:0)+(frenzyReceipt&&frenzyReceipt.active?1:0)+(batteryChips?1:0);if(tail)resultLines=lines.slice(0,250-tail).concat(lines.slice(-tail));}
     var total=finite(Math.floor(chips*mult)),result={name:r.name,key:r.key,handLevel:lv+1,chips:chips,mult:mult,total:total,lines:resultLines};
     if(frenzyReceipt){result.scoringTriggers=scoringTriggers;result.scoringCards=scoringCards;result.frenzy=frenzyReceipt;}
     if(critEvents.length)result.critEvents=critEvents;if(critTotals)result.critTotals=critTotals;return result;
@@ -1078,7 +1080,16 @@
   }
   function abandon(s) {phase(s,['select','play','cashout','shop','pack']);if(s.phase==='play')snapshotRoundDeal(s,'loss');s.phase='lost';s.abandoned=true;note(s,'Run abandoned at Ante '+s.ante+'.');}
   function maybeLose(s) {if(s.hands<=0||s.hand.length===0&&s.drawPile.length===0){var bones=s.jokers.find(function(j){return j.id==='mr_bones'&&isJokerActive(j);});if(bones&&s.score>=s.target/4){note(s,'Mr. Bones prevented defeat.');finishRound(s);destroyJoker(s,bones);}else {s.phase='lost';snapshotRoundDeal(s,'loss');note(s,'Run ended at Ante '+s.ante+'.');}}}
-  function play(s,ids,options) {
+  // Optional transient battery input is NOT part of Frenzy's strict context or a save.
+  // Invalid/unavailable input contributes zero; never trust cached run.playerLevel.
+  function finalBatteryChips(value,actualLevel){try{
+    if(!Number.isInteger(actualLevel)||actualLevel<10||actualLevel>100||!value||Object.getPrototypeOf(value)!==Object.prototype)return 0;
+    var keys=Reflect.ownKeys(value);if(keys.length!==2||keys.indexOf('emeraldLevel')<0||keys.indexOf('batteryPercent')<0)return 0;
+    var e=Object.getOwnPropertyDescriptor(value,'emeraldLevel'),b=Object.getOwnPropertyDescriptor(value,'batteryPercent');
+    if(!e||!b||!e.enumerable||!b.enumerable||!Object.prototype.hasOwnProperty.call(e,'value')||!Object.prototype.hasOwnProperty.call(b,'value'))return 0;
+    return Number.isInteger(e.value)&&e.value>=2&&e.value<=10&&Number.isInteger(b.value)&&b.value>=0&&b.value<=100?b.value:0;
+  }catch(_){return 0}}
+  function play(s,ids,options,battery) {
     // Legacy two-argument callers never gain Frenzy scoring authority from a
     // cached run level. The app supplies the actual profile level and one clock.
     var context=null,actualLevel;if(options!==undefined){check(Frenzy,'Load the Frenzy model before the engine.');context=Frenzy.context(options);actualLevel=context.actualLevel;if(context.actualLevel<33)context=null;}
@@ -1099,7 +1110,7 @@
     // hand-level / win receipts, and before Gaming death ends the active potion.
     progressEvent(s,'hand-play',cards.length,{cards:cards.length});
     if(activeBoss(s,'ox')&&r.key===s.oxHand){if(s.money>0)r.bossTriggered=true;if(s.money!==0)recordBossEffect(s,'ox','bank-reset');s.money=0;}if(activeBoss(s,'tooth')){s.money-=cards.length;recordBossEffect(s,'tooth','played-card-loss');}
-    s.lastResult=forbidden?{name:r.name,key:r.key,handLevel:s.levels[r.key],chips:0,mult:0,total:0,lines:[forbidden,'Hand consumed: scores 0.']}:scoreHand(s,cards,r,handBindings,context);
+    s.lastResult=forbidden?{name:r.name,key:r.key,handLevel:s.levels[r.key],chips:0,mult:0,total:0,lines:[forbidden,'Hand consumed: scores 0.']}:scoreHand(s,cards,r,handBindings,context,finalBatteryChips(battery,actualLevel));
     if(forbidden&&context){s.lastResult.scoringTriggers=0;s.lastResult.scoringCards=[];s.lastResult.frenzy=commitFrenzy(s,context,0,[]);}
     s.score=finite(s.score+s.lastResult.total);s.stats.bestHand=Math.max(s.stats.bestHand,s.lastResult.total);
     cards.forEach(function(c){if(s.antePlayed.indexOf(c.id)<0)s.antePlayed.push(c.id);c.faceDown=false;});

@@ -55,10 +55,13 @@
    suppressAutomatic();autoUntil=at+AUTO_DURATION;autoNextAt=Math.max(at+COOLDOWN,nextAt??0);autoWasEligible=true;paint(s,at);
   }
   function openRoadmap(){let s;try{s=host.state()}catch(_){return}if(!allowed(s)||s.level<36||typeof host.openRoadmap!=='function')return;host.openRoadmap()}
-  function paint(s,at){if(!bubble)return;const t=preferences(s),silent=s.workshop?.silent===true;
+  function paint(s,at){if(!bubble)return;const t=preferences(s),silent=s.workshop?.silent===true,name=root.BOEmerald.displayName(s.level);
+   const alt=name+', your green beetle companion',next=name+' · next tip';if(photo.alt!==alt)photo.alt=alt;if(nextButton.textContent!==next)nextButton.textContent=next;
+   if(chatForm){const label=chatForm.querySelector('label'),text='Ask '+name+' about Balatro';if(label.textContent!==text)label.textContent=text}
+   if(chatAnswer){const text=root.BOEmerald.displayText(chatAnswer.textContent,s.level);if(chatAnswer.textContent!==text)chatAnswer.textContent=text}
    const message=lookerMode?(entries[0]?.message||'Looker Mode only compares fully visible cards in your current playable hand.'):!t.first&&!t.second?'Tips are paused. Choose 1st tips, 2nd tips, or both.':current?.message||(gameContext(s)?'I’ll check the current table before my next tip.':'I’m here while you explore. Choose the next tip when you’re ready.');if(bubble.textContent!==message)bubble.textContent=message;
    if(lookerButton){lookerButton.hidden=!gameContext(s);lookerButton.disabled=silent;lookerButton.textContent=lookerMode?'Looker Mode · On':'Looker Mode';lookerButton.setAttribute('aria-pressed',String(lookerMode))}
-   bubble.hidden=compact||silent;stage.classList.toggle('emerald-compact',compact);stage.classList.toggle('emerald-working',silent);stage.setAttribute('aria-label',silent?'Emerald is working silently on your card':'Emerald game companion');
+   bubble.hidden=compact||silent;stage.classList.toggle('emerald-compact',compact);stage.classList.toggle('emerald-working',silent);stage.setAttribute('aria-label',silent?name+' is working silently on your card':name+' game companion');
    if(nextButton){const remaining=nextAt===null?COOLDOWN:Math.max(0,nextAt-at);nextButton.disabled=silent||compact||!entries.length||remaining>0;nextButton.title=remaining>0?'This speech lasts ten seconds. Next tip in '+Math.ceil(remaining/1000)+'s.':'Browse tips only — no extra gift rolls';nextButton.setAttribute('aria-disabled',String(nextButton.disabled))}
    for(const name of ['first','second']){const b=controls?.querySelector('[data-emerald-tips="'+name+'"]');if(b){b.setAttribute('aria-pressed',String(t[name]));b.disabled=prefPending||!gameContext(s)}}
    if(quietButton){quietButton.textContent=compact?'Show tips':'Quiet';quietButton.setAttribute('aria-pressed',String(compact))}
@@ -85,20 +88,20 @@
   function createChat(){
    chatForm=document.createElement('form');chatForm.id='emerald-chat-form';chatForm.className='emerald-chat';chatForm.hidden=true;
    const note=document.createElement('p');note.className='emerald-chat-note';note.textContent='Offline local rules, not online AI. No questions leave this device. No swearing: the whole game is banned on this browser for 3 calendar months. All saves are kept; this is not an account/server ban.';
-   const label=document.createElement('label');label.htmlFor='emerald-chat-input';label.textContent='Ask Emerald about Balatro';
+   const label=document.createElement('label');label.htmlFor='emerald-chat-input';label.textContent='Ask a green beetle about Balatro';
    chatInput=document.createElement('input');chatInput.id='emerald-chat-input';chatInput.name='emerald-question';chatInput.type='text';chatInput.maxLength=240;chatInput.autocomplete='off';chatInput.required=true;chatInput.placeholder='How does Mult work?';
    const send=button('Send');send.type='submit';chatAnswer=document.createElement('p');chatAnswer.id='emerald-chat-answer';chatAnswer.setAttribute('role','status');chatAnswer.setAttribute('aria-live','polite');chatForm.append(note,label,chatInput,send,chatAnswer);
    chatForm.addEventListener('submit',async event=>{event.preventDefault();let s;try{s=host.state()}catch(_){return}if(sending||!allowed(s)||!gameContext(s)||s.workshop?.silent)return;
     suppressAutomatic();const text=chatInput.value;if(typeof host.sendChat!=='function'){chatAnswer.textContent='The guarded local game chat is unavailable. Keep all game files together.';return}
     if(!text.trim()||text.length>240){chatAnswer.textContent='Ask one Balatro question, using 1–240 characters.';return}
     const token=generation,runId=s.run._uiId;sending=true;send.disabled=true;
-    try{const result=await host.sendChat(text);if(destroyed||generation!==token||host.state()?.run?._uiId!==runId)return;chatAnswer.textContent=result?.message||result?.reason||'No answer was committed. Your saves are unchanged.';if(result?.ok)chatInput.value=''}catch(error){if(generation===token&&chatAnswer)chatAnswer.textContent=error.message||'The guarded game chat is unavailable.'}finally{if(generation===token){sending=false;send.disabled=false}}
+    try{const result=await host.sendChat(text);if(destroyed||generation!==token||host.state()?.run?._uiId!==runId)return;chatAnswer.textContent=root.BOEmerald.displayText(result?.message||result?.reason||'No answer was committed. Your saves are unchanged.',host.state()?.level);if(result?.ok)chatInput.value=''}catch(error){if(generation===token&&chatAnswer)chatAnswer.textContent=root.BOEmerald.displayText(error.message||'The guarded game chat is unavailable.',host.state()?.level)}finally{if(generation===token){sending=false;send.disabled=false}}
    });
   }
   function createStage(parent,s){
    remove();stage=document.createElement('section');stage.id='emerald-companion';stage.className='emerald-stage';group=document.createElement('div');group.className='emerald-group';bubble=document.createElement('p');bubble.className='emerald-bubble';bubble.setAttribute('role','status');bubble.setAttribute('aria-live','polite');
-   photo=document.createElement('img');photo.src=root.BOEmeraldAsset;photo.alt='Emerald, your green beetle companion';photo.width=98;photo.height=64;photo.draggable=false;controls=document.createElement('div');controls.className='emerald-controls';
-   nextButton=button('Emerald · next tip',()=>{let live;try{live=host.state()}catch(_){return}const at=now();if(advanceTip(live,at))paint(live,at)});nextButton.dataset.emeraldNext='';
+   photo=document.createElement('img');photo.src=root.BOEmeraldAsset;photo.alt='a green beetle, your green beetle companion';photo.width=98;photo.height=64;photo.draggable=false;controls=document.createElement('div');controls.className='emerald-controls';
+   nextButton=button('a green beetle · next tip',()=>{let live;try{live=host.state()}catch(_){return}const at=now();if(advanceTip(live,at))paint(live,at)});nextButton.dataset.emeraldNext='';
    quietButton=button(compact?'Show tips':'Quiet',()=>{compact=!compact;if(compact)suppressAutomatic();update()});quietButton.dataset.emeraldQuiet='';
    const first=button('1st tips',()=>changeTips('first')),second=button('2nd tips',()=>changeTips('second'));first.dataset.emeraldTips='first';second.dataset.emeraldTips='second';
    talkButton=button('Talk',()=>{let live;try{live=host.state()}catch(_){return}if(!allowed(live)||!gameContext(live)||live.workshop?.silent)return;suppressAutomatic();chatOpen=!chatOpen;paint(live,now());if(chatOpen)chatInput?.focus()});talkButton.dataset.emeraldTalk='';talkButton.setAttribute('aria-controls','emerald-chat-form');
@@ -117,7 +120,7 @@
     if(levelBar&&((levelBar.tagName==='BUTTON')!==enhanced)){levelBar.remove();levelBar=null}
     if(!levelBar){levelBar=enhanced?button('',openRoadmap):document.createElement('section');levelBar.className='emerald-level-bar';if(enhanced)levelBar.dataset.emeraldRoadmap='progress';levelBar.innerHTML='<span class="emerald-level-label"></span><span class="emerald-level-track" role="progressbar" aria-label="Emerald fresh game wins" aria-valuemin="0"><span class="emerald-level-fill"></span></span>';group.insertBefore(levelBar,controls)}
     const percent=pet.max?100:pet.nextWins>0?Math.max(0,Math.min(100,100*pet.wins/pet.nextWins)):0;let progressAvailable=true,label='Emerald E'+pet.level+' · '+(pet.max?'MAX':pet.wins+'/'+pet.nextWins+' fresh wins');
-    if(enhanced){try{label=root.BOEmeraldRoadmap.label(pet)}catch(_){label='Emerald progress is unavailable.';progressAvailable=false}}
+    try{label=root.BOEmeraldRoadmap.label(pet)}catch(_){label='Emerald progress is unavailable.';progressAvailable=false}
     levelBar.querySelector('.emerald-level-label').textContent=label;
     if(enhanced){levelBar.disabled=!canRoadmap||!progressAvailable;levelBar.setAttribute('aria-label',label+'. View Emerald’s level roadmap')}
     const track=levelBar.querySelector('.emerald-level-track');track.hidden=!progressAvailable;track.style.display=progressAvailable?'':'none';track.setAttribute('aria-valuemax',String(pet.nextWins||1));track.setAttribute('aria-valuenow',String(pet.max?1:pet.wins));track.setAttribute('aria-valuetext',pet.max?'Emerald Level 10, MAX, 100%':pet.wins+' of '+pet.nextWins+' fresh game wins toward Emerald Level '+pet.nextLevel);levelBar.querySelector('.emerald-level-fill').style.width=percent+'%';

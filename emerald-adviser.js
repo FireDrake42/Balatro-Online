@@ -6,6 +6,10 @@
  const DEFAULT_TIPS=Object.freeze({first:true,second:true}),MAX_POOL=12,MAX_SELECTION=6;
  function number(n){return Number.isFinite(n)?String(Math.round(n*100000)/100000):'—'}
  function validLevel(n){return Number.isInteger(n)&&n>=1&&n<=100}
+ // System-owned presentation only. Current actual player level is authoritative,
+ // never companion levels, cached runs or incoming saves. No saved reveal flag.
+ function displayName(level){return validLevel(level)&&level>=10?'Emerald':'a green beetle'}
+ function displayText(text,level){return String(text??'').replace(/\bEmerald\b/g,displayName(level))}
  // Keep the game/action predicate narrow: chat and public table advice use it.
  function visible(s){return !!s&&validLevel(s.level)&&s.level>=5&&s.page==='game'&&!s.survey&&!s.protected&&!s.suspended&&!!s.run}
  function presentationVisible(s){return visible(s)||!!s&&validLevel(s.level)&&s.level>=39&&['home','game'].includes(s.page)&&!s.survey&&!s.protected&&!s.suspended}
@@ -92,5 +96,5 @@
   if(t.first)advice(E,s).messages.forEach(message=>out.push({id:'first:'+message,source:'first',message}));
   if(t.second)out.push(...quoteEntries(E,s));return kinder(out,s);
  }
- return Object.freeze({DEFAULT_TIPS,MAX_POOL,MAX_SELECTION,advice,number,visible,presentationVisible,validateTips,tips,publicRun,selectionLimit,frenzyInfo,royalOnTable,quotes,looker,catalog});
+ return Object.freeze({DEFAULT_TIPS,MAX_POOL,MAX_SELECTION,displayName,displayText,advice,number,visible,presentationVisible,validateTips,tips,publicRun,selectionLimit,frenzyInfo,royalOnTable,quotes,looker,catalog});
 });

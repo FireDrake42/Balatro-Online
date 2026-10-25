@@ -38,8 +38,13 @@
     check(M && typeof M.poll === 'function', 'missing-model', 'The pure Passive Money model is required.');
     for (const key of ['get','eligible','assertWritable','stamp','now','monotonic','read','ownRaw','write','pause','applyRun'])
       check(host && typeof host[key] === 'function', 'invalid-host', 'Missing synchronous Passive Money host.' + key);
-    let busy = false, destroyed = false, uncertain = false, epoch = 0, observation = null;
-    function resetObservation() { epoch++; observation = null; }
+    let busy = false, destroyed = false, uncertain = false, retaining = false, epoch = 0, observation = null, carry = null;
+    function resetObservation() {
+      epoch++;
+      // A reset inside a transaction is cancellation, never an earning pause.
+      if (busy || retaining || destroyed || uncertain) { observation = null; carry = null; return; }
+      retainObserved(true);
+    }
     function guard() {
       check(!destroyed && !uncertain, uncertain ? 'uncertain' : 'destroyed', uncertain ? 'Saving is uncertain. Reload safely; do not retry or reset.' : 'This Passive Money controller was destroyed.');
       const allowed = host.assertWritable(); check(allowed !== false && !thenable(allowed), 'read-only', 'This save is not writable.');
@@ -97,14 +102,83 @@
       check(typeof mono === 'number' && Number.isFinite(mono) && mono >= 0 && mono <= M.MAX_TIME, 'invalid-monotonic', 'Invalid observable monotonic clock.');
       return {now,mono};
     }
-    function identify(c, now, mono, pending) {
+    function identify(c, now, mono, pending, since = now, prior = pending) {
       return {run:c.run,profile:c.profile,id:c.id,level:c.level,page:c.page,stamp:c.stamp,epoch,
-        ledger:stable(M.normalize(c.source.passiveMoney)),now,mono,pending};
+        ledger:stable(M.normalize(c.source.passiveMoney)),now,mono,pending,since,prior};
     }
-    function matches(c) {
-      return observation && observation.run === c.run && observation.profile === c.profile && observation.id === c.id &&
-        observation.level === c.level && observation.page === c.page && observation.stamp === c.stamp && observation.epoch === epoch &&
-        observation.ledger === stable(M.normalize(c.source.passiveMoney));
+    function sameOrigin(saved, c) {
+      return saved && saved.run === c.run && saved.profile === c.profile && saved.id === c.id &&
+        saved.level === c.level && saved.stamp === c.stamp &&
+        saved.ledger === stable(M.normalize(c.source.passiveMoney));
+    }
+    function matches(c) { return sameOrigin(observation, c) && observation.epoch === epoch; }
+    function segmentBudget(s, saved, now, pending) {
+      // Clip the WHOLE contiguous observation, preserving monotonic sub-ms
+      // fractions across quantized Date.now samples. An explicit segment start
+      // prevents post-expiry observations from being projected before expiry.
+      // prior is ONLY a previously verified sub-ms remainder from a commit.
+      const begin = Math.max(saved.since, s.startedAt, s.lastAt, now - (pending - saved.prior));
+      return saved.prior + Math.max(0, Math.min(now, s.endsAt) - begin);
+    }
+    function retentionGuard() {
+      check(!destroyed && !uncertain, 'cancelled', 'This observation was cancelled.');
+      const allowed = host.assertWritable();
+      check(allowed !== false && !thenable(allowed), 'read-only', 'This save is not writable.');
+    }
+    function retentionFence(c) {
+      // Pauses may be ineligible but never owner/read/save-guard exempt.
+      retentionGuard(); verifyLive(c); raws(c);
+      retentionGuard(); verifyLive(c); raws(c); verifyLive(c);
+    }
+    function retentionCapture() {
+      const token = epoch; retentionGuard();
+      const stamp = host.stamp(), live = liveContext();
+      const c = {...live,id:live.source._uiId,stamp,epoch:token,runRaw:host.read('run'),profileRaw:host.read('profile')};
+      check(typeof c.runRaw === 'string' && typeof c.profileRaw === 'string' &&
+        c.runRaw === host.ownRaw('run') && c.profileRaw === host.ownRaw('profile'),
+        'foreign-raw', 'The latest complete save is missing or was not written by this owner.');
+      const durable = M.copyData(JSON.parse(c.runRaw));
+      check(durable._uiId === c.id && durable.phase === c.source.phase && durable.money === c.source.money &&
+        stable(M.normalize(durable.passiveMoney)) === stable(M.normalize(c.source.passiveMoney)),
+        'durable-mismatch', 'The durable origin id, phase, Bank or Passive Money ledger is not reconciled.');
+      retentionFence(c); return c;
+    }
+    function retainObserved(sampleBoundary) {
+      const saved = observation, previousCarry = carry;
+      observation = null; carry = null;
+      if (retaining || destroyed || uncertain || !saved && !previousCarry) return;
+      retaining = true;
+      try {
+        const c = retentionCapture(), s = M.normalize(c.source.passiveMoney), clock = clocks();
+        if (!s || s.settled) return;
+        const previous = sameOrigin(previousCarry, c) ? previousCarry : null, current = sameOrigin(saved, c) ? saved : null;
+        // Read clocks even while ineligible and even if observation is null.
+        // A rollback invalidates ALL carry; reading a gap does not earn it.
+        if (previous && (clock.now < previous.now || clock.mono < previous.mono) ||
+            current && (clock.now < current.now || clock.mono < current.mono)) return;
+        let budget = previous ? previous.pending : 0;
+        if (current) {
+          // An ineligible reset adds only the last sampled segment, never the
+          // modal/hidden/busy interval leading up to this reset. No writer here.
+          const sample = sampleBoundary && host.eligible() === true;
+          const now = sample ? clock.now : current.now;
+          const pending = current.pending + (sample ? clock.mono - current.mono : 0);
+          budget += segmentBudget(s, current, now, pending);
+        }
+        check(Number.isFinite(budget) && budget >= 0 && budget <= M.MAX_TIME, 'observation-overflow', 'Observable eligible time cannot be represented safely.');
+        // Host reads/clocks/eligibility hooks can cancel or replace this origin.
+        // The private latch prevents recursion; this final epoch/raw/live fence
+        // prevents an external reset from resurrecting either local snapshot.
+        retentionFence(c);
+        carry = budget ? identify(c, clock.now, clock.mono, budget) : null;
+      } catch (_) { carry = null; }
+      finally { retaining = false; }
+    }
+    function commitObserved(c, proposal, now, mono, fraction) {
+      // Both successful writes and denied/uncertain attempted commits consume
+      // this private budget. The original complete-RUN commit remains exact.
+      carry = null;
+      return commit(c, proposal, now, mono, fraction);
     }
     function commit(c, proposal, now, mono, fraction) {
       let attempted = false;
@@ -145,43 +219,64 @@
       }
     }
     function perform(work) {
-      if (destroyed || uncertain || busy) return fail(uncertain ? 'uncertain' : destroyed ? 'destroyed' : 'reentrant', uncertain ? 'Saving is uncertain; reload safely without retrying.' : 'This action is no longer available.');
+      if (destroyed || uncertain || busy || retaining) return fail(uncertain ? 'uncertain' : destroyed ? 'destroyed' : 'reentrant', uncertain ? 'Saving is uncertain; reload safely without retrying.' : 'This action is no longer available.');
       busy = true;
       try { return work(); }
-      catch (error) { resetObservation(); return fail(error.code || 'denied', error.message); }
+      catch (error) {
+        if (error.code === 'ineligible') { epoch++; retainObserved(false); }
+        else resetObservation();
+        return fail(error.code || 'denied', error.message);
+      }
       finally { busy = false; }
     }
     function start() {
       return perform(() => {
         const clock = clocks(), c = capture(), proposal = M.start(c.source, c.level, clock.now);
         if (!proposal.result.ok) return proposal.result;
-        return commit(c, proposal, clock.now, clock.mono, 0);
+        return commitObserved(c, proposal, clock.now, clock.mono, 0);
       });
     }
     function tick() {
       return perform(() => {
         const clock = clocks(), c = capture(), s = M.normalize(c.source.passiveMoney);
-        if (!s) { observation = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'idle',status:M.status(c.source,c.level,clock.now)}; }
+        if (!s) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'idle',status:M.status(c.source,c.level,clock.now)}; }
         if (clock.now < s.lastAt) { resetObservation(); return fail('clock-rollback','The absolute clock moved backwards. No time was forced forward.'); }
-        if (s.settled) { observation = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'settled',status:M.status(c.source,c.level,clock.now)}; }
-        let pending = 0;
+        if (s.settled) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'settled',status:M.status(c.source,c.level,clock.now)}; }
+        if (!sameOrigin(carry, c)) carry = null;
+        if (carry && (clock.now < carry.now || clock.mono < carry.mono) ||
+            matches(c) && (clock.now < observation.now || clock.mono < observation.mono)) { carry = null; observation = null; }
+        let pending = 0, since = clock.now, prior = 0;
         if (matches(c) && clock.mono >= observation.mono && clock.now >= observation.now) {
           pending = observation.pending + clock.mono - observation.mono;
+          since = observation.since; prior = observation.prior;
           check(Number.isFinite(pending) && pending >= 0 && pending <= M.MAX_TIME, 'observation-overflow', 'Observable eligible time cannot be represented safely.');
         } else {
           observation = identify(c, clock.now, clock.mono, 0);
-          // A reload/context reset never infers the missing interval. Expiry is
-          // still settled once, with zero observation, at its original deadline.
-          if (clock.now < s.endsAt) return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'observing',status:M.status(c.source,c.level,clock.now)};
+          // Anchor a new segment without counting the gap. A carried budget is
+          // already observed, not reconstructed from lastAt or offline time.
+          if (!carry && clock.now < s.endsAt) return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'observing',status:M.status(c.source,c.level,clock.now)};
         }
-        const observedMs = Math.floor(pending), proposal = M.poll(c.source, c.level, clock.now, observedMs);
+        const budget = (carry ? carry.pending : 0) + segmentBudget(s, {since,prior}, clock.now, pending);
+        check(Number.isFinite(budget) && budget >= 0 && budget <= M.MAX_TIME, 'observation-overflow', 'Observable eligible time cannot be represented safely.');
+        const observedMs = Math.floor(budget), at = Math.min(clock.now, s.endsAt);
+        // ONLY the independently clipped pre-deadline budget may be folded at
+        // the deadline. A wholly post-expiry interval contributes exactly zero.
+        let proposal = M.poll(c.source, c.level, at, observedMs);
+        if (proposal.result.ok && clock.now > at) {
+          const final = M.poll(proposal.run, c.level, clock.now, 0);
+          if (final.result.ok) final.result = {...final.result,
+            changed:proposal.result.changed || final.result.changed,
+            awardedCents:proposal.result.awardedCents + final.result.awardedCents,
+            earnedMs:proposal.result.earnedMs + final.result.earnedMs};
+          proposal = final;
+        }
         if (!proposal.result.ok) { resetObservation(); return proposal.result; }
         if (proposal.result.awardedCents > 0 || proposal.run.passiveMoney.settled) {
-          return commit(c, proposal, clock.now, clock.mono, pending - observedMs);
+          return commitObserved(c, proposal, clock.now, clock.mono, budget - observedMs);
         }
         // No every-250ms zero-cent writes. Keep integer AND fractional eligible
         // milliseconds since the last confirmed commit, not since the last poll.
-        observation = identify(c, clock.now, clock.mono, pending);
+        observation = identify(c, clock.now, clock.mono, pending, since, prior);
         return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'observing',status:M.status(c.source,c.level,clock.now)};
       });
     }
