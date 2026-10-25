@@ -1,6 +1,29 @@
 /* Whole-panel Moving Mode. No engine, storage, economy, text editing or card APIs. */
 (function(root,factory){'use strict';const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.BOMovingPanels=api})(typeof globalThis!=='undefined'?globalThis:this,function(root){
  'use strict';
+// Finite keyed presentation only: lookup at call time; canonical models and receipts stay untouched.
+
+function _aux(key,fallback,params){const rt=globalThis.BOTranslation,values=params||{},plain=()=>fallback.replace(/\{([A-Za-z][A-Za-z0-9_]*)\}/g,(all,name)=>Object.prototype.hasOwnProperty.call(values,name)?String(values[name]):all);if(!rt)return plain();const text=rt.t(key,values);return text===key?plain():text;}
+function _auxEsc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+const _auxKeys=Object.freeze({"Moving Mode panel controls":"aux.moving.panels.8d3220f41193","Moving Mode":"aux.moving.panels.6147adfc7f10","Save":"common.save","Reset":"common.reset","Cancel":"common.cancel"});
+function _auxSource(source){if(typeof source!=='string')return source;const key=_auxKeys[source]||globalThis.BOTranslation?.keyFor?.(source);return key?_aux(key,source):source;}
+
+
+// Source-explicit text/attribute bindings: no scanning English text, DOM-source recovery or user-data inference.
+const _auxDisplayValues=new WeakMap();
+function _auxInline(key,fallback,params){return '<span data-i18n-inline="true" data-i18n="'+_auxEsc(key)+'"'+(params?' data-i18n-params="'+_auxEsc(JSON.stringify(params))+'"':'')+'>'+_auxEsc(_aux(key,fallback,params))+'</span>';}
+function _auxAttribute(attribute,quote,key,fallback,params){return _auxEsc(_aux(key,fallback,params))+quote+' data-i18n-'+attribute+'='+quote+_auxEsc(key)+(params?quote+' data-i18n-params='+quote+_auxEsc(JSON.stringify(params)):'');}
+function _auxValue(key,fallback,params){const value=new String(_aux(key,fallback,params));_auxDisplayValues.set(value,{key,fallback,params});return value;}
+function _auxSourceValue(source){if(typeof source!=='string')return source;const key=_auxKeys[source]||globalThis.BOTranslation?.keyFor?.(source);return key?_auxValue(key,source):source;}
+function _auxValueHTML(value){const binding=value&&typeof value==='object'&&_auxDisplayValues.get(value);return binding?_auxInline(binding.key,binding.fallback,binding.params):_auxEsc(value);}
+
+// Exact keyed projection of source-explicit bindings, before native equality checks.
+// Never traverses the live document and never invokes an economy/controller/render callback.
+function _auxMarkup(html){return globalThis.BOI18n?.projectHTML?.("moving-panels",html)??html;}
+function _auxSetText(element,key,fallback,params){const text=_aux(key,fallback,params);element.textContent=text;element.setAttribute?.('data-i18n',key);if(params)element.setAttribute?.('data-i18n-params',JSON.stringify(params));globalThis.BOTranslation?.bindText?.(element,key,params||{});return text;}
+function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux(key,fallback,params);if(element.nodeType===9&&attribute==='title'){element.title=text;const leaf=element.querySelector('title');if(leaf)_auxSetText(leaf,key,fallback,params);return text;}element.setAttribute(attribute,text);element.setAttribute('data-i18n-'+attribute,key);if(params)element.setAttribute('data-i18n-params',JSON.stringify(params));globalThis.BOTranslation?.bindAttribute?.(element,attribute,key,params||{});return text;}
+
+
  const PANEL_IDS=Object.freeze(['blind','hands','discards','bank','round','jokers','tags','consumables','phase-select','phase-play','phase-cashout','phase-shop','phase-pack','phase-won','phase-lost']);
  const allowedIDs=new Set(PANEL_IDS),own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k),empty=()=>({version:1,panels:{}});
  function record(value,keys){
@@ -51,17 +74,17 @@
   function finish(){stopDrag();editing=false;draft=null;snapshot=null;error=''}
   function restoreFocus(){const target=doc.querySelector('[data-moving-action="start"]')||lastFocus;if(target&&doc.body.contains(target))target.focus({preventScroll:true});lastFocus=null}
   function focusControl(el){if(!el)return;el.focus({preventScroll:true});if(el.hasAttribute('data-move-handle'))try{el.scrollIntoView?.({block:'center',inline:'nearest',behavior:'instant'})}catch(_){/* Older browsers still retain keyboard focus. */}}
-  function node(tag,text,attrs){const el=doc.createElement(tag);if(text)el.textContent=text;for(const [k,v]of Object.entries(attrs||{}))el.setAttribute(k,v);return el}
+  function node(tag,text,attrs){const el=doc.createElement(tag);if(text){const binding=typeof text==='object'&&_auxDisplayValues.get(text);if(binding)_auxSetText(el,binding.key,binding.fallback,binding.params);else el.textContent=text;}for(const [k,v]of Object.entries(attrs||{})){const binding=v&&typeof v==='object'&&_auxDisplayValues.get(v);if(binding&&['aria-label','title','placeholder','alt','aria-description'].includes(k))_auxSetAttribute(el,k,binding.key,binding.fallback,binding.params);else el.setAttribute(k,v);}return el}
   function paintToolbar(){
    if(!editing){toolbar?.remove();toolbar=null;message=null;buttons.clear();return}
    if(!toolbar){
-    toolbar=node('section','',{'data-moving-toolbar':'','class':'bo-moving-toolbar','role':'region','aria-label':'Moving Mode panel controls'});
-    const copy=node('div','',{'class':'bo-moving-copy'});copy.append(node('strong','Moving Mode'));
+    toolbar=node('section','',{'data-moving-toolbar':'','class':'bo-moving-toolbar','role':'region','aria-label':_auxValue("aux.moving.panels.8d3220f41193","Moving Mode panel controls")});
+    const copy=node('div','',{'class':'bo-moving-copy'});copy.append(node('strong',_auxValue("aux.moving.panels.6147adfc7f10","Moving Mode")));
     message=node('span','',{'class':'bo-moving-message','aria-live':'polite'});copy.append(message);toolbar.append(copy);
-    for(const [action,text]of [['save','Save'],['reset','Reset'],['cancel','Cancel']]){const b=node('button',text,{'type':'button','data-moving-action':action,'class':'bo-moving-button'});buttons.set(action,b);toolbar.append(b)}
+    for(const [action,text]of [['save',_auxValue("common.save","Save")],['reset',_auxValue("common.reset","Reset")],['cancel',_auxValue("common.cancel","Cancel")]]){const b=node('button',text,{'type':'button','data-moving-action':action,'class':'bo-moving-button'});buttons.set(action,b);toolbar.append(b)}
     doc.body.append(toolbar);
    }
-   message.setAttribute('role',error?'alert':'status');message.textContent=error||'Drag handles or use arrow keys. Shift = 1px. Only panel movement is enabled.';
+   message.setAttribute('role',error?'alert':'status');if(error){message.removeAttribute('data-i18n');message.removeAttribute('data-i18n-params');message.textContent=error;}else _auxSetText(message,"aux.moving.helper","Drag handles or use arrow keys. Shift = 1px. Only panel movement is enabled.");
   }
   function bounds(grid){
    const rect=grid.getBoundingClientRect(),app=doc.querySelector('#app'),a=app?.getBoundingClientRect()||rect,style=app?view.getComputedStyle(app):null;
@@ -83,7 +106,7 @@
     if(editing){
      el.setAttribute('data-moving-edit','');
      if(view.getComputedStyle(el).position==='static')el.setAttribute('data-moving-positioned','');
-     if(!entry.handle){entry.handle=node('button','↕ Move '+label(id),{'type':'button','data-move-handle':id,'class':'bo-moving-handle','aria-label':'Move '+label(id)+' panel. Arrow keys move 10 pixels; Shift and arrow moves 1 pixel.'});el.append(entry.handle)}
+     if(!entry.handle){entry.handle=node('button',_auxValue('aux.moving.handle.'+id,'↕ Move '+label(id)),{'type':'button','data-move-handle':id,'class':'bo-moving-handle','aria-label':_auxValue('aux.moving.handleAria.'+id,'Move '+label(id)+' panel. Arrow keys move 10 pixels; Shift and arrow moves 1 pixel.')});el.append(entry.handle)}
     }else{el.removeAttribute('data-moving-edit');el.removeAttribute('data-moving-positioned');entry.handle?.remove();entry.handle=null}
    }
    if(found.grid){
