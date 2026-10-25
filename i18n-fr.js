@@ -1,5 +1,10 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['fr']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "interest.cap43.note": "Les intérêts composés remplacent l’XP passive fixe au niveau 20 : réserve d’XP actuelle ×0,01 %, maximum 2 XP réelles/s. Au niveau 26 : ×0,015 %, maximum 3 XP réelles/s. Aux niveaux 30–42 : ×0,025 %, maximum 5 XP réelles/s. Aux niveaux 43–99 : toujours ×0,025 %, maximum 10 XP réelles/s. Au niveau 100 : aucun intérêt. Atteindre le plafond n’augmente jamais les exigences d’XP ; les réductions permanentes des niveaux 10/20/30 et la Potion de réduction restent applicables. Les Jokers Exp physiques actifs multiplient le taux AVANT le plafond. Le niveau 15, le bonus manuel du niveau 22 et la Potion d’expérience ne multiplient pas les intérêts. Connaissance rapporte séparément 1 XP/s multipliée uniquement par les Jokers Exp. Jeu visible uniquement ; aucun rattrapage hors ligne, masqué ou au rechargement ; les longues pauses sont ignorées.",
+  "interest.currentCap": "Plafond réel actuel : {value1} XP/s.",
+  "interest.cap43.reward": "Le plafond des intérêts composés passe à 10 XP réelles/s aux niveaux de joueur 43–99 ; la réserve d’XP actuelle ×0,025 % et les Jokers Exp avant le plafond restent inchangés. Aucun intérêt au niveau 100.",
+  "interest.cap43.compact": "Intérêts composés : plafond 10 XP/s",
+  "interest.costNeutral": "Le taux d’intérêt et son plafond réel n’augmentent jamais ces exigences d’XP. Ces valeurs d’équilibrage pourront être ajustées lors d’une prochaine mise à jour.",
   "emerald.quirk.clicking": "(cliquette)",
   "emerald.quirk.squeaking": "(couine)",
   "emerald.quirk.humming": "(fredonne)",

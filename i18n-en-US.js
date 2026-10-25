@@ -1,5 +1,10 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['en-US']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "interest.cap43.note": "Compound Interest replaces ordinary flat passive XP at Level 20: current XP bank ×0.01%, maximum2 actual XP/sec. At Level26: ×0.015%, maximum3 actual XP/sec. At Levels30–42: ×0.025%, maximum5 actual XP/sec. At Levels43–99: the same ×0.025%, maximum10 actual XP/sec. At Level100: no interest. Capped interest never increases XP requirements; permanent Level10/20/30 discounts and the Discount Potion still apply. Active physical Exp Jokers multiply the rate BEFORE the hard cap. Level15, manual22 and Exp Potion do not multiply interest. Knowledge separately earns1 XP/sec times Exp Jokers only. Visible game only; no offline/hidden/reload catch-up; long gaps skipped.",
+  "interest.currentCap": "Current actual cap: {value1} XP/s.",
+  "interest.cap43.reward": "Compound Interest cap rises to 10 actual XP/sec at player Levels43–99; current XP bank ×0.025% and Exp Jokers before the cap stay unchanged. Level100 earns no interest.",
+  "interest.cap43.compact": "Compound Interest cap10 XP/s",
+  "interest.costNeutral": "Interest rate and its actual cap never increase these XP requirements. These balancing defaults can be adjusted in a later update.",
   "emerald.quirk.clicking": "(clicks)",
   "emerald.quirk.squeaking": "(squeaks)",
   "emerald.quirk.humming": "(hums)",

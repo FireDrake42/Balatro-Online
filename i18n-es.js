@@ -1,5 +1,10 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['es']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "interest.cap43.note": "El interés compuesto sustituye la XP pasiva fija en el nivel 20: XP actual acumulada ×0,01 %, máximo 2 XP reales/s. En el nivel 26: ×0,015 %, máximo 3 XP reales/s. En los niveles 30–42: ×0,025 %, máximo 5 XP reales/s. En los niveles 43–99: el mismo ×0,025 %, máximo 10 XP reales/s. En el nivel 100: sin intereses. Llegar al límite nunca aumenta los requisitos de XP; se mantienen los descuentos permanentes de los niveles 10/20/30 y la Poción de descuento. Los comodines Exp físicos activos multiplican la tasa ANTES del límite. El nivel 15, el bono manual del 22 y la Poción de experiencia no multiplican los intereses. Conocimiento obtiene por separado 1 XP/s multiplicado solo por los comodines Exp. Solo con el juego visible; sin ganancias sin conexión, oculto o por recargar; se omiten las pausas largas.",
+  "interest.currentCap": "Límite real actual: {value1} XP/s.",
+  "interest.cap43.reward": "El límite del interés compuesto sube a 10 XP reales/s en los niveles de jugador 43–99; se mantienen la XP actual ×0,025 % y los comodines Exp antes del límite. El nivel 100 no genera intereses.",
+  "interest.cap43.compact": "Interés compuesto: límite 10 XP/s",
+  "interest.costNeutral": "La tasa de interés y su límite real nunca aumentan estos requisitos de XP. Estos valores de equilibrio pueden ajustarse en una actualización posterior.",
   "emerald.quirk.clicking": "(hace clic)",
   "emerald.quirk.squeaking": "(chilla)",
   "emerald.quirk.humming": "(tararea)",

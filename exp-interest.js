@@ -11,10 +11,10 @@
   const keys=['version','revision','totalXp','lastTickAt'];
   check(record(value)&&Object.keys(value).length===keys.length&&keys.every(k=>Object.prototype.hasOwnProperty.call(value,k)),'invalid saved ledger; stored data was not overwritten.');
   check(value.version===1&&Number.isSafeInteger(value.revision)&&value.revision>=0&&finite(value.totalXp)&&Number.isSafeInteger(value.lastTickAt)&&value.lastTickAt>=0,'invalid saved ledger values.');
-  check(value.revision===0?value.totalXp===0&&value.lastTickAt===0:value.totalXp>0&&value.totalXp<=value.revision*5&&value.lastTickAt>0&&value.lastTickAt%INTERVAL_MS===0&&value.lastTickAt>=value.revision*INTERVAL_MS,'saved income does not match its highwater.');
+  check(value.revision===0?value.totalXp===0&&value.lastTickAt===0:value.totalXp>0&&value.totalXp<=value.revision*10&&value.lastTickAt>0&&value.lastTickAt%INTERVAL_MS===0&&value.lastTickAt>=value.revision*INTERVAL_MS,'saved income does not match its highwater.');
   return {version:1,revision:value.revision,totalXp:value.totalXp,lastTickAt:value.lastTickAt};
  }
- function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');return p.level>=20&&p.level<100?Math.min(p.level>=30?5:p.level>=26?3:2,p.xp*(p.level>=30?.00025:p.level>=26?.00015:.0001)*PG.jokerXpMultiplier(config)):0}
+ function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');return p.level>=20&&p.level<100?Math.min(p.level>=43?10:p.level>=30?5:p.level>=26?3:2,p.xp*(p.level>=30?.00025:p.level>=26?.00015:.0001)*PG.jokerXpMultiplier(config)):0}
  function step(progression,ledger,at,config){
   const state=normalize(ledger),amount=rate(progression,config),fromLevel=progression.level;
   check(Number.isSafeInteger(at)&&at>=0,'invalid tick time.');const slot=Math.floor(at/INTERVAL_MS)*INTERVAL_MS;
