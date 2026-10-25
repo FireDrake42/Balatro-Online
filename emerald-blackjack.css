@@ -13,3 +13,6 @@ body.blackjack-table-open{background-color:#071e1d;background-image:radial-gradi
 /* On narrow tables the portrait owns a row; scores and names never shrink. */
 @media(max-width:600px){#emerald-blackjack-table .blackjack-emerald-seat .blackjack-seat-heading{display:block;position:relative}#emerald-blackjack-table .blackjack-identity{flex-direction:column;align-items:flex-start}#emerald-blackjack-table .blackjack-emerald-photo{width:calc(min(78px,(100% - 48px) / 1.9) * var(--emerald-scale,1));height:auto}#emerald-blackjack-table .blackjack-emerald-seat .blackjack-score{position:absolute;right:0;bottom:0}}
 @media(prefers-reduced-motion:reduce){#emerald-blackjack-table *,#emerald-blackjack-table *::before,#emerald-blackjack-table *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* Whole-frame portrait owns its natural aspect ratio at every breakpoint. */
+#emerald-blackjack-table .blackjack-emerald-photo.emerald-framed-portrait{width:calc(min(140px,(100vw - 140px) / 1.9) * var(--emerald-scale,1));max-width:calc(100% - 44px);height:auto}
+#emerald-blackjack-table .emerald-framed-portrait>img{width:100%;height:auto;max-width:100%;margin:0;border:0;border-radius:0;object-fit:contain;filter:none}

@@ -27,7 +27,7 @@
  function render(document,parent,snapshot,question){const line=message(snapshot,question);if(!line||!M.RM)return null;
   const stage=document.createElement('aside');stage.id='emerald-survey-companion';stage.className='emerald-survey-companion';stage.setAttribute('aria-label','Emerald survey companion');
   const details=document.createElement('details'),summary=document.createElement('summary');summary.className='emerald-survey-summary';
-  const photo=document.createElement('img');if(typeof root.BOEmeraldAsset==='string'&&root.BOEmeraldAsset.startsWith('data:image/'))photo.src=root.BOEmeraldAsset;photo.alt='Emerald, your green beetle companion';photo.width=98;photo.height=64;photo.style.cssText=M.EP.appearance(snapshot.progress.unlocked?snapshot.progress.level:0).css;photo.draggable=false;
+  const photo=root.BOEmeraldPortrait.create(document,snapshot.progress.unlocked?snapshot.progress.level:0,snapshot.level);
   const label=document.createElement('span');label.className='emerald-survey-level';label.textContent=M.RM.label(snapshot.progress);summary.setAttribute('aria-label',label.textContent+'. Open Emerald’s own level roadmap');summary.append(photo,label);details.appendChild(summary);
   const roadmap=document.createElement('div');roadmap.className='emerald-survey-roadmap';roadmap.innerHTML=M.RM.html(snapshot.progress);details.appendChild(roadmap);stage.appendChild(details);
   const speech=document.createElement('p');speech.className='emerald-survey-speech';speech.textContent=line;if(question?.type==='attention'){speech.id='emerald-survey-trick-warning';speech.setAttribute('role','status')}stage.appendChild(speech);parent.appendChild(stage);return stage;

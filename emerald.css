@@ -76,4 +76,11 @@ body.frenzy-active .emerald-photo-link{border-color:#d8ffeb}
 .emerald-following .emerald-group{position:fixed;right:max(8px,env(safe-area-inset-right,0px));bottom:max(8px,env(safe-area-inset-bottom,0px));box-sizing:border-box;width:min(310px,calc(100vw - 16px));max-height:min(470px,calc(100svh - var(--bo-hud-space,152px) - 60px));overflow:auto;overscroll-behavior:contain;padding:10px;border:1px solid #a2f59d;border-radius:14px;background:#0c251bf5;box-shadow:0 4px 24px #0007;animation:none}
 .emerald-faucet-assist{display:block;box-sizing:border-box;min-height:44px!important;width:100%;max-width:100%;margin:4px 0 2px;white-space:normal;overflow-wrap:anywhere}
 .emerald-controls [data-emerald-looker][aria-pressed=true]{border-color:#ffd7f1;background:#513047}
+/* Supplied full framed card: one accessible, own-level label in its original
+   label region. Never crop/stretch the frame; growth/glow stay on the whole card. */
+.emerald-framed-portrait{box-sizing:border-box;position:relative;display:block;flex:none;width:calc(min(140px,(100vw - 140px) / 1.9) * var(--emerald-scale,1));max-width:calc(100% - 44px);height:auto;aspect-ratio:1280/1216;margin:var(--emerald-glow-radius,0px);overflow:visible;filter:drop-shadow(0 5px 7px #0006) drop-shadow(0 0 var(--emerald-glow-radius,0px) rgba(42,255,113,var(--emerald-glow-alpha,0)))}
+.emerald-framed-portrait>img,.emerald-group .emerald-framed-portrait>img{display:block;box-sizing:border-box;width:100%;height:auto;max-width:100%;margin:0;border:0;border-radius:0;object-fit:contain;filter:none}
+.emerald-framed-portrait>svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.emerald-framed-portrait>svg text{font-family:Georgia,'Times New Roman',serif;fill:#fffdf2;stroke:none;letter-spacing:normal;text-transform:none}
+.emerald-photo-link{overflow:visible}
 

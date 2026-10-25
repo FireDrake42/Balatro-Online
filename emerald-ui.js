@@ -79,7 +79,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   }
   function openRoadmap(){let s;try{s=host.state()}catch(_){return}if(!allowed(s)||s.level<36||typeof host.openRoadmap!=='function')return;host.openRoadmap()}
   function paint(s,at){if(!bubble)return;const t=preferences(s),silent=s.workshop?.silent===true,name=root.BOEmerald.displayName(s.level);
-   const alt=_aux("aux.emerald.ui.b3569f43f4f1","{value1}, your green beetle companion",{value1:(name)}),next=_aux("aux.emerald.ui.84c3ce0bf9e4","{value1} · next tip",{value1:(name)});if(photo.alt!==alt)photo.alt=alt;if(nextButton.textContent!==next)nextButton.textContent=next;
+   const next=_aux("aux.emerald.ui.84c3ce0bf9e4","{value1} · next tip",{value1:(name)});if(nextButton.textContent!==next)nextButton.textContent=next;
    if(chatForm){const label=chatForm.querySelector('label'),text=_aux("aux.emerald.ui.b12d1e0f8a83","Ask {value1} about Balatro",{value1:(name)});if(label.textContent!==text)label.textContent=text}
    if(chatAnswer){const text=root.BOEmerald.displayText(chatAnswer.textContent,s.level);if(chatAnswer.textContent!==text)chatAnswer.textContent=text}
    const message=lookerMode?(entries[0]?.message||_aux("aux.emerald.ui.734ea89b5281","Looker Mode only compares fully visible cards in your current playable hand.")):!t.first&&!t.second?_aux("aux.emerald.ui.8a427667488a","Tips are paused. Choose 1st tips, 2nd tips, or both."):current?.message||(gameContext(s)?_aux("aux.emerald.ui.cf817f2e8fda","I’ll check the current table before my next tip."):_aux("aux.emerald.ui.a79ec42f931f","I’m here while you explore. Choose the next tip when you’re ready."));if(bubble.textContent!==message)bubble.textContent=message;
@@ -123,7 +123,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   }
   function createStage(parent,s){
    remove();stage=document.createElement('section');stage.id='emerald-companion';stage.className='emerald-stage';group=document.createElement('div');group.className='emerald-group';bubble=document.createElement('p');bubble.className='emerald-bubble';bubble.setAttribute('role','status');bubble.setAttribute('aria-live','polite');
-   photo=document.createElement('img');photo.src=root.BOEmeraldAsset;_auxSetAttribute(photo,"alt","aux.emerald.ui.77d734f768f9","a green beetle, your green beetle companion");photo.width=98;photo.height=64;photo.draggable=false;controls=document.createElement('div');controls.className='emerald-controls';
+   photo=root.BOEmeraldPortrait.create(document,s.pet?.unlocked?s.pet.level:0,s.level);controls=document.createElement('div');controls.className='emerald-controls';
    nextButton=button(_aux("aux.emerald.ui.f76da73e7a73","a green beetle · next tip"),()=>{let live;try{live=host.state()}catch(_){return}const at=now();if(advanceTip(live,at))paint(live,at)});nextButton.dataset.emeraldNext='';
    quietButton=button(compact?_aux("aux.emerald.ui.754e196536fe","Show tips"):_aux("aux.emerald.ui.c0ebb7d6b693","Quiet"),()=>{compact=!compact;if(compact)suppressAutomatic();update()});quietButton.dataset.emeraldQuiet='';
    const first=button(_aux("aux.emerald.ui.c97df97bd7b2","1st tips"),()=>changeTips('first')),second=button(_aux("aux.emerald.ui.4fdd92680f1c","2nd tips"),()=>changeTips("second"));first.dataset.emeraldTips='first';second.dataset.emeraldTips='second';
@@ -132,11 +132,11 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    controls.append(nextButton,quietButton,first,second,talkButton,lookerButton);createChat();group.append(bubble,photo,controls,chatForm);stage.append(group);parent.append(stage);
   }
   function updateLevel(s){const caps=s.capabilities||{},pet=s.pet,enhanced=s.level>=36,canRoadmap=typeof host.openRoadmap==='function';
-   photo.style.cssText=root.BOEmeraldProgress.appearance(pet?.unlocked?pet.level:0).css;
+   root.BOEmeraldPortrait.update(photo,pet?.unlocked?pet.level:0,s.level);
    stage.classList.toggle('emerald-following',s.following===true&&pet?.level>=5);stage.classList.toggle('emerald-motion-off',s.motion===false);stage.classList.toggle('emerald-aura',s.level>=10&&caps.greenAura===true);stage.classList.toggle('emerald-rich-green',s.level>=38);stage.style.setProperty('--emerald-scale',String(s.level>=10&&caps.photoScale||1));stage.style.setProperty('--emerald-speed',String(s.level>=10&&caps.movementSpeed||1));stage.dataset.emeraldLevel=String(pet?.level||1);stage.dataset.position=['bob','glide','corner'][Math.floor(now()/24000)%3];
    if(enhanced){
-    if(!photoLink){photoLink=button('',openRoadmap);photoLink.className='emerald-photo-link';photoLink.dataset.emeraldRoadmap='photo';group.insertBefore(photoLink,photo);photoLink.append(photo);const badge=document.createElement('span');badge.className='emerald-photo-level';photoLink.append(badge)}
-    photoLink.disabled=!canRoadmap;photoLink.setAttribute('aria-label',_aux("aux.emerald.ui.1fdf58451a58","Emerald Level {value1}, view Emerald’s level roadmap",{value1:(pet?.level||1)}));_auxSetAttribute(photoLink,"title","aux.emerald.ui.676b0150dfa6","View Emerald’s own levels and upgrades");_auxSetText(photoLink.querySelector('.emerald-photo-level'),"aux.emerald.ui.3a522cc25197","Emerald Level {value1}",{value1:(pet?.level||1)});
+    if(!photoLink){photoLink=button('',openRoadmap);photoLink.className='emerald-photo-link';photoLink.dataset.emeraldRoadmap='photo';group.insertBefore(photoLink,photo);photoLink.append(photo)}
+    photoLink.disabled=!canRoadmap;photoLink.setAttribute('aria-label',_aux("aux.emerald.ui.1fdf58451a58","Emerald Level {value1}, view Emerald’s level roadmap",{value1:(pet?.level||1)}));_auxSetAttribute(photoLink,"title","aux.emerald.ui.676b0150dfa6","View Emerald’s own levels and upgrades");
     if(!autoButton){autoButton=button(_aux("aux.emerald.ui.d1378b7a864d","Auto Speak"),toggleAuto);autoButton.dataset.emeraldAuto='';controls.append(autoButton)}
    }else{if(photoLink){group.insertBefore(photo,photoLink);photoLink.remove();photoLink=null}autoButton?.remove();autoButton=null}
    if(s.level>=10&&pet?.unlocked){
