@@ -1,5 +1,10 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['en-US']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "settings.emeraldPlacement.title": "Emerald position",
+  "settings.emeraldPlacement.left": "Emerald Left",
+  "settings.emeraldPlacement.right": "Emerald Right",
+  "settings.emeraldPlacement.below": "Emerald Below",
+  "settings.emeraldPlacement.note": "On roomy desktops, Left and Right sit beside the table. Smaller screens keep those alignments in a reserved area below. Below centers Emerald underneath. Choosing a position pauses floating Following without erasing its saved preference. Turn Following on to resume it.",
   "expansion.reward.51": "Unlock8 Settings power switches: Compound Interest, Passive Money, Passive XP, username display, card games, statistics, surveys and Market. Each switch turned OFF adds3% BATTERY LIFE, up to+24% for all8; no charging-speed bonus. Saved choices and history are retained, never deleted. Essential charging, drain, saving and recovery keep their existing rules.",
   "expansion.compact.51": "8 Settings power switches · +3% battery life/OFF (max+24%)",
   "expansion.reward.52": "New earned XP doubles from now on: ×2 applied ONCE before per-award caps, including the10 actual XP-per-payment interest cap. Already-final awards are not doubled again. Historical XP and saved balances are not rewritten.",

@@ -1,5 +1,10 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['fr']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "settings.emeraldPlacement.title": "Position d’Emerald",
+  "settings.emeraldPlacement.left": "Emerald à gauche",
+  "settings.emeraldPlacement.right": "Emerald à droite",
+  "settings.emeraldPlacement.below": "Emerald en dessous",
+  "settings.emeraldPlacement.note": "Sur les grands écrans, Gauche et Droite placent Emerald à côté de la table. Sur les écrans plus petits, ces alignements restent dans un espace réservé dessous. En dessous centre Emerald sous la table. Choisir une position suspend le suivi flottant sans effacer la préférence enregistrée. Activez le suivi pour le reprendre.",
   "expansion.reward.51": "Débloque8 interrupteurs de consommation dans Réglages : intérêts composés, argent passif, XP passifs, nom d’utilisateur, jeux de cartes, statistiques, enquêtes et marché. Chaque fonction DÉSACTIVÉE ajoute3 % d’AUTONOMIE, jusqu’à+24 % pour les8 ; aucun bonus de vitesse de charge. Choix sauvegardés et historique sont conservés, jamais supprimés. Charge essentielle, consommation, sauvegarde et récupération gardent leurs règles.",
   "expansion.compact.51": "8 interrupteurs dans Réglages · +3 % d’autonomie par fonction désactivée (max.+24 %)",
   "expansion.reward.52": "Les nouveaux XP gagnés doublent désormais : ×2 UNE SEULE FOIS avant les plafonds par récompense, dont celui de10 XP réels par paiement d’intérêts. Les gains déjà finalisés ne sont pas doublés à nouveau. Les XP historiques et soldes sauvegardés ne sont pas réécrits.",

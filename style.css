@@ -536,4 +536,20 @@ body.level41-light:not(.bo-survey-page) .grain{opacity:.04}
 #dialog-body .sheet-actions > [data-action="move-joker"]{flex:0 0 auto;max-inline-size:100%;min-block-size:3.68rem;font-size:1.2rem;line-height:1.6rem;padding:.96rem calc(1.52rem + .2px);border:1px solid #78cfcb;border-radius:12px;background:linear-gradient(180deg,#235c64,#173d45);color:var(--text);box-shadow:0 4px 0 #06181b,0 7px 12px #0008,inset 0 1px 0 #d6ffff4d;white-space:normal}
 #dialog-body .sheet-actions > [data-action="move-joker"]:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 /* End Joker reorder polish r7. */
+/* Build your hand only: nominal card geometry +25%, never eight-across shrink.
+   Wrap full cards with lift/shadow headroom; deck/shop/inspect art is unchanged. */
+.table-surface .hand-row{--hand-card-width:95px;--hand-card-height:140px;--hand-corner:20px;--hand-suit:37.5px;--hand-label:10px;flex-wrap:wrap;row-gap:28px}
+.hand-row > .playing-card[data-context="hand"]{flex:0 0 var(--hand-card-width);width:var(--hand-card-width);min-width:var(--hand-card-width);max-width:none;height:var(--hand-card-height);padding:6.25px}
+.hand-row > .playing-card[data-context="hand"] .corner{font-size:var(--hand-corner)}
+.hand-row > .playing-card[data-context="hand"] .suit-big{font-size:var(--hand-suit)}
+.hand-row > .playing-card[data-context="hand"] .mod-label{font-size:var(--hand-label);bottom:27.5px}
+@media(min-width:1400px){.table-surface .hand-row{--hand-card-width:103.75px;--hand-card-height:152.5px}}
+@media(max-width:1050px){.table-surface .hand-row{--hand-card-height:122.5px;--hand-corner:17.5px;--hand-suit:32.5px}}
+@media(max-width:700px){.table-surface .hand-row{--hand-card-width:83.75px;--hand-card-height:113.75px;--hand-corner:16.25px;--hand-suit:30px;--hand-label:7.5px}.hand-row > .playing-card[data-context="hand"]{padding:5px}.hand-row > .playing-card[data-context="hand"] .mod-label{bottom:22.5px}}
+@media(max-width:390px){.table-surface .hand-row{--hand-card-height:100px;--hand-corner:13.75px;--hand-suit:26.25px;--hand-label:6.25px}}
+/* The three placement choices remain regular Settings controls, not table actions. */
+#emerald-placement-settings .emerald-placement-buttons{display:flex;flex-wrap:wrap;gap:8px}
+#emerald-placement-settings [data-action="emerald-placement"]{flex:0 1 auto;min-height:44px;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+#emerald-placement-settings [data-action="emerald-placement"][aria-pressed="true"]{border-color:#c6ffb7;background:#285a34;color:#f5fff1;box-shadow:inset 0 0 0 1px #c6ffb7}
+#emerald-placement-settings [data-action="emerald-placement"]:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 

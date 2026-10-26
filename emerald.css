@@ -83,4 +83,23 @@ body.frenzy-active .emerald-photo-link{border-color:#d8ffeb}
 .emerald-framed-portrait>svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
 .emerald-framed-portrait>svg text{font-family:Georgia,'Times New Roman',serif;fill:#fffdf2;stroke:none;letter-spacing:normal;text-transform:none}
 .emerald-photo-link{overflow:visible}
+/* Explicit positions win over automatic glide/corner and floating Following.
+   A reserved, normal-flow habitat keeps cards, actions and the HUD uncovered. */
+.emerald-stage.emerald-positioned{position:relative;justify-content:flex-start}
+.emerald-stage.emerald-positioned .emerald-group{position:static;animation:none;transform:none;max-height:none;overflow:visible}
+.emerald-stage.emerald-positioned[data-placement="left"] .emerald-group{align-items:flex-start}
+.emerald-stage.emerald-positioned[data-placement="right"]{justify-content:flex-end}
+.emerald-stage.emerald-positioned[data-placement="right"] .emerald-group{align-items:flex-end}
+.emerald-stage.emerald-positioned[data-placement="below"]{justify-content:center}
+.emerald-stage.emerald-positioned[data-placement="below"] .emerald-group{align-items:center}
+/* Desktop-only280px side rails leave at least600px for the table and fixed
+   full-size cards wrap. Wider screens can add the rail to the old1440px canvas. */
+@media(min-width:1280px){
+ body.clean-game-ui #app:has(> .game-grid > .emerald-positioned:is([data-placement="left"],[data-placement="right"])){max-width:1736px}
+ body.clean-game-ui #app .game-grid.clean-table:has(> .emerald-positioned[data-placement="left"]){grid-template-columns:280px 204px minmax(600px,1fr);grid-template-areas:"emerald sidebar table"}
+ body.clean-game-ui #app .game-grid.clean-table:has(> .emerald-positioned[data-placement="right"]){grid-template-columns:204px minmax(600px,1fr) 280px;grid-template-areas:"sidebar table emerald"}
+ body.clean-game-ui #app .game-grid.clean-table:has(> .emerald-positioned) > .sidebar{grid-area:sidebar}
+ body.clean-game-ui #app .game-grid.clean-table:has(> .emerald-positioned) > .table-column{grid-area:table}
+ body.clean-game-ui #app .game-grid.clean-table > .emerald-positioned{grid-area:emerald;min-width:0;margin:0;align-self:start}
+}
 
