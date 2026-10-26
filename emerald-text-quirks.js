@@ -20,10 +20,10 @@
  function displayed(element){if(!element?.isConnected||element.ownerDocument?.hidden||element.closest?.('[hidden],[inert],[aria-hidden="true"]'))return false;
   if(element.getClientRects&&!element.getClientRects().length)return false;const style=element.ownerDocument?.defaultView?.getComputedStyle?.(element);return !style||style.display!=='none'&&style.visibility!=='hidden'&&style.visibility!=='collapse';
  }
- function create(options={}){const choices=new Map(),limit=Number.isInteger(options.limit)&&options.limit>0?Math.min(options.limit,256):128,draw=options.uint32||uint32;
+ function create(options={}){const choices=new Map(),limit=Number.isInteger(options.limit)&&options.limit>0?Math.min(options.limit,256):128,draw=options.uint32||uint32,writer=root.BOEmeraldTypewriter&&root.requestAnimationFrame?root.BOEmeraldTypewriter.create({eligible:options.eligible}):null;
   function choice(key,level){if(!Number.isInteger(level)||level<6||level>100){if(!choices.has(key)){choices.set(key,null);if(choices.size>limit)choices.delete(choices.keys().next().value)}return null}if(choices.has(key)){const value=choices.get(key);choices.delete(key);choices.set(key,value);return value}let value=null;try{value=sample(level,draw)}catch(_){/* No entropy: leave the actual message unchanged. */}choices.set(key,value);if(choices.size>limit)choices.delete(choices.keys().next().value);return value}
-  function paint(element,raw,key,level,translate){if(!displayed(element))return false;const text=String(raw??'');if(!text.trim()){if(element.textContent!==text)element.textContent=text;return false}const value=decorate(text,choice(key,level),translate);if(element.textContent!==value)element.textContent=value;return true}
-  return Object.freeze({choice,paint,clear:()=>choices.clear(),size:()=>choices.size});
+  function paint(element,raw,key,level,translate){if(!displayed(element))return false;const text=String(raw??'');if(!text.trim()){if(element.textContent!==text)element.textContent=text;return false}const value=decorate(text,choice(key,level),translate);if(writer)writer.paint(element,value,key,{motion:options.motion?.()!==false,eligible:options.eligible});else if(element.textContent!==value)element.textContent=value;return true}
+  return Object.freeze({choice,paint,clear:()=>{choices.clear();writer?.clear()},size:()=>choices.size});
  }
  return Object.freeze({KINDS,six,sample,decorate,displayed,create});
 });

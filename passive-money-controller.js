@@ -4,11 +4,16 @@
  * transitions (also before cloud/slot/run replacement).
  *
  * const c = BOPassiveMoneyController.create(host);
- * c.status(); c.start(); c.tick(); c.resetObservation(); c.destroy();
+ * c.status(); c.start(); c.tick(); c.syncPower({explicit:true}); c.resetObservation(); c.destroy();
  * host: get()->{profile,run,level,page}, eligible()->boolean, assertWritable(),
  * stamp(), now()->Date.now integer, monotonic()->performance.now number,
  * read('run'|'profile'), ownRaw('run'|'profile'), write('run',wholeRun), pause(msg),
  * applyRun(next,result), changed(result) [optional], notify(msg) [optional].
+ * getFeatureEnabled()->boolean [default true], getPaused()->boolean [default false]
+ * explicitly opt new starts into v2. syncPower is an essential owner-fenced RUN
+ * checkpoint (never a PROFILE/SETTINGS writer); explicit:true alone may upgrade
+ * an existing v1 at CURRENT remaining. Reads/creation never upgrade. The parent
+ * preholds getPaused BEFORE guarded policy writes; uncertainty keeps that hold.
  * All host operations must be synchronous. A write must update ownRaw to its
  * confirmed owned raw, exactly like the parent's existing whole-RUN writer.
  *
@@ -38,6 +43,15 @@
     check(M && typeof M.poll === 'function', 'missing-model', 'The pure Passive Money model is required.');
     for (const key of ['get','eligible','assertWritable','stamp','now','monotonic','read','ownRaw','write','pause','applyRun'])
       check(host && typeof host[key] === 'function', 'invalid-host', 'Missing synchronous Passive Money host.' + key);
+    for (const key of ['getFeatureEnabled','getPaused'])
+      check(host[key] === undefined || typeof host[key] === 'function', 'invalid-host', 'Invalid synchronous Passive Money host.' + key);
+    const pauseClock = typeof host.getFeatureEnabled === 'function' || typeof host.getPaused === 'function';
+    function power() {
+      const enabled = typeof host.getFeatureEnabled === 'function' ? host.getFeatureEnabled() : true;
+      const paused = typeof host.getPaused === 'function' ? host.getPaused() : false;
+      check(typeof enabled === 'boolean' && typeof paused === 'boolean', 'invalid-power', 'Power callbacks must return synchronous booleans.');
+      return {powerPaused:!enabled || paused,powerKey:JSON.stringify([enabled,paused])};
+    }
     let busy = false, destroyed = false, uncertain = false, retaining = false, epoch = 0, observation = null, carry = null;
     function resetObservation() {
       epoch++;
@@ -49,6 +63,7 @@
       check(!destroyed && !uncertain, uncertain ? 'uncertain' : 'destroyed', uncertain ? 'Saving is uncertain. Reload safely; do not retry or reset.' : 'This Passive Money controller was destroyed.');
       const allowed = host.assertWritable(); check(allowed !== false && !thenable(allowed), 'read-only', 'This save is not writable.');
       check(host.eligible() === true, 'ineligible', 'Only observable foreground eligible time earns Passive Money.');
+      check(!power().powerPaused, 'power-paused', 'Low Power or a disabled Passive Money feature pauses earnings.');
     }
     function liveContext() {
       const c = host.get();
@@ -59,19 +74,20 @@
         'unreconciled-level', 'The origin run actual player level is not durably reconciled yet.');
       const s = M.status(source, c.level, 0);
       check(s.ok && s.eligibleRun, s.code || 'ineligible-run', s.reason || 'An active, non-abandoned origin run is required.');
-      return {...c,source,runJSON:JSON.stringify(source),profileJSON};
+      return {...c,...power(),source,runJSON:JSON.stringify(source),profileJSON};
     }
     function verifyLive(c) {
       check(c.epoch === epoch && !destroyed && !uncertain, 'cancelled', 'This observation or action was cancelled.');
       const stamp = host.stamp(), live = liveContext();
       check(c.epoch === epoch && !destroyed && !uncertain && live.run === c.run && live.profile === c.profile &&
         live.level === c.level && live.page === c.page && live.source._uiId === c.id && stamp === c.stamp &&
-        live.runJSON === c.runJSON && live.profileJSON === c.profileJSON,
+        live.runJSON === c.runJSON && live.profileJSON === c.profileJSON && live.powerKey === c.powerKey,
         'context-changed', 'The whole live run, profile, actual level, owner or slot changed.');
       return live;
     }
     function sameContext(c) { guard(); return verifyLive(c); }
     function confirmedFence(c, runRaw = c.runRaw) {
+      if (c.powerTransition) { retentionFence(c, runRaw); return verifyLive(c); }
       // The guard itself may discover ownership/slot changes. Re-read raws
       // AFTER it; then seal whole live data again in case a storage read hook
       // cancelled/replaced/mutated this context. Never overwrite a failed origin.
@@ -125,10 +141,10 @@
       const allowed = host.assertWritable();
       check(allowed !== false && !thenable(allowed), 'read-only', 'This save is not writable.');
     }
-    function retentionFence(c) {
+    function retentionFence(c, runRaw = c.runRaw) {
       // Pauses may be ineligible but never owner/read/save-guard exempt.
-      retentionGuard(); verifyLive(c); raws(c);
-      retentionGuard(); verifyLive(c); raws(c); verifyLive(c);
+      retentionGuard(); verifyLive(c); raws(c, runRaw);
+      retentionGuard(); verifyLive(c); raws(c, runRaw); verifyLive(c);
     }
     function retentionCapture() {
       const token = epoch; retentionGuard();
@@ -160,7 +176,7 @@
         if (current) {
           // An ineligible reset adds only the last sampled segment, never the
           // modal/hidden/busy interval leading up to this reset. No writer here.
-          const sample = sampleBoundary && host.eligible() === true;
+          const sample = sampleBoundary && host.eligible() === true && !c.powerPaused && !(s.version === M.PAUSE_VERSION && s.pausedAt !== null);
           const now = sample ? clock.now : current.now;
           const pending = current.pending + (sample ? clock.mono - current.mono : 0);
           budget += segmentBudget(s, current, now, pending);
@@ -203,7 +219,7 @@
         observation = null;
         const next = liveContext();
         check(next.runJSON === intended && next.profile === c.profile && next.profileJSON === c.profileJSON && next.level === c.level &&
-          next.page === c.page && host.stamp() === c.stamp && epoch === c.epoch && !destroyed,
+          next.page === c.page && next.powerKey === c.powerKey && host.stamp() === c.stamp && epoch === c.epoch && !destroyed,
           'apply-context', 'The confirmed run application changed its origin context.');
         if (!proposal.run.passiveMoney.settled)
           observation = identify({...next,id:next.source._uiId,stamp:c.stamp}, now, mono, fraction);
@@ -223,7 +239,7 @@
       busy = true;
       try { return work(); }
       catch (error) {
-        if (error.code === 'ineligible') { epoch++; retainObserved(false); }
+        if (error.code === 'ineligible' || error.code === 'power-paused') { epoch++; retainObserved(false); }
         else resetObservation();
         return fail(error.code || 'denied', error.message);
       }
@@ -231,7 +247,7 @@
     }
     function start() {
       return perform(() => {
-        const clock = clocks(), c = capture(), proposal = M.start(c.source, c.level, clock.now);
+        const clock = clocks(), c = capture(), proposal = M.start(c.source, c.level, clock.now, pauseClock ? {pauseClock:true} : undefined);
         if (!proposal.result.ok) return proposal.result;
         return commitObserved(c, proposal, clock.now, clock.mono, 0);
       });
@@ -241,6 +257,8 @@
         const clock = clocks(), c = capture(), s = M.normalize(c.source.passiveMoney);
         if (!s) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'idle',status:M.status(c.source,c.level,clock.now)}; }
         if (clock.now < s.lastAt) { resetObservation(); return fail('clock-rollback','The absolute clock moved backwards. No time was forced forward.'); }
+        if (s.version === M.PAUSE_VERSION && s.pausedAt !== null)
+          return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'paused',status:M.status(c.source,c.level,clock.now)};
         if (s.settled) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'settled',status:M.status(c.source,c.level,clock.now)}; }
         if (!sameOrigin(carry, c)) carry = null;
         if (carry && (clock.now < carry.now || clock.mono < carry.mono) ||
@@ -280,13 +298,58 @@
         return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'observing',status:M.status(c.source,c.level,clock.now)};
       });
     }
+    function syncPower(options) {
+      return perform(() => {
+        const config = options === undefined ? {explicit:false} : M.copyData(options);
+        check(config && Object.keys(config).length === 1 && typeof config.explicit === 'boolean', 'invalid-options', 'Supply only a boolean explicit power-command option.');
+        const clock = clocks(), c = retentionCapture(), s = M.normalize(c.source.passiveMoney);
+        const unchanged = code => ({ok:true,changed:false,awardedCents:0,earnedMs:0,code,
+          status:{...M.status(c.source,c.level,clock.now),powerPaused:c.powerPaused}});
+        if (!s) return unchanged('idle');
+        check(clock.now >= s.lastAt, 'clock-rollback', 'The absolute clock moved backwards. No pause was forced forward.');
+        const wasPaused = s.version === M.PAUSE_VERSION && s.pausedAt !== null;
+        if (wasPaused === c.powerPaused) return unchanged(wasPaused ? 'paused' : 'unchanged');
+        if (s.version === M.VERSION && !config.explicit) return unchanged('legacy-power-pending');
+        let previous = sameOrigin(carry, c) ? carry : null, current = sameOrigin(observation, c) ? observation : null;
+        if (previous && (clock.now < previous.now || clock.mono < previous.mono) ||
+            current && (clock.now < current.now || clock.mono < current.mono)) {
+          previous = null; current = null; carry = null; observation = null;
+        }
+        // ONLY already verified budget survives a policy boundary. Never sample
+        // modal/hidden/policy-off time on this essential checkpoint path.
+        let budget = previous ? previous.pending : 0;
+        if (current) budget += segmentBudget(s, current, current.now, current.pending);
+        check(Number.isFinite(budget) && budget >= 0 && budget <= M.MAX_TIME, 'observation-overflow', 'Invalid verified pause-boundary budget.');
+        const observedMs = Math.floor(budget);
+        let source = c.source, folded = {ok:true,changed:false,awardedCents:0,earnedMs:0};
+        if (!wasPaused && !s.settled) {
+          const at = Math.min(clock.now, s.endsAt);
+          let proposal = M.poll(source, c.level, at, observedMs);
+          if (proposal.result.ok && clock.now > at) {
+            const final = M.poll(proposal.run, c.level, clock.now, 0);
+            if (final.result.ok) final.result = {...final.result,changed:proposal.result.changed || final.result.changed,
+              awardedCents:proposal.result.awardedCents + final.result.awardedCents,earnedMs:proposal.result.earnedMs + final.result.earnedMs};
+            proposal = final;
+          }
+          if (!proposal.result.ok) return proposal.result;
+          source = proposal.run; folded = proposal.result;
+        }
+        const proposal = M.setPaused(source, c.level, clock.now, c.powerPaused, 0);
+        if (!proposal.result.ok) return proposal.result;
+        proposal.result = {...proposal.result,changed:folded.changed || proposal.result.changed,
+          awardedCents:folded.awardedCents + proposal.result.awardedCents,earnedMs:folded.earnedMs + proposal.result.earnedMs};
+        if (!proposal.result.changed) return proposal.result;
+        c.powerTransition = true;
+        return commitObserved(c, proposal, clock.now, clock.mono, wasPaused ? budget : budget - observedMs);
+      });
+    }
     function status() {
       try { const c = host.get(), result = M.status(c && c.run, c && c.level, host.now());
-        return {...result,uncertain,destroyed};
+        return {...result,...power(),uncertain,destroyed};
       } catch (error) { return {...fail(error.code || 'invalid-context', error.message),uncertain,destroyed}; }
     }
     function destroy() { destroyed = true; resetObservation(); }
-    return Object.freeze({status,start,tick,resetObservation,destroy});
+    return Object.freeze({status,start,tick,syncPower,resetObservation,destroy});
   }
   return Object.freeze({create});
 }));

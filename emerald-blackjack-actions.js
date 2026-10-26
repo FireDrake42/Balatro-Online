@@ -17,7 +17,8 @@
   function gate(c){
    check(!destroyed&&!paused,'Blackjack saving is paused. Reload safely before playing.');
    check(c&&record(c.profile)&&c.page==='home'&&c.tab==='blackjack','Open the Blackjack tab before playing.');
-   check(!c.hidden&&!c.protected&&!c.suspended&&!c.conductPaused&&!c.cloudRestoring&&!c.slotBusy&&!c.survey,'Blackjack is unavailable in this protected context.');
+   check(c.gamesEnabled!==false,'Card games are disabled in Feature Power. Your saved table is kept.');
+   check(!c.hidden&&!c.protected&&!c.suspended&&!c.animating&&!c.conductPaused&&!c.cloudRestoring&&!c.slotBusy&&!c.survey,'Blackjack is unavailable in this protected context.');
    check(!root.document?.hidden&&root.document?.visibilityState!=='hidden','Return to the visible Blackjack table before playing.');
    check(Number.isInteger(c.level)&&c.level>=10&&c.level<=100&&c.profile.progression?.level===c.level,'Use the actual, reconciled player level before playing.');
    check(P.validate(c.profile.emerald)&&P.progress(c.profile.emerald,c.level).level>=3,'Blackjack unlocks at Emerald Level 3.');return c;
@@ -84,7 +85,7 @@
     check(read('profile')===raw&&read('run')===c.runRaw,'The canonical save changed before Blackjack could apply.');fence(c);
     check(read('profile')===raw&&read('run')===c.runRaw,'The canonical save changed after the final ownership check.');
     const appliedResult=host.applyProfile(next);check(appliedResult!==false&&!thenable(appliedResult),'The Blackjack profile could not be applied synchronously.');applied=true;
-    try{host.render();}catch(_){/* A renderer failure cannot revoke a proven durable action. */}
+    try{host.render({game:'blackjack',before:source.present?B.publicState(source.state):null,after:B.publicState(proposal.state),completed:proposal.completed});}catch(_){/* A renderer failure cannot revoke a proven durable action. */}
     return {ok:true,completed:proposal.completed,roundId:proposal.roundId,message:proposal.message,state:B.publicState(proposal.state)};
    }catch(error){
     if(attempted&&!applied){paused=true;try{host.pause('Blackjack saving is uncertain. This action may already be saved. Do not retry, reset or clear storage; reload safely to inspect it. '+error.message);}catch(_){/* The local uncertainty latch still prevents a second attempt. */}}

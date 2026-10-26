@@ -1,0 +1,60 @@
+/* Additive, owned Settings controls only; inherit the game's theme and fonts. */
+#power-settings-controls {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+#power-settings-controls fieldset {
+  box-sizing: border-box;
+  min-inline-size: 0;
+  margin-block: 1rem;
+}
+#power-settings-controls legend {
+  max-inline-size: 100%;
+  white-space: normal;
+}
+#power-settings-controls .power-interest-rows,
+#power-settings-controls .power-feature-rows {
+  display: grid;
+  gap: .75rem;
+}
+#power-settings-controls .power-interest-row {
+  display: grid;
+  min-inline-size: 0;
+  gap: .35rem;
+}
+#power-settings-controls select {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-block-size: 44px;
+  font: inherit;
+}
+#power-settings-controls .power-feature-row {
+  display: flex;
+  align-items: center;
+  min-block-size: 44px;
+  min-inline-size: 0;
+  gap: .65rem;
+  cursor: pointer;
+}
+#power-settings-controls .power-feature-row input {
+  flex: 0 0 auto;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
+#power-settings-controls .power-feature-row span,
+#power-settings-controls p,
+#power-settings-controls small,
+#power-settings-controls output {
+  overflow-wrap: anywhere;
+}
+#power-settings-controls output {
+  display: block;
+  margin-block-start: 1rem;
+  font-weight: 600;
+}
+@media (min-width: 600px) {
+  #power-settings-controls .power-feature-rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -136,6 +136,9 @@
     return {required: table[p.level - 1], interestCostMultiplier: 1};
   }
   function manualXpMultiplier(level,config) {return level>=22&&(!record(config)||config.xpSource!=='passive')?1.2:1;}
+  // New earned rewards only: never double a stored bank, cost/refund or an
+  // already-final capped payment. Evaluate before this award can level up.
+  function earnedXpMultiplier(level) {validLevel(level);return level>=52?2:1;}
   function buffs(level) {
     validLevel(level);
     return {
@@ -148,7 +151,7 @@
       bossBonusHands: level >= 20 ? 1 : 0, bossBonusDiscards: level >= 20 ? 1 : 0,
       stockMarket: level >= 21, casinoTrack: level >= 24, moreTracks:level>=27, faucet: level >= 25, faucetNotifications:level>=28,
       animationDurationMultiplier:level>=22?.8:1,manualXpMultiplier:level>=22?1.2:1,roundCashoutBonus:level>=23?1:0,shopDiscount:level>=24?1:0,
-      interestRate:level>=100?0:level>=30?.00025:level>=26?.00015:level>=20?.0001:0,interestCap:level>=100?0:level>=43?10:level>=30?5:level>=26?3:level>=20?2:0,fullscreen:level>=31,baseCritChance:level>=32?.01:0,potionMerging:level>=33,
+      interestRate:level>=100?0:level>=30?.00025:level>=26?.00015:level>=20?.0001:0,interestCap:level>=100?0:level>=42?10:level>=30?5:level>=26?3:level>=20?2:0,fullscreen:level>=31,baseCritChance:level>=53?.02:level>=32?.01:0,potionMerging:level>=33,
       enhancedUI: level >= 30, roundBonusMoney: (level >= 23 ? 1 : 0) + (level >= 35 ? 2 : 0)
     };
   }
@@ -421,7 +424,7 @@
       commit(p, draft);
       return Object.assign(summary(draft, fromLevel, 0, table), {baseXp: baseXp, duplicate: true});
     }
-    var multiplier = fixedAward ? 1 : (draft.level >= 15 ? 2 : 1) * potionContext(config).effects.xpMultiplier * jokerXpMultiplier(config) * manualXpMultiplier(draft.level,config);
+    var multiplier = fixedAward ? 1 : (draft.level >= 15 ? 2 : 1) * potionContext(config).effects.xpMultiplier * jokerXpMultiplier(config) * manualXpMultiplier(draft.level,config) * earnedXpMultiplier(draft.level);
     var earned = award(draft, baseXp, multiplier, table);
     if (eventId !== undefined) {
       if (!draft.receipts) draft.receipts = {};
@@ -431,8 +434,15 @@
     return Object.assign(summary(draft, fromLevel, earned, table), {baseXp: baseXp, duplicate: false});
   }
   function addXp(p, baseXp, eventId, config) { return addXpWithPolicy(p, baseXp, eventId, config, false); }
-  // Knowledge supplies final awarded XP, not a pre-multiplier gameplay amount.
+  // Explicit FINAL awards (notably capped compound interest) are not multiplied.
   function addAwardedXp(p, awardedXp, eventId, config) { return addXpWithPolicy(p, awardedXp, eventId, config, true); }
+  // Raw, already-source-scaled earnings such as Hi-Lo/Knowledge get only the
+  // new level52 bonus, not the level15/manual/potion multipliers a second time.
+  function addEarnedXp(p, rawXp, eventId, config) {
+    requireProfile(p);validateXp(rawXp);
+    var result=addXpWithPolicy(p,rawXp*earnedXpMultiplier(savedLevel(p)),eventId,config,true);
+    result.baseXp=rawXp;return result;
+  }
   function validateEvent(event) {
     if (!record(event) || !integer(event.seq, 1, MAX_SAFE)) throw new TypeError('Progression event sequence must be a positive safe integer.');
     validateXp(event.baseXp);
@@ -487,7 +497,7 @@
       }
       if (event.seq !== cursor + 1) throw new RangeError('Missing progression event sequence ' + (cursor + 1) + '; no events applied.');
       // Capture this BEFORE the current Boss receipt can release banked XP.
-      var multiplier = (draft.level >= 15 ? 2 : 1) * (own(event, 'potionXpMultiplier') ? event.potionXpMultiplier : 1) * jokerXpMultiplier(event) * manualXpMultiplier(draft.level);
+      var multiplier = (draft.level >= 15 ? 2 : 1) * (own(event, 'potionXpMultiplier') ? event.potionXpMultiplier : 1) * jokerXpMultiplier(event) * manualXpMultiplier(draft.level) * earnedXpMultiplier(draft.level);
       // A Small WIN that reaches cap through its own XP is not after-cap proof.
       // Gate opening precedes XP settlement, so existing bank/carry is released
       // by the unchanged cost policy, and never credited to two gates at once.
@@ -676,7 +686,7 @@
     var reward = (f.level + 1) * (taskRate / 10) * (tier.percent / 20), carry = coinCarry(f);
     var trackedEarned = f.earnedLifetimeHundredths || 0;
     var baseCooldownMs = (600 - 10 * (f.level - 1)) * 1000, effects = settings.potion.effects;
-    var awardedXp = 10 * effects.xpMultiplier * jokerXpMultiplier(settings.playerConfig) * manualXpMultiplier(p.level);
+    var awardedXp = 10 * effects.xpMultiplier * jokerXpMultiplier(settings.playerConfig) * manualXpMultiplier(p.level) * earnedXpMultiplier(p.level);
     var lifetimeKnown = own(f, 'earnedLifetimeHundredths') && f.lifetimeEarningsKnown === true;
     return {
       unlocked: p.level >= 25, level: f.level, claims: f.claims, totalClaims: f.totalClaims,
@@ -850,7 +860,7 @@
   }
 
   return {MAX_PLAYER_LEVEL: MAX_PLAYER_LEVEL, MAX_FAUCET_LEVEL: MAX_FAUCET_LEVEL, CAP_THRESHOLDS: CAP_THRESHOLDS,
-    create: create, normalize: normalize, buffs: buffs, jokerXpMultiplier:jokerXpMultiplier, interestCostMultiplier: interestCostMultiplier, cost: cost, addXp: addXp, addAwardedXp: addAwardedXp,
+    create: create, normalize: normalize, buffs: buffs, jokerXpMultiplier:jokerXpMultiplier, interestCostMultiplier: interestCostMultiplier, cost: cost, addXp: addXp, addAwardedXp: addAwardedXp, addEarnedXp: addEarnedXp, earnedXpMultiplier: earnedXpMultiplier,
     applyEvents: applyEvents, setGateMode: setGateMode, progress: progress, format: format, applyCooldownPotion: applyCooldownPotion,
     faucetCosts: faucetCosts, faucetDay: faucetDay, faucetInfo: faucetInfo, claimFaucet: claimFaucet, unlockJoker: unlockJoker};
 }));

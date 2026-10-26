@@ -16,4 +16,25 @@
 .battery-polish50:not(.battery-low-power) #app :is(.chips-pill,.mult-pill){box-shadow:inset 0 1px 0 #fffa,0 0 calc(13px * var(--battery-glow,1)) #a8dbd944}
 .battery-low-power :is(#app,#level-hud,.topbar,#fictional-battery-dock,#overlay) *,.battery-low-power :is(#app,#level-hud,.topbar,#fictional-battery-dock,#overlay){box-shadow:none!important;text-shadow:none!important;filter:none!important}.battery-low-power :is(.fx-confetti,.xp-shine,.level-celebration>i,.grain,.fx-floating,.fx-crit-halo,.passive-spark){display:none!important}.battery-low-power :is(.passive-xp-button,.passive-money-button)::before{display:none!important}.battery-low-power :is(#app,#level-hud,.topbar,.site-footer){animation:none!important}.battery-low-power #fictional-battery-dock{background:#112b24}.battery-low-power .battery-player-lamp{color:#fff9d7}.battery-empty{background:#000!important}.battery-empty #player-username-badge:not([data-save-state=paused]):not([data-save-state=view-only]){z-index:70}.battery-empty .emerald-stage{background:transparent}.battery-empty .chill-companion{background:#10251b;border-radius:12px}.battery-empty:not(.battery-low-power) :is(.emerald-framed-portrait,.battery-player-lamp){filter:drop-shadow(0 0 9px #b0ffad);text-shadow:0 0 10px #fff3a6}
 @media(max-width:480px){#fictional-battery-dock{width:calc(100% - 20px);padding:6px 8px;gap:4px;font-size:11px}.battery-clean35 #fictional-battery-dock{gap:4px;padding:6px 10px}.battery-percent{min-width:95px;gap:5px}.battery-player-lamp{font-size:10px}#fictional-battery-dock .btn{padding:8px 10px;font-size:11px;min-height:44px;white-space:normal;max-width:135px}.battery-help{min-width:44px}.battery-settings{padding:12px}}
-@media(prefers-reduced-motion:reduce){#fictional-battery-dock *{animation:none!important;transition:none!important}}
+/* Mode tint is separate from the black shade: Light is brighter even at100%.
+ * Never filter an ancestor of Emerald, dialogs or recovery touch surfaces. */
+body.battery-mode-light:not(.battery-empty){background:radial-gradient(ellipse at 55% 30%,#2b5a58 0,#173c40 45%,#102e33 90%)}
+.battery-mode-light:not(.battery-empty) #app :is(.panel,.tray-wrap,.table-surface){background-color:#21443f}
+body.battery-mode-dark:not(.battery-empty){background:radial-gradient(ellipse at 55% 30%,#112d30 0,#071a1e 45%,#041015 90%)}
+#fictional-battery-compact{position:fixed;top:calc(var(--bo-hud-space,150px) + 33px);right:12px;z-index:73;display:flex;align-items:center;justify-content:center;min-width:64px;min-height:44px;max-width:calc(100vw - 24px);padding:3px 7px 3px 3px;border-radius:7px;background:transparent;font:inherit;color:var(--text);font-size:11px;letter-spacing:0;font-variant-numeric:tabular-nums;touch-action:manipulation}
+#fictional-battery-compact[hidden]{display:none!important}
+#fictional-battery-compact .battery-icon{width:auto;min-width:54px;height:26px;padding:2px 4px;border-radius:4px;background:#102b25;overflow:visible;color:#a3e8c1}
+#fictional-battery-compact .battery-icon:after{top:7px;height:9px}
+#fictional-battery-compact .battery-icon i{position:absolute;inset:0 auto 0 0;max-width:100%;height:auto;opacity:.3;pointer-events:none}
+#fictional-battery-compact .battery-compact-percent{position:relative;display:block;line-height:18px;color:var(--text);font:inherit;font-weight:750;white-space:nowrap}
+.battery-low-power #fictional-battery-compact{box-shadow:none!important;text-shadow:none!important;filter:none!important}
+.battery-low-power #fictional-battery-compact .battery-icon{color:#ffda67}
+#fictional-battery-dock[data-compact=true]{width:max-content;max-width:calc(100% - 20px);gap:8px}
+/* Reserve the mobile toolbar row instead of covering audio/help/Settings.
+ * At zero, recovery sits on its own row below the compact touch target. */
+@media(max-width:900px){body.battery-compact.passive-xp-unlocked .topbar{padding-top:80px}}
+body.battery-empty.battery-compact #fictional-battery-dock{position:fixed;top:calc(var(--battery-compact-top,calc(var(--bo-hud-space,150px) + 33px)) + 52px);left:0;right:0;margin:0 auto}
+.battery-display-settings{margin:12px 0;padding:12px;border:1px solid #80b69b;border-radius:9px;min-width:0}
+.battery-display-settings label{margin:8px 0;min-height:44px}
+.battery-display-settings select{min-width:64px}
+@media(prefers-reduced-motion:reduce){:is(#fictional-battery-dock,#fictional-battery-compact) *{animation:none!important;transition:none!important}}

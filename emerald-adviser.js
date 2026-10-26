@@ -8,11 +8,11 @@
  function validLevel(n){return Number.isInteger(n)&&n>=1&&n<=100}
  // System-owned presentation only. Current actual player level is authoritative,
  // never companion levels, cached runs or incoming saves. No saved reveal flag.
- function displayName(level){return validLevel(level)&&level>=10?'Emerald':'a green beetle'}
+ function displayName(level){return !validLevel(level)||level<=5?'???':level>=10?'Emerald':'a green beetle'}
  function displayText(text,level){return String(text??'').replace(/\bEmerald\b/g,displayName(level))}
  // Keep the game/action predicate narrow: chat and public table advice use it.
  function visible(s){return !!s&&validLevel(s.level)&&s.level>=5&&s.page==='game'&&!s.survey&&!s.protected&&!s.suspended&&!!s.run}
- function presentationVisible(s){return visible(s)||!!s&&validLevel(s.level)&&s.level>=39&&['home','game'].includes(s.page)&&!s.survey&&!s.protected&&!s.suspended}
+ function presentationVisible(s){return visible(s)||!!s&&validLevel(s.level)&&s.level>=5&&s.batteryPercent===0&&['home','game'].includes(s.page)&&!s.survey&&!s.protected&&!s.suspended||!!s&&validLevel(s.level)&&s.level>=10&&s.page==='home'&&['blackjack','baccarat','high-low'].includes(s.section)&&s.gamesEnabled!==false&&!s.survey&&!s.protected&&!s.suspended||!!s&&validLevel(s.level)&&s.level>=39&&['home','game'].includes(s.page)&&!s.survey&&!s.protected&&!s.suspended}
  function validateTips(v){try{if(!v||typeof v!=='object'||![null,Object.prototype].includes(Object.getPrototypeOf(v)))return false;const keys=Reflect.ownKeys(v);if(keys.length!==2||!keys.every(k=>k==='first'||k==='second'))return false;return keys.every(k=>{const d=Object.getOwnPropertyDescriptor(v,k);return d&&Object.prototype.hasOwnProperty.call(d,'value')&&d.enumerable===true&&typeof d.value==='boolean'})}catch(_){return false}}
  function tips(v){return validateTips(v)?{first:v.first,second:v.second}:{...DEFAULT_TIPS}}
  function visibleCards(run){const out=[];for(const c of Array.isArray(run?.hand)?run.hand:[]){if(!c||c.faceDown)continue;const item={};for(const k of ['id','rank','suit','enhancement','edition','seal','debuffed'])if(Object.prototype.hasOwnProperty.call(c,k))item[k]=c[k];out.push(item)}return out}
@@ -50,7 +50,7 @@
   if(l>=25&&validLevel(s.faucetLevel))add('three','Your level is '+l+', the faucet’s level is '+s.faucetLevel+' and I’m level '+e+'!!! We three are the only ones on this poker table. All to ourselves!!!');
   if(l>=26&&s.faucetReady===true)add('faucet-ready','You can claim your faucet...');
   if(l>=30)add('virtual','You must claim your faucet, do ficcional surveys, and invest in stonks for in-game stuff and hope Bitcoin isn’t crashing... Fictional game only: virtual surveys, stonks and Bitcoin — never real money.');
-  const f=frenzyInfo(s);if(l>=33){if(f.active)add('frenzy-active','FRENZY ACTIVATED!!! LETS GO!!!!!');else if(f.remaining>0&&f.remaining<=10)add('frenzy-near','Frenzy is nearly full, get ready for pure dopamine')}
+  const f=frenzyInfo(s);if(l>=33){if(f.active)add('frenzy-active','FRENZY ACTIVATED!!! LETS GO!!!!!');else if(f.remaining===10)add('frenzy-near','Exactly 10 scoring-card triggers left until Frenzy!')}
   return out;
  }
  function quotes(E,s){return quoteEntries(E,s).map(x=>x.message)}
@@ -83,7 +83,7 @@
   return out;
  }
  function looker(E,s){if(!visible(s)||s.run.phase!=='play')return null;const r=recommendation(E,s);return r?{...r,message:'Try looking for a “'+r.name+'”. It leads my visible base-hand comparison'+(r.limited?' among the first 12 visible cards':'')+'.'}:null}
- function kinder(entries,s){const fp=Math.max(0,Math.min(1000,Number(s?.friendship?.fp)||0));if(!fp)return entries;return entries.map(entry=>{let h=2166136261;for(const c of entry.id)h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0)%1000<fp?{...entry,message:entry.message+(entry.id.includes(':l49-')?speech49Support(s):' I’m on your side — take your time.')}:entry})}
+ function kinder(entries,s){const fp=Math.max(0,Math.min(1000,Number(s?.friendship?.totalCredits)||0));if(!fp)return entries;return entries.map(entry=>{let h=2166136261;for(const c of entry.id)h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0)%1000<fp?{...entry,message:entry.message+(entry.id.includes(':l49-')?speech49Support(s):' I’m on your side — take your time.')}:entry})}
   // 1,024 trilingual full texts composed from 256 authored cores and 128
  // topic-specific clauses. Four substantive combinations/core; NOT 1,024
  // independent core facts. Exact parent-reviewed source SHA256 is pinned in

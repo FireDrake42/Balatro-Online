@@ -29,7 +29,7 @@
     return out;
   }
   function rateWithEffects(p, rate, effects, config) {
-    return (effects.knowledgeXpPerSecond === 1 ? 1 : level(p) >= 20 ? 0 : rate.baseXp * (level(p) >= 15 ? 2 : 1) * effects.xpMultiplier) * PG.jokerXpMultiplier(config);
+    return (effects.knowledgeXpPerSecond === 1 ? 1 : level(p) >= 20 ? 0 : rate.baseXp * (level(p) >= 15 ? 2 : 1) * effects.xpMultiplier) * PG.jokerXpMultiplier(config) * PG.earnedXpMultiplier(level(p));
   }
   function copyReceipts(source) {
     if (!record(source)) throw new RangeError('Invalid passive cooldown potion receipts.');
@@ -60,14 +60,63 @@
     var rounded = Math.round(value * XP_UNITS) / XP_UNITS;
     return Number.isFinite(rounded) && Math.abs(rounded - value) <= Number.EPSILON * Math.max(1, Math.abs(value)) * 8 ? rounded : value;
   }
+  var MAX_TIMESTAMP = 8640000000000000, MAX_POWER_INTERVALS = 4096;
+  function safeTimestamp(value) { return Number.isSafeInteger(value) && value >= 0 && value <= MAX_TIMESTAMP; }
+  function pauseData(object, key) {
+    var d = Object.getOwnPropertyDescriptor(object, key);
+    if (!d || !d.enumerable || !own(d, 'value')) throw new RangeError('Passive power pause must contain enumerable data only.');
+    return d.value;
+  }
+  function pauseRecord(value, keys) {
+    if (!record(value) || (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) ||
+        Reflect.ownKeys(value).length !== keys.length || !keys.every(function (key) { return own(value, key); })) {
+      throw new RangeError('Invalid passive power pause fields.');
+    }
+    keys.forEach(function (key) { pauseData(value, key); });
+  }
+  function copyPowerPause(value) {
+    pauseRecord(value, ['version', 'activeFrom', 'exclusions']);
+    if (value.version !== 1 || value.activeFrom !== null && !safeTimestamp(value.activeFrom)) throw new RangeError('Invalid passive power pause boundary.');
+    var a = value.exclusions;
+    if (!Array.isArray(a) || Object.getPrototypeOf(a) !== Array.prototype || a.length > MAX_POWER_INTERVALS || Reflect.ownKeys(a).length !== a.length + 1) {
+      throw new RangeError('Invalid passive power exclusions.');
+    }
+    var exclusions = [], end = 0;
+    for (var i = 0; i < a.length; i++) {
+      var entry = pauseData(a, String(i)); pauseRecord(entry, ['from', 'to']);
+      if (!safeTimestamp(entry.from) || !safeTimestamp(entry.to) || entry.from >= entry.to || entry.from < end) throw new RangeError('Invalid passive power exclusion interval.');
+      exclusions.push({from: entry.from, to: entry.to}); end = entry.to;
+    }
+    if (value.activeFrom !== null && value.activeFrom < end) throw new RangeError('Passive power intervals overlap.');
+    return {version: 1, activeFrom: value.activeFrom, exclusions: exclusions};
+  }
+  function powerPaused(s) { return !!s.powerPause && s.powerPause.activeFrom !== null; }
+  function powerExcluded(s, at) {
+    var pause = s.powerPause; if (!pause) return false;
+    if (pause.activeFrom !== null && at >= pause.activeFrom) return true;
+    var a = pause.exclusions, lo = 0, hi = a.length - 1;
+    while (lo <= hi) {
+      var mid = Math.floor((lo + hi) / 2), entry = a[mid];
+      if (at < entry.from) hi = mid - 1; else if (at >= entry.to) lo = mid + 1; else return true;
+    }
+    return false;
+  }
+  function prunePower(s) {
+    if (!s.powerPause) return;
+    var nextLeftEdge = s.startedAt + s.creditedMs;
+    // A partially covered next tick still needs its exclusion after reload.
+    s.powerPause.exclusions = s.powerPause.exclusions.filter(function (entry) { return entry.to > nextLeftEdge; });
+  }
   function create() {
     return {version: 3, sequence: 0, startedAt: 0, endsAt: 0, sessionDurationMs: 0, tickMs: TICK_MS, baseRateXp: 0.01,
       creditedTicks: 0, creditedMs: 0, totalTicks: 0, totalCreditedMs: 0, totalXp: 0,
       sessionsStarted: 0, sessionsCompleted: 0, completionCounted: false};
   }
   function normalize(existing) {
-    var s = create();
+    var s = create(), pause;
+    if (record(existing) && own(existing, 'powerPause')) pause = copyPowerPause(pauseData(existing, 'powerPause'));
     if (!record(existing) || (existing.version !== 1 && existing.version !== 2 && existing.version !== 3)) return s;
+    if (pause) s.powerPause = pause;
     var version = existing.version, oldInterval = version === 1 ? 10000 : TICK_MS;
     if (own(existing, 'cooldownPotionReceipts')) s.cooldownPotionReceipts = copyReceipts(existing.cooldownPotionReceipts);
     if(own(existing,'jokerXpSegments')){
@@ -176,7 +225,7 @@
     if (active && POT.hasEffect(active,'cooldown')) rememberCooldown(s, active.uid);
   }
   function view(p, s, now, state, xpConfig) {
-    var unlocked = level(p) >= UNLOCK_LEVEL, session = hasSession(s), update = needsDurationUpdate(p, s, now);
+    var paused = powerPaused(s), unlocked = level(p) >= UNLOCK_LEVEL, session = hasSession(s), update = !paused && needsDurationUpdate(p, s, now);
     var unlockedDuration = durationForLevel(level(p)), rate = rateForLevel(level(p));
     var duration = update ? unlockedDuration : session ? s.sessionDurationMs : unlockedDuration;
     var end = session ? s.startedAt + duration : 0;
@@ -191,7 +240,7 @@
     // after every own level-up, so a catch-up batch can cross rate/duration tiers.
     var pending = unlocked && session && !s.completionCounted ? Math.floor(Math.max(0, elapsed - s.creditedMs) / rate.intervalMs) : 0;
     var maxTicks = session ? s.creditedTicks + (s.completionCounted ? 0 : Math.floor((duration - s.creditedMs) / rate.intervalMs)) : Math.floor(duration / rate.intervalMs);
-    return {unlocked: unlocked, active: active, ready: unlocked && !active && !coolingDown,
+    var result = {unlocked: unlocked, active: active, ready: unlocked && !active && !coolingDown,
       coolingDown: coolingDown, cooldownMs: cooldownMs, cooldownUntil: cooldownUntil,
       baseCooldownMs: cooldown.baseCooldownMs, committedCooldownMs: cooldown.committedCooldownMs, cooldownPotionApplied: cooldown.cooldownPotionApplied,
       cooldownMultiplier: effects.cooldownMultiplier, nextCooldownMs: cooldown.baseCooldownMs * effects.cooldownMultiplier,
@@ -208,6 +257,13 @@
       needsRateUpdate: needsRateUpdate(p, s), sequence: s.sequence, startedAt: s.startedAt, endsAt: end,
       sessionsStarted: s.sessionsStarted, sessionsCompleted: s.sessionsCompleted,
       completionCounted: s.completionCounted, expired: session && now >= end};
+    if (s.powerPause) result.paused = paused;
+    if (paused) {
+      result.rateXp = 0; result.ready = false; result.pendingTicks = 0;
+      result.sessionTicks = s.creditedTicks; result.nextTickMs = 0;
+      result.needsDurationUpdate = false; result.needsRateUpdate = false;
+    }
+    return result;
   }
   function status(profile, now, xpConfig) {
     if (!nonnegative(now)) throw new RangeError('Passive XP time must be a finite non-negative timestamp.');
@@ -243,8 +299,11 @@
         // exactly 120 XP, never 119, even when first polled after expiry.
         var tickTime = s.startedAt + s.creditedMs, effects = effectsAt(state, tickTime);
         var tickConfig = xpConfigAt(xpConfig, state, tickTime);tickConfig.jokerXpMultiplier=historicalJoker(s,tickTime);
-        var result = effects.knowledgeXpPerSecond === 1 ? PG.addAwardedXp(p, PG.jokerXpMultiplier(tickConfig), undefined, tickConfig) : PG.addXp(p, base, undefined, tickConfig);
-        baseUnits += Math.round(base * XP_UNITS); units += result.awardedXp * XP_UNITS;
+        var excluded = powerExcluded(s, tickTime);
+        // Recorded power-off seconds consume the existing paid-time cursor with
+        // zero new XP, just like ordinary zero-base ticks at actual level20+.
+        var result = excluded ? PG.addXp(p, 0, undefined, tickConfig) : effects.knowledgeXpPerSecond === 1 ? PG.addEarnedXp(p, PG.jokerXpMultiplier(tickConfig), undefined, tickConfig) : PG.addXp(p, base, undefined, tickConfig);
+        baseUnits += Math.round((excluded ? 0 : base) * XP_UNITS); units += result.awardedXp * XP_UNITS;
         p.xp = cleanXp(p.xp); p.totalXp = cleanXp(p.totalXp);
         PG.addXp(p, 0, undefined, tickConfig);
         p.xp = cleanXp(p.xp); p.totalXp = cleanXp(p.totalXp);
@@ -272,17 +331,62 @@
     // wait. Legacy neutral cooldowns remain the same pure derived view as before.
     if (s.cooldownEndAt === s.endsAt && nonnegative(s.cooldownUntil)) s.cooldownUntil = cooldownView(p, s, s.endsAt, state).cooldownUntil;
     captureJoker(s,now,PG.jokerXpMultiplier(xpConfig));
+    prunePower(s);
     return summary(p, s, now, fromLevel, ticks, baseUnits, units, paidMs, stopped, xpConfigAt(xpConfig, state, now), state);
   }
   function commit(profile, p, s) {
     // Persist the whole profile after this synchronous transaction, never one ledger.
     profile.progression = p; profile.passiveXp = s;
   }
+  function powerResult(p, s, now, xpConfig, state, changed, settled) {
+    var result = settled || summary(p, s, now, level(p), 0, 0, 0, 0, false, xpConfig, state);
+    result.changed = changed; result.paused = powerPaused(s); result.status = view(p, s, now, state, xpConfig);
+    return result;
+  }
+  function setPowerPaused(profile, now, paused, xpConfig) {
+    if (!safeTimestamp(now)) return failure('invalid-time', 'Supply a safe passive power boundary timestamp.');
+    if (typeof paused !== 'boolean') return failure('invalid-power', 'Passive power pause must be boolean.');
+    var invalid = validate(profile, now, xpConfig); if (invalid) return invalid;
+    var p = Object.assign({}, profile.progression), s = normalize(profile.passiveXp), state = potionState(profile);
+    try {
+      // An explicit boundary without an existing session cannot initialize a
+      // ledger. Parent feature policy separately gates any future Start action.
+      if ((!hasSession(s) && !s.powerPause) || powerPaused(s) === paused) return powerResult(p, s, now, xpConfig, state, false);
+      var result;
+      if (paused) {
+        var last = s.powerPause && s.powerPause.exclusions[s.powerPause.exclusions.length - 1];
+        if (last && now < last.to) throw new RangeError('Passive power clock moved backwards.');
+        // Settle only the pre-pause legacy debt, once; no future pause interval
+        // is inferred from saved Low Power, elapsed wall time or a missing poll.
+        result = settle(p, s, now, xpConfig, level(profile.progression), state);
+        if (!s.powerPause) s.powerPause = {version: 1, activeFrom: null, exclusions: []};
+        s.powerPause.activeFrom = now;
+      } else {
+        var pause = s.powerPause, from = pause.activeFrom, a = pause.exclusions;
+        if (now < from) throw new RangeError('Passive power clock moved backwards.');
+        if (now > from) {
+          var previous = a[a.length - 1];
+          if (previous && previous.to === from) previous.to = now;
+          else {
+            if (a.length >= MAX_POWER_INTERVALS) throw new RangeError('Passive power exclusion history is full.');
+            a.push({from: from, to: now});
+          }
+        }
+        // Close the interval in this PRIVATE draft. Resume and its excluded
+        // backlog become visible only together in the single whole-PROFILE commit.
+        pause.activeFrom = null;
+        result = settle(p, s, now, xpConfig, level(profile.progression), state);
+      }
+      var out = powerResult(p, s, now, xpConfig, state, true, result);
+      commit(profile, p, s); return out;
+    } catch (error) { return failure('overflow', error.message); }
+  }
   function poll(profile, now, xpConfig) {
     var invalid = validate(profile, now, xpConfig);
     if (invalid) return invalid;
     var p = Object.assign({}, profile.progression), s = normalize(profile.passiveXp), state = potionState(profile);
     try {
+      if (powerPaused(s)) return powerResult(p, s, now, xpConfig, state, false);
       var result = settle(p, s, now, xpConfig, level(profile.progression), state);
       commit(profile, p, s); return result;
     } catch (error) { return failure('overflow', error.message); }
@@ -293,6 +397,7 @@
     var p = Object.assign({}, profile.progression), s = normalize(profile.passiveXp), state = potionState(profile);
     try {
       var current = view(p, s, now, state, xpConfig);
+      if (powerPaused(s)) return Object.assign(failure('power-paused', 'Passive XP is paused by the current power setting.'), {status: current});
       if (current.active) return Object.assign(failure('already-active', 'The active passive XP session cannot be restarted or extended.'), {status: current});
       var settled = settle(p, s, now, xpConfig, level(profile.progression), state);
       // Historical passive level-ups can reveal that the old session is still open,
@@ -306,6 +411,7 @@
         if (s.sequence >= MAX_SAFE || s.sessionsStarted >= MAX_SAFE) throw new RangeError('Passive XP session counter overflow.');
         var duration = durationForLevel(level(p)), endsAt = now + duration;
         if (!Number.isFinite(endsAt) || endsAt <= now) throw new RangeError('Passive XP deadline overflow.');
+        if (s.powerPause && s.completionCounted && s.creditedMs === s.sessionDurationMs) s.powerPause.exclusions = [];
         s.sequence++; s.sessionsStarted++; s.startedAt = now; s.endsAt = endsAt; s.sessionDurationMs = duration;
         s.creditedTicks = 0; s.creditedMs = 0; s.completionCounted = false; setRate(s, rateForLevel(level(p)));
         delete s.jokerXpSegments;if(PG.jokerXpMultiplier(xpConfig)!==1)s.jokerXpSegments=[{at:now,multiplier:PG.jokerXpMultiplier(xpConfig)}];
@@ -356,5 +462,5 @@
 
   return {UNLOCK_LEVEL: UNLOCK_LEVEL, BASE_XP: 0.01, TICK_MS: TICK_MS, SESSION_MS: SESSION_MS, COOLDOWN_MS: COOLDOWN_MS, REDUCED_COOLDOWN_MS: REDUCED_COOLDOWN_MS,
     MAX_SESSION_MS: MAX_SESSION_MS, SESSION_MAX_TICKS: SESSION_MAX_TICKS, durationForLevel: durationForLevel, rateForLevel: rateForLevel, cooldownForLevel: cooldownForLevel,
-    create: create, normalize: normalize, captureJokerMultiplier:captureJokerMultiplier, status: status, start: start, poll: poll, applyCooldownPotion: applyCooldownPotion};
+    create: create, normalize: normalize, captureJokerMultiplier:captureJokerMultiplier, status: status, start: start, poll: poll, setPowerPaused: setPowerPaused, applyCooldownPotion: applyCooldownPotion};
 }));

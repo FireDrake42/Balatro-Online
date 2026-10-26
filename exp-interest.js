@@ -1,7 +1,7 @@
 /* Exp Interest: actual current-bank income, not a passive session or offline claim.
  * One guarded PROFILE write owns both the exact XP and this compact highwater.
  * No reload timestamp is ever converted into elapsed income. */
-(function(root,factory){'use strict';const api=factory(typeof module==='object'&&module.exports?require('./progression'):root.BOProgress,root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.BOExpInterest=api;})(typeof window!=='undefined'?window:null,function(PG,root){'use strict';
+(function(root,factory){'use strict';const api=factory(typeof module==='object'&&module.exports?require('./progression'):root.BOProgress,root,typeof module==='object'&&module.exports?require('./interest-settings'):root.BOInterestSettings);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.BOExpInterest=api;})(typeof window!=='undefined'?window:null,function(PG,root,IS){'use strict';
  const PROFILE='danis-table.profile.v1',INTERVAL_MS=1000,MAX_GAP_MS=2500,FENCE=PROFILE+'.exp-interest.committed.',LEASE=PROFILE+'.exp-interest.lease.v1';
  const copy=x=>JSON.parse(JSON.stringify(x)),record=x=>!!x&&typeof x==='object'&&!Array.isArray(x),finite=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0;
  const check=(ok,message)=>{if(!ok)throw new Error('Exp Interest: '+message)};
@@ -10,17 +10,17 @@
   if(value===undefined)return create();
   const keys=['version','revision','totalXp','lastTickAt'];
   check(record(value)&&[Object.prototype,null].includes(Object.getPrototypeOf(value))&&Reflect.ownKeys(value).length===keys.length&&keys.every(k=>{const d=Object.getOwnPropertyDescriptor(value,k);return d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')}),'invalid saved ledger; stored data was not overwritten.');
-  check([1,2].includes(value.version)&&Number.isSafeInteger(value.revision)&&value.revision>=0&&finite(value.totalXp)&&Number.isSafeInteger(value.lastTickAt)&&value.lastTickAt>=0,'invalid saved ledger values.');
-  // V1 is never relaxed or migrated on read. V2 is born only on a paid fast
+  check([1,2,3].includes(value.version)&&Number.isSafeInteger(value.revision)&&value.revision>=0&&finite(value.totalXp)&&Number.isSafeInteger(value.lastTickAt)&&value.lastTickAt>=0,'invalid saved ledger values.');
+  // V1/V2 remain strict on read. V3 is born only on a paid <500ms
   // tick; its highwater is a logical receipt clock, not offline entitlement.
-  const grid=value.version===1?INTERVAL_MS:100,minInterval=value.version===1?INTERVAL_MS:500;
+  const grid=value.version===1?INTERVAL_MS:100,minInterval=value.version===1?INTERVAL_MS:value.version===2?500:100;
   check(value.revision===0?value.version===1&&value.totalXp===0&&value.lastTickAt===0:value.totalXp>0&&value.totalXp<=value.revision*10&&value.lastTickAt>0&&value.lastTickAt%grid===0&&value.lastTickAt>=value.revision*minInterval,'saved income does not match its highwater.');
   return {version:value.version,revision:value.revision,totalXp:value.totalXp,lastTickAt:value.lastTickAt};
  }
- function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');return p.level>=20&&p.level<100?Math.min(p.level>=43?10:p.level>=30?5:p.level>=26?3:2,p.xp*(p.level>=30?.00025:p.level>=26?.00015:.0001)*PG.jokerXpMultiplier(config)):0}
- function intervalMs(level){check(Number.isInteger(level)&&level>=1&&level<=100,'invalid actual player level.');return level>=50?500:level>=48?600:level>=46?700:level>=44?800:level>=42?900:INTERVAL_MS}
+ function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');return p.level>=20&&p.level<100?Math.min(p.level>=42?10:p.level>=30?5:p.level>=26?3:2,p.xp*IS.effective(p.level,config).rateFraction*PG.jokerXpMultiplier(config)*PG.earnedXpMultiplier(p.level)):0}
+ function intervalMs(level,config){check(Number.isInteger(level)&&level>=1&&level<=100,'invalid actual player level.');return IS.effective(level,config).intervalMs}
  function step(progression,ledger,at,config){
-  const state=normalize(ledger),amount=rate(progression,config),fromLevel=progression.level,interval=intervalMs(fromLevel),version=state.version===2||interval<INTERVAL_MS?2:1,grid=version===1?INTERVAL_MS:100;
+  const state=normalize(ledger),amount=rate(progression,config),fromLevel=progression.level,interval=intervalMs(fromLevel,config),version=Math.max(state.version,interval<500?3:interval<INTERVAL_MS?2:1),grid=version===1?INTERVAL_MS:100;
   check(Number.isSafeInteger(at)&&at>=0,'invalid tick time.');const slot=Math.floor(at/grid)*grid;
   const unchanged=()=>({ok:true,unchanged:true,awardedXp:0,fromLevel,toLevel:fromLevel,state,progression:copy(progression)});
   if(!amount||slot<interval||slot-state.lastTickAt<interval)return unchanged();
@@ -41,9 +41,9 @@
  function payEligible(progression,ledger,elapsedMs,at,config){
   check(finite(elapsedMs)&&elapsedMs<=MAX_GAP_MS,'invalid eligible interval; never claim an offline gap.');check(Number.isSafeInteger(at)&&at>=0,'invalid captured receipt time.');
   let next=copy(progression),state=normalize(ledger),consumedMs=0,awardedXp=0,payments=0,lastResult=null;
-  while(elapsedMs-consumedMs>=intervalMs(next.level)){
-   const c=typeof config==='function'?config(next):config,interval=intervalMs(next.level);if(!rate(next,c))break;
-   const grid=state.version===2||interval<INTERVAL_MS?100:INTERVAL_MS,receiptAt=state.revision?state.lastTickAt+interval:Math.max(interval,Math.floor(at/grid)*grid);
+  while(true){
+   const c=typeof config==='function'?config(next):config,interval=intervalMs(next.level,c);if(elapsedMs-consumedMs<interval||!rate(next,c))break;
+   const grid=state.version>=2||interval<INTERVAL_MS?100:INTERVAL_MS,receiptAt=state.revision?state.lastTickAt+interval:Math.max(interval,Math.floor(at/grid)*grid);
    check(Number.isSafeInteger(receiptAt),'receipt clock overflow.');const r=step(next,state,receiptAt,c);check(!r.unchanged,'captured payment did not advance its receipt.');
    next=r.progression;state=r.state;consumedMs+=interval;awardedXp+=r.awardedXp;payments++;lastResult=r;
   }
@@ -90,14 +90,21 @@
   check(env&&api?.getProfile&&api.capture&&api.transact,'ticker host unavailable.');
   let clock=api.now||(typeof env.__BO_EXP_INTEREST_CLOCK__==='function'?env.__BO_EXP_INTEREST_CLOCK__:()=>env.performance.now());
   let anchor=clock(),lastLevel=api.getProfile().progression.level,epoch=0,pending=null,timer=null,abort=null,error='',fenceName='',fenceRelease=null,destroyed=false,parked=false;
+  let retainedMs=0,policyPaused=api.enabled?api.enabled()!==true:false,lastPolicyKey=null;
   const owner=env.crypto?.randomUUID?env.crypto.randomUUID():'interest-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),waiters=new Map();
   const wall=()=>api.wallNow?api.wallNow():Date.now(),visible=()=>!destroyed&&!parked&&!env.document.hidden;
+  lastPolicyKey=policyKey();
   function mono(){const value=clock();check(finite(value),'invalid visible-time clock.');return value}
   function currentRate(){try{const p=api.getProfile();return rate(p.progression,api.xpConfig?.(wall(),p))}catch(_){return 0}}
-  function status(){const save=api.saveStatus?.(),readonly=save?.writable===false;return {rateXp:readonly||error?0:currentRate(),intervalMs:intervalMs(api.getProfile().progression.level),pending:!!pending,blocked:!!error||readonly,reason:error||(readonly?save.reason:''),anchor,active:visible()&&!readonly&&!error,revision:api.getProfile().expInterest?.revision||0}}
+  function currentInterval(){const p=api.getProfile();return intervalMs(p.progression.level,api.xpConfig?.(wall(),p))}
+  function powerAllowed(){return api.enabled?api.enabled()===true:true}
+  function policyKey(){const p=api.getProfile(),choice=IS.read(api.xpConfig?.(wall(),p));return JSON.stringify([p.progression.level,choice?.index??null])}
+  function reanchorPolicy(now){anchor=now;retainedMs=0;lastLevel=api.getProfile().progression.level;lastPolicyKey=policyKey()}
+  function remaining(){const interval=currentInterval(),elapsed=mono()-anchor,budget=policyPaused?retainedMs:visible()&&elapsed>=0&&elapsed<=MAX_GAP_MS+retainedMs?elapsed:retainedMs;return Math.max(0,interval-budget)}
+  function status(){const save=api.saveStatus?.(),readonly=save?.writable===false,paused=policyPaused||!powerAllowed();return {rateXp:readonly||error||paused?0:currentRate(),intervalMs:currentInterval(),remainingMs:remaining(),paused,pending:!!pending,blocked:!!error||readonly,reason:error||(readonly?save.reason:''),anchor,active:visible()&&!paused&&!readonly&&!error,revision:api.getProfile().expInterest?.revision||0}}
   function clearLease(){try{const value=JSON.parse(env.localStorage.getItem(LEASE)||'null');if(value?.owner===owner)env.localStorage.removeItem(LEASE)}catch(_){}}
   function invalidate(){epoch++;abort?.abort();abort=null;for(const [id,resolve]of waiters){env.clearTimeout(id);resolve(false)}waiters.clear();clearLease()}
-  function resetAnchor(){invalidate();anchor=mono();lastLevel=api.getProfile().progression.level}
+  function resetAnchor(){invalidate();if(policyPaused&&lastPolicyKey===policyKey()){anchor=mono();lastLevel=api.getProfile().progression.level}else reanchorPolicy(mono())}
   function releaseFence(){fenceRelease?.();fenceRelease=null;fenceName=''}
   function wait(ms){return new Promise(resolve=>{const id=env.setTimeout(()=>{waiters.delete(id);resolve(true)},ms);waiters.set(id,resolve)})}
   async function checkFence(context){
@@ -129,41 +136,61 @@
   async function heartbeat(){
    if(pending)return pending;
    if(error)return {ok:false,code:'blocked',reason:error};
+   if(policyPaused)return {ok:true,unchanged:true,code:'paused',paused:true};
+   if(!powerAllowed())return setPaused(true);
    if(!visible())return {ok:true,unchanged:true,code:'hidden'};
    const now=mono(),level=api.getProfile().progression.level;
-   if(level!==lastLevel){anchor=now;lastLevel=level;return {ok:true,unchanged:true,code:'level-anchor'}}
-   if(!currentRate()){anchor=now;return {ok:true,unchanged:true,code:'zero'}}
+   if(level!==lastLevel||lastPolicyKey!==policyKey()){const code=level!==lastLevel?'level-anchor':'choice-anchor';reanchorPolicy(now);return {ok:true,unchanged:true,code}}
+   if(!currentRate()){anchor=now;retainedMs=0;return {ok:true,unchanged:true,code:'zero'}}
    const elapsed=now-anchor;
-   if(elapsed<0||elapsed>MAX_GAP_MS){anchor=now;return {ok:true,unchanged:true,code:'fresh-anchor'}}
-   if(elapsed<intervalMs(level))return {ok:true,unchanged:true,code:'not-due'};
-   if(api.busy?.()){anchor=now;return {ok:false,code:'busy'}}
+   if(elapsed<0||elapsed>MAX_GAP_MS+retainedMs){anchor=now-retainedMs;return {ok:true,unchanged:true,code:'fresh-anchor'}}
+   if(elapsed<currentInterval())return {ok:true,unchanged:true,code:'not-due'};
+   if(api.busy?.()){anchor=now;retainedMs=0;return {ok:false,code:'busy'}}
    let context;try{context=api.capture()}catch(e){error=e.message;api.changed?.();return {ok:false,code:'stale',reason:error}}
-   const requestEpoch=epoch,tickAt=wall();abort=new env.AbortController();
+   const requestEpoch=epoch,tickAt=wall(),capturedPolicyKey=lastPolicyKey,payableElapsed=Math.min(elapsed,MAX_GAP_MS);abort=new env.AbortController();
    const commit=()=>{
-    if(requestEpoch!==epoch||!visible())return {ok:false,code:'cancelled'};
+    if(requestEpoch!==epoch||!visible()||policyPaused||!powerAllowed())return {ok:false,code:'cancelled'};
+    if(policyKey()!==capturedPolicyKey){reanchorPolicy(mono());return {ok:true,unchanged:true,code:'choice-anchor'}}
     if(api.busy?.())return {ok:false,code:'busy'};
-    if(mono()-now>MAX_GAP_MS){anchor=mono();return {ok:true,unchanged:true,code:'fresh-anchor'}}
-    const at=tickAt;return api.transact(next=>{const r=payEligible(next.progression,next.expInterest,elapsed,at,progression=>api.xpConfig?.(at,{...next,progression}));if(r.unchanged)return r;next.progression=r.progression;next.expInterest=r.state;return {...r,xpResult:r}},context);
+    if(mono()-now>MAX_GAP_MS){anchor=mono()-retainedMs;return {ok:true,unchanged:true,code:'fresh-anchor'}}
+    const at=tickAt,result=api.transact(next=>{const r=payEligible(next.progression,next.expInterest,payableElapsed,at,progression=>api.xpConfig?.(at,{...next,progression}));if(r.unchanged)return r;next.progression=r.progression;next.expInterest=r.state;return {...r,xpResult:r}},context);
+    // Debit eligible time at the synchronous durable result, BEFORE awaiting a
+    // shared fence grant. Visibility may invalidate this epoch while publication
+    // waits, but must never resurrect time already spent by the saved PROFILE.
+    if(result?.ok){const consumed=result.consumedMs||0;anchor+=consumed;retainedMs=Math.max(0,elapsed-consumed);lastLevel=api.getProfile().progression.level;lastPolicyKey=policyKey()}
+    return result;
    };
    const work=(async()=>{
     try{
      const locks=env.navigator?.locks,result=locks?.request?await locks.request(PROFILE,{mode:'exclusive',signal:abort.signal},async()=>{await checkFence(context);const r=commit();if(r?.ok&&!r.unchanged)try{await publishFence(context,requestEpoch)}catch(_){/* XP is already durable; never retry a saved second. */}return r}):await fallback(commit,requestEpoch);
-     if(result?.ok&&requestEpoch===epoch){if(result.code!=='fresh-anchor')anchor+=result.consumedMs||0;lastLevel=api.getProfile().progression.level;error='';if(!result.unchanged)api.changed?.(result)}
+     if(result?.ok&&requestEpoch===epoch&&!result.unchanged)api.changed?.(result);
      return result;
     }catch(e){if(requestEpoch!==epoch||e.name==='AbortError')return {ok:false,code:'cancelled'};error=e.message||'Exp Interest could not be saved.';api.changed?.();return {ok:false,code:'save-failed',reason:error}}
    })();pending=work;
    try{return await work}finally{if(pending===work)pending=null}
   }
+  // Explicit power boundaries cannot race a pending durable transaction. The
+  // parent holds its cross-model boundary, checkpoints RUN, commits policy, then
+  // resumes only after exact readback. No paused wall gap becomes eligible time.
+  function setPaused(value){
+   check(typeof value==='boolean','pause must be an explicit boolean.');
+   if(error||destroyed)return {ok:false,code:'blocked',reason:error||'Destroyed interest controller.'};
+   if(pending)return {ok:false,code:'busy',reason:'Interest payment is finishing; no power boundary changed.'};
+   const want=value||!powerAllowed(),now=mono();if(lastPolicyKey!==policyKey())reanchorPolicy(now);
+   if(want===policyPaused)return {ok:true,unchanged:true,paused:want};
+   if(want){const elapsed=now-anchor;if(visible()&&elapsed>=0&&elapsed<=MAX_GAP_MS+retainedMs)retainedMs=elapsed;policyPaused=true;stop();anchor=now}else{policyPaused=false;start()}
+   return {ok:true,paused:policyPaused};
+  }
   function stop(){if(timer!==null)env.clearInterval(timer);timer=null;invalidate();releaseFence()}
-  function start(){stop();if(destroyed||parked||env.document.hidden)return;anchor=mono();lastLevel=api.getProfile().progression.level;timer=env.setInterval(()=>{void heartbeat()},250)}
+  function start(){stop();if(lastPolicyKey!==policyKey())reanchorPolicy(mono());if(destroyed||error||policyPaused||parked||env.document.hidden)return;anchor=mono()-retainedMs;lastLevel=api.getProfile().progression.level;timer=env.setInterval(()=>{void heartbeat()},250)}
   function visibility(){if(env.document.hidden)stop();else start()}
   function hide(){parked=true;stop()}
   function show(){parked=false;start()}
-  function reset(){stop();error='';start()}
+  function reset(){if(error)return {ok:false,code:'blocked',reason:error};stop();start();return {ok:true}}
   function setClock(fn){check(fn===null||typeof fn==='function','test clock must be a function or null.');clock=fn||(()=>env.performance.now());resetAnchor()}
   function destroy(){stop();destroyed=true;env.document.removeEventListener('visibilitychange',visibility);env.removeEventListener('pagehide',hide);env.removeEventListener('pageshow',show)}
   env.document.addEventListener('visibilitychange',visibility);env.addEventListener('pagehide',hide);env.addEventListener('pageshow',show);
-  return {start,stop,reset,resetAnchor,setClock,heartbeat,status,destroy,assertFenceCurrent:checkFence,ownsLease:()=>owner};
+  return {start,stop,reset,resetAnchor,setClock,setPaused,heartbeat,status,destroy,assertFenceCurrent:checkFence,ownsLease:()=>owner};
  }
  return {create,normalize,rate,step,intervalMs,payEligible,createController,createWriterGuard,INTERVAL_MS,MAX_GAP_MS,LEASE_KEY:LEASE};
 });

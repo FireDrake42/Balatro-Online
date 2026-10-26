@@ -401,7 +401,9 @@
   function creditLimit(s) {return has(s,'big_credit_card')?100:has(s,'credit_card')?20:0;}
   function count(s,id) {return s.jokers.filter(function (j) {return j.id===id&&isJokerActive(j);}).length;}
   function xpMultiplier(s) {return Math.min(Number.MAX_SAFE_INTEGER,Math.pow(1.2,s&&s.phase!=='lost'&&Array.isArray(s.jokers)?count(s,'exp_joker'):0));}
-  function permanentCrit(s) {return s&&s.progressionEnabled===true&&s.playerLevel>=32?.01:0;}
+  // Preserve historical Level 32/cache behavior. Only explicit canonical authority
+  // can unlock the new Level 53 base; no context/legacy call can infer it.
+  function permanentCrit(s,actualLevel) {return s&&s.progressionEnabled===true?(Number.isInteger(actualLevel)&&actualLevel>=53&&actualLevel<=100?.02:s.playerLevel>=32?.01:0):0;}
   function isCopyJoker(j) {return j.id==='blueprint'||j.id==='brainstorm';}
   // Pure UID graph traversal. No RNG, synthetic Jokers, mutation, skip-search,
   // recursive emissions or arbitrary depth limit. Path includes a closing cycle UID.
@@ -450,14 +452,14 @@
   function listedProbability(s,denominator) {check(Number.isFinite(denominator)&&denominator>0,'Choose a positive probability denominator.');return Math.min(1,listedLuckMultiplier(s)/denominator);}
   function chance(s,denominator) {return random(s)<listedProbability(s,denominator);}
   // Read-only Settings data: never refresh/hydrate a save or advance its RNG.
-  function probabilityInfo(s) {
+  function probabilityInfo(s,actualLevel) {
     s=s||{jokers:[],vouchers:{},stake:'white'};var activeOops=count(s,'oops_all_sixes'),oopsMultiplier=Math.pow(2,activeOops),playerLuck=playerLuckMultiplier(s),potion=potionEffects(s),multiplier=playerLuck*oopsMultiplier*potion.luckMultiplier,stake=runStake(s),listed=[
       ['lucky_mult','Lucky +20 Mult',5],['lucky_money','Lucky $20',15],['glass','Glass break',4],['wheel_of_fortune','Wheel of Fortune success',4],
       ['space_joker','Space Joker',4],['eight_ball','8 Ball',4],['reserved_parking','Reserved Parking',2],['business_card','Business Card',2],
       ['bloodstone','Bloodstone',2],['critical_joker','Critical Joker CRIT',25],['hallucination','Hallucination',2],['gros_michel','Gros Michel extinction',6],['cavendish','Cavendish extinction',1000],['wheel_boss','The Wheel face down',7]
     ].map(function(x){return {id:x[0],label:x[1],denominator:x[2],numerator:Math.min(x[2],multiplier),baseline:1/x[2],effective:listedProbability(s,x[2])};});
     var packTotal=PACKS.reduce(function(n,p){return n+p.weight;},0),weights=shelfWeights(s),shelfTotal=weights.reduce(function(n,w){return n+w.w;},0);
-    return {activeOops:activeOops,oopsMultiplier:oopsMultiplier,playerLuckMultiplier:playerLuck,multiplier:multiplier,listed:listed,potionLuckMultiplier:potion.luckMultiplier,baseCritChance:permanentCrit(s)+potion.baseCritChance,baseCritEffectiveChance:Math.min(1,(permanentCrit(s)+potion.baseCritChance)*multiplier),permanentCritChance:permanentCrit(s),potionDropChance:Math.min(.5,multiplier/10),potionDropEligible:potionEligible(s)&&!(s.potions&&s.potions.blockedReason)&&(!s.potions||s.potions.inventory.length<2),bossDisablePotionChance:potion.bossDisableChance,potionDrop:{unlocked:potionEligible(s),full:!!(s.potions&&s.potions.inventory.length>=2),blocked:!!(s.potions&&s.potions.blockedReason),denominator:10,numerator:Math.min(5,multiplier),effective:Math.min(.5,multiplier/10),maximum:.5},potionCrit:{baseline:potion.baseCritChance,effective:Math.min(1,potion.baseCritChance*multiplier)},shopJokerEditions:editionWeights(s,'joker'),standardCardEditions:editionWeights(s,'standard'),
+    return {activeOops:activeOops,oopsMultiplier:oopsMultiplier,playerLuckMultiplier:playerLuck,multiplier:multiplier,listed:listed,potionLuckMultiplier:potion.luckMultiplier,baseCritChance:permanentCrit(s,actualLevel)+potion.baseCritChance,baseCritEffectiveChance:Math.min(1,(permanentCrit(s,actualLevel)+potion.baseCritChance)*multiplier),permanentCritChance:permanentCrit(s,actualLevel),potionDropChance:Math.min(.5,multiplier/10),potionDropEligible:potionEligible(s)&&!(s.potions&&s.potions.blockedReason)&&(!s.potions||s.potions.inventory.length<2),bossDisablePotionChance:potion.bossDisableChance,potionDrop:{unlocked:potionEligible(s),full:!!(s.potions&&s.potions.inventory.length>=2),blocked:!!(s.potions&&s.potions.blockedReason),denominator:10,numerator:Math.min(5,multiplier),effective:Math.min(.5,multiplier/10),maximum:.5},potionCrit:{baseline:potion.baseCritChance,effective:Math.min(1,potion.baseCritChance*multiplier)},shopJokerEditions:editionWeights(s,'joker'),standardCardEditions:editionWeights(s,'standard'),
       shopCardEditions:editionWeights(s,'shop_card'),wheelEditions:{foil:0.5,holo:0.35,poly:0.15},rarity:{common:0.7,uncommon:0.25,rare:0.05},
       shelf:weights.map(function(w){return {type:w.type,weight:w.w,probability:w.w/shelfTotal};}),packs:PACKS.map(function(p){return {id:p.id,weight:p.weight,probability:p.weight/packTotal};}),
       stickers:{eternal:stake.eternal?0.3:0,perishable:stake.perishable?0.3:0,rental:stake.rental?0.3:0,eternalPerishableDisjoint:true,rentalIndependent:true},
@@ -884,7 +886,7 @@
   // Vanilla excludes The Hook/The Tooth and debuffed non-scoring kickers.
   function payMatador(s,r,b,lines) {if(!r.bossTriggered||r.matadorPaid[b.source.uid])return;r.matadorPaid[b.source.uid]=true;addMoney(s,8);lines.push(abilityLabel(b)+': +$8');}
   function scoreHand(s,cards,r,bindings,frenzyContext,batteryChips) {
-    var scoringTriggers=0,scoringCards=[];
+    var scoringTriggers=0,scoringCards=[],actualLevel=frenzyContext?frenzyContext.actualLevel:undefined,permanent=permanentCrit(s,actualLevel);
     var lines=[],critEvents=[],critTotals=null,chips,mult,potion=potionEffects(s),scored=r.indices.map(function(i){return cards[i];}),held=s.hand.filter(function(c){return cards.indexOf(c)<0;}),firstFace;
     function C(n,label){chips=finite(chips+n);if(n)lines.push(label+' +'+n+' Chips');}function M(n,label){mult=finite(mult+n);if(n)lines.push(label+' +'+n+' Mult');}function X(n,label){mult=finite(mult*n);if(n!==1)lines.push(label+' X'+Number(n.toFixed(4))+' Mult');}
     function addCritTotal(cardId,lineIndex){var group=critTotals.find(function(g){return g.cardId===cardId;});if(group)group.totalCount++;else critTotals.push({cardId:cardId,firstLine:lineIndex,totalCount:1});}
@@ -931,7 +933,7 @@
         if(c.seal==='gold'){addMoney(s,3);lines.push('Gold Seal: +$3');}
         if(c.edition==='foil')C(50,'Foil');if(c.edition==='holo')M(10,'Holographic');if(c.edition==='poly')X(1.5,'Polychrome');
         if(potion.cardMult)M(potion.cardMult,'Mult Potion');if(potion.cardChips)C(potion.cardChips,'Chips Potion');
-        var baseCrit=permanentCrit(s)+potion.baseCritChance;if(baseCrit&&chance(s,1/baseCrit))CRIT(c,(permanentCrit(s)?'Level 32'+(potion.baseCritChance?' + Potion':''):potion.gamingHP!==null?'Gaming Potion':'Critical Potion')+' CRIT!');
+        var baseCrit=permanent+potion.baseCritChance;if(baseCrit&&chance(s,1/baseCrit))CRIT(c,(permanent?(permanent===.02?'Level 53':'Level 32')+(potion.baseCritChance?' + Potion':''):potion.gamingHP!==null?'Gaming Potion':'Critical Potion')+' CRIT!');
         eachAbility(s,bindings,'scored',function(j,b){var ranked=c.enhancement!=='stone',label=abilityLabel(b);switch(j.id){
           case 'greedy_joker':if(suit(c,'D',s))M(3,label);break;case 'lusty_joker':if(suit(c,'H',s))M(3,label);break;case 'wrathful_joker':if(suit(c,'S',s))M(3,label);break;case 'gluttonous_joker':if(suit(c,'C',s))M(3,label);break;
           case 'eight_ball':if(ranked&&c.rank===8&&chance(s,4))addConsumable(s,randomConsumable(s,'tarot').id);break;
@@ -1017,10 +1019,14 @@
     if(frenzyReceipt&&frenzyReceipt.active){mult=finite(mult*1.5);lines.push('Frenzy X1.5 FINAL Mult');}
     // Flat Chips AFTER all chip transformations. Never a trigger or a Mult change.
     if(batteryChips)C(batteryChips,'Emerald battery '+batteryChips+'%');
-    // Keep the original final stages AND battery visible in capped retrigger logs.
+    // Level 54 applies once to the already-integer final score, not Chips/Mult.
+    // Use the same finite ceiling even when the native product has saturated.
+    var total=finite(Math.floor(chips*mult)),finalScoreBoost=s.progressionEnabled===true&&actualLevel>=54&&actualLevel<=100;
+    if(finalScoreBoost){var baseTotal=total;total=finite(baseTotal+Math.floor(baseTotal/10));lines.push('Level 54 +10% FINAL score: '+baseTotal+' → '+total);}
+    // Keep the original final stages, battery AND final score in capped logs.
     var resultLines=deal&&lines.length>250?lines.slice(0,248).concat(lines.slice(-2)):lines.slice(0,250);
-    if((frenzyReceipt||batteryChips)&&lines.length>250){var tail=(potion.daylightMult?1:0)+(deal?2:0)+(frenzyReceipt&&frenzyReceipt.active?1:0)+(batteryChips?1:0);if(tail)resultLines=lines.slice(0,250-tail).concat(lines.slice(-tail));}
-    var total=finite(Math.floor(chips*mult)),result={name:r.name,key:r.key,handLevel:lv+1,chips:chips,mult:mult,total:total,lines:resultLines};
+    if((frenzyReceipt||batteryChips||finalScoreBoost)&&lines.length>250){var tail=(potion.daylightMult?1:0)+(deal?2:0)+(frenzyReceipt&&frenzyReceipt.active?1:0)+(batteryChips?1:0)+(finalScoreBoost?1:0);if(tail)resultLines=lines.slice(0,250-tail).concat(lines.slice(-tail));}
+    var result={name:r.name,key:r.key,handLevel:lv+1,chips:chips,mult:mult,total:total,lines:resultLines};
     if(frenzyReceipt){result.scoringTriggers=scoringTriggers;result.scoringCards=scoringCards;result.frenzy=frenzyReceipt;}
     if(critEvents.length)result.critEvents=critEvents;if(critTotals)result.critTotals=critTotals;return result;
   }

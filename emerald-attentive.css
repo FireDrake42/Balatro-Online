@@ -1,0 +1,17 @@
+/* One usual bubble in all native tables; bounded text accessibility. */
+.emerald-typed-accessible{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+.emerald-typed-visible{white-space:pre-wrap}
+.emerald-stage{overflow:visible}
+/* The following portrait must not hijack native table/tab clicks underneath. */
+.emerald-following .emerald-group{pointer-events:none}
+.emerald-following :is(.emerald-controls button,button.emerald-level-bar,.emerald-chat-form input,.emerald-chat-form button){pointer-events:auto}
+.emerald-visible-target{outline:3px solid #a4ff95;outline-offset:4px}
+.emerald-stage[data-card-table=true]{min-height:210px}
+.emerald-stage[data-card-table=true] .emerald-level-bar{font-size:11px}
+.chill-card-back{color:#b6e5d8;background:repeating-linear-gradient(45deg,#143e37,#143e37 7px,#0c2a26 7px,#0c2a26 14px);border-color:#8bc5ae}
+.chill-cooldown{min-height:1.5em;font-variant-numeric:tabular-nums;color:#d8f2de}
+.blackjack-result{max-width:250px;text-align:center;color:#f2ffe9;line-height:1.5}
+.chill-card,.blackjack-card{animation:emerald-public-card-in .42s ease-out both}
+@keyframes emerald-public-card-in{from{transform:translateY(-14px) rotate(-3deg);opacity:.35}to{transform:none;opacity:1}}
+.reduced-motion :is(.chill-card,.blackjack-card){animation:none!important}
+@media(prefers-reduced-motion:reduce){.chill-card,.blackjack-card{animation:none!important}.emerald-following .emerald-group{position:static!important}}
