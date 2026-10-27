@@ -21,6 +21,13 @@
  * id/phase/Bank/passive ledger; native-owned live potion/task/derived fields may
  * differ from that previous owned raw and are preserved, not deleted or reset.
  * Exact whole-live/profile snapshots and both durable raws fence every commit.
+ * Royal context is derived ONLY from matching own saved/live PROFILE event
+ * ledgers, at the existing captured absolute host.now. No global config, cached
+ * event flag, extra clock, PROFILE writer or persisted duplicate is introduced.
+ * Status uses whole owned saved raws + live run/event-only fencing, without
+ * enumerating unrelated live PROFILE/private Poker fields or invoking action
+ * guards/replay. host.eligible includes its existing writer-canWrite check.
+ * Readiness is virtual; hidden/protected/power/owner guards remain strict.
  * Any attempted uncertainty permanently latches this controller and calls
  * pause; never retry, roll back or apply money after an unconfirmed write.
  */
@@ -65,16 +72,30 @@
       check(host.eligible() === true, 'ineligible', 'Only observable foreground eligible time earns Passive Money.');
       check(!power().powerPaused, 'power-paused', 'Low Power or a disabled Passive Money feature pauses earnings.');
     }
+    function eventContext(profile) {
+      check(profile && typeof profile === 'object' && Object.getPrototypeOf(profile) === Object.prototype,
+        'invalid-profile', 'An own whole profile is required for Poker event authority.');
+      const d = Object.getOwnPropertyDescriptor(profile, 'emeraldPokerEvents');
+      if (!d) return undefined;
+      check(d.enumerable === true && Object.prototype.hasOwnProperty.call(d, 'value') && d.value !== undefined,
+        'invalid-events', 'The existing Poker event field needs attention.');
+      return {pokerEvents:d.value};
+    }
+    function savedEvents(c) {
+      const context = eventContext(JSON.parse(c.profileRaw));
+      check(stable(context) === stable(c.modelContext), 'event-mismatch', 'The whole saved and live Poker event ledgers differ.');
+    }
     function liveContext() {
       const c = host.get();
       check(c && c.profile && c.run && (c.page === 'game' || c.page === 'home'), 'ineligible-run', 'An eligible current origin run is required.');
       check(Number.isInteger(c.level) && c.level >= 40 && c.level <= 100, 'locked', 'Passive Money unlocks at actual player Level 40.');
-      const source = M.copyData(c.run), profileJSON = serialized(c.profile);
+      const source = M.copyData(c.run), profileSource = M.copyData(c.profile), profileJSON = JSON.stringify(profileSource);
+      const modelContext = eventContext(profileSource);
       check(source.progressionEnabled === true && source.playerLevel === c.level,
         'unreconciled-level', 'The origin run actual player level is not durably reconciled yet.');
-      const s = M.status(source, c.level, 0);
+      const s = M.status(source, c.level, 0, modelContext);
       check(s.ok && s.eligibleRun, s.code || 'ineligible-run', s.reason || 'An active, non-abandoned origin run is required.');
-      return {...c,...power(),source,runJSON:JSON.stringify(source),profileJSON};
+      return {...c,...power(),source,runJSON:JSON.stringify(source),profileJSON,modelContext};
     }
     function verifyLive(c) {
       check(c.epoch === epoch && !destroyed && !uncertain, 'cancelled', 'This observation or action was cancelled.');
@@ -110,6 +131,7 @@
       const durableState = M.normalize(durable.passiveMoney), liveState = M.normalize(c.source.passiveMoney);
       check(durable._uiId === c.id && durable.phase === c.source.phase && durable.money === c.source.money &&
         stable(durableState) === stable(liveState), 'durable-mismatch', 'The durable origin id, phase, Bank or Passive Money ledger is not reconciled.');
+      savedEvents(c);
       sameContext(c); raws(c); sameContext(c); return c;
     }
     function clocks() {
@@ -157,6 +179,7 @@
       check(durable._uiId === c.id && durable.phase === c.source.phase && durable.money === c.source.money &&
         stable(M.normalize(durable.passiveMoney)) === stable(M.normalize(c.source.passiveMoney)),
         'durable-mismatch', 'The durable origin id, phase, Bank or Passive Money ledger is not reconciled.');
+      savedEvents(c);
       retentionFence(c); return c;
     }
     function retainObserved(sampleBoundary) {
@@ -247,7 +270,7 @@
     }
     function start() {
       return perform(() => {
-        const clock = clocks(), c = capture(), proposal = M.start(c.source, c.level, clock.now, pauseClock ? {pauseClock:true} : undefined);
+        const clock = clocks(), c = capture(), proposal = M.start(c.source, c.level, clock.now, pauseClock ? {pauseClock:true} : undefined, c.modelContext);
         if (!proposal.result.ok) return proposal.result;
         return commitObserved(c, proposal, clock.now, clock.mono, 0);
       });
@@ -255,11 +278,11 @@
     function tick() {
       return perform(() => {
         const clock = clocks(), c = capture(), s = M.normalize(c.source.passiveMoney);
-        if (!s) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'idle',status:M.status(c.source,c.level,clock.now)}; }
+        if (!s) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'idle',status:M.status(c.source,c.level,clock.now,c.modelContext)}; }
         if (clock.now < s.lastAt) { resetObservation(); return fail('clock-rollback','The absolute clock moved backwards. No time was forced forward.'); }
         if (s.version === M.PAUSE_VERSION && s.pausedAt !== null)
-          return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'paused',status:M.status(c.source,c.level,clock.now)};
-        if (s.settled) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'settled',status:M.status(c.source,c.level,clock.now)}; }
+          return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'paused',status:M.status(c.source,c.level,clock.now,c.modelContext)};
+        if (s.settled) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'settled',status:M.status(c.source,c.level,clock.now,c.modelContext)}; }
         if (!sameOrigin(carry, c)) carry = null;
         if (carry && (clock.now < carry.now || clock.mono < carry.mono) ||
             matches(c) && (clock.now < observation.now || clock.mono < observation.mono)) { carry = null; observation = null; }
@@ -272,16 +295,16 @@
           observation = identify(c, clock.now, clock.mono, 0);
           // Anchor a new segment without counting the gap. A carried budget is
           // already observed, not reconstructed from lastAt or offline time.
-          if (!carry && clock.now < s.endsAt) return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'observing',status:M.status(c.source,c.level,clock.now)};
+          if (!carry && clock.now < s.endsAt) return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'observing',status:M.status(c.source,c.level,clock.now,c.modelContext)};
         }
         const budget = (carry ? carry.pending : 0) + segmentBudget(s, {since,prior}, clock.now, pending);
         check(Number.isFinite(budget) && budget >= 0 && budget <= M.MAX_TIME, 'observation-overflow', 'Observable eligible time cannot be represented safely.');
         const observedMs = Math.floor(budget), at = Math.min(clock.now, s.endsAt);
         // ONLY the independently clipped pre-deadline budget may be folded at
         // the deadline. A wholly post-expiry interval contributes exactly zero.
-        let proposal = M.poll(c.source, c.level, at, observedMs);
+        let proposal = M.poll(c.source, c.level, at, observedMs, c.modelContext);
         if (proposal.result.ok && clock.now > at) {
-          const final = M.poll(proposal.run, c.level, clock.now, 0);
+          const final = M.poll(proposal.run, c.level, clock.now, 0, c.modelContext);
           if (final.result.ok) final.result = {...final.result,
             changed:proposal.result.changed || final.result.changed,
             awardedCents:proposal.result.awardedCents + final.result.awardedCents,
@@ -295,7 +318,7 @@
         // No every-250ms zero-cent writes. Keep integer AND fractional eligible
         // milliseconds since the last confirmed commit, not since the last poll.
         observation = identify(c, clock.now, clock.mono, pending, since, prior);
-        return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'observing',status:M.status(c.source,c.level,clock.now)};
+        return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'observing',status:M.status(c.source,c.level,clock.now,c.modelContext)};
       });
     }
     function syncPower(options) {
@@ -304,7 +327,7 @@
         check(config && Object.keys(config).length === 1 && typeof config.explicit === 'boolean', 'invalid-options', 'Supply only a boolean explicit power-command option.');
         const clock = clocks(), c = retentionCapture(), s = M.normalize(c.source.passiveMoney);
         const unchanged = code => ({ok:true,changed:false,awardedCents:0,earnedMs:0,code,
-          status:{...M.status(c.source,c.level,clock.now),powerPaused:c.powerPaused}});
+          status:{...M.status(c.source,c.level,clock.now,c.modelContext),powerPaused:c.powerPaused}});
         if (!s) return unchanged('idle');
         check(clock.now >= s.lastAt, 'clock-rollback', 'The absolute clock moved backwards. No pause was forced forward.');
         const wasPaused = s.version === M.PAUSE_VERSION && s.pausedAt !== null;
@@ -324,9 +347,9 @@
         let source = c.source, folded = {ok:true,changed:false,awardedCents:0,earnedMs:0};
         if (!wasPaused && !s.settled) {
           const at = Math.min(clock.now, s.endsAt);
-          let proposal = M.poll(source, c.level, at, observedMs);
+          let proposal = M.poll(source, c.level, at, observedMs, c.modelContext);
           if (proposal.result.ok && clock.now > at) {
-            const final = M.poll(proposal.run, c.level, clock.now, 0);
+            const final = M.poll(proposal.run, c.level, clock.now, 0, c.modelContext);
             if (final.result.ok) final.result = {...final.result,changed:proposal.result.changed || final.result.changed,
               awardedCents:proposal.result.awardedCents + final.result.awardedCents,earnedMs:proposal.result.earnedMs + final.result.earnedMs};
             proposal = final;
@@ -334,7 +357,7 @@
           if (!proposal.result.ok) return proposal.result;
           source = proposal.run; folded = proposal.result;
         }
-        const proposal = M.setPaused(source, c.level, clock.now, c.powerPaused, 0);
+        const proposal = M.setPaused(source, c.level, clock.now, c.powerPaused, 0, c.modelContext);
         if (!proposal.result.ok) return proposal.result;
         proposal.result = {...proposal.result,changed:folded.changed || proposal.result.changed,
           awardedCents:folded.awardedCents + proposal.result.awardedCents,earnedMs:folded.earnedMs + proposal.result.earnedMs};
@@ -343,10 +366,46 @@
         return commitObserved(c, proposal, clock.now, clock.mono, wasPaused ? budget : budget - observedMs);
       });
     }
+    function statusEvents(profile) {
+      const context = eventContext(profile);
+      return context === undefined ? undefined : M.copyData(context);
+    }
+    function statusFence(c) {
+      check(c.epoch === epoch && !destroyed && !uncertain && host.stamp() === c.stamp,
+        'context-changed', 'The read-only Passive Money context changed.');
+      raws(c);
+      const v = host.get();
+      check(v && v.profile === c.profile && v.run === c.run && v.level === c.level && v.page === c.page &&
+        serialized(v.run) === c.runJSON && stable(statusEvents(v.profile)) === stable(c.modelContext) && power().powerKey === c.powerKey,
+        'context-changed', 'The origin run, event ledger or power policy changed during the status read.');
+      raws(c);
+      check(c.epoch === epoch && !destroyed && !uncertain && host.stamp() === c.stamp,
+        'context-changed', 'The read-only Passive Money context changed.');
+    }
     function status() {
-      try { const c = host.get(), result = M.status(c && c.run, c && c.level, host.now());
-        return {...result,...power(),uncertain,destroyed};
-      } catch (error) { return {...fail(error.code || 'invalid-context', error.message),uncertain,destroyed}; }
+      try {
+        // Never enumerate/copy live PROFILE here: Poker private RNG/seed/round
+        // replay belongs to explicit action boundaries, not render/read paths.
+        check(!destroyed && !uncertain, destroyed ? 'destroyed' : 'uncertain', 'Passive Money status is not writable.');
+        const now = host.now(), v = host.get();
+        check(v && v.profile && v.run && (v.page === 'game' || v.page === 'home'), 'ineligible-run', 'An eligible origin run is required.');
+        check(Number.isInteger(v.level) && v.level >= 40 && v.level <= 100, 'locked', 'Passive Money unlocks at actual player Level 40.');
+        const source = M.copyData(v.run), c = {profile:v.profile,run:v.run,level:v.level,page:v.page,
+          source,runJSON:JSON.stringify(source),modelContext:statusEvents(v.profile),...power(),epoch,
+          stamp:host.stamp(),profileRaw:host.read('profile'),runRaw:host.read('run')};
+        check(source.progressionEnabled === true && source.playerLevel === c.level,
+          'unreconciled-level', 'The origin run actual player level is not durably reconciled yet.');
+        check(typeof c.runRaw === 'string' && typeof c.profileRaw === 'string', 'unsaved-run', 'Save this origin run before starting Passive Money.');
+        const durable = JSON.parse(c.runRaw);
+        check(durable && durable._uiId === source._uiId && durable.phase === source.phase && durable.money === source.money &&
+          stable(M.normalize(durable.passiveMoney)) === stable(M.normalize(source.passiveMoney)),
+          'durable-mismatch', 'The durable origin id, phase, Bank or Passive Money ledger is not reconciled.');
+        savedEvents(c); statusFence(c);
+        const result = M.status(source, c.level, now, c.modelContext), eligible = host.eligible() === true;
+        statusFence(c);
+        return {...result,powerPaused:c.powerPaused,powerKey:c.powerKey,eligible,
+          ready:result.ok === true && result.ready && eligible && !c.powerPaused,uncertain,destroyed};
+      } catch (error) { return {...fail(error.code || 'invalid-context', error.message),ready:false,uncertain,destroyed}; }
     }
     function destroy() { destroyed = true; resetObservation(); }
     return Object.freeze({status,start,tick,syncPower,resetObservation,destroy});

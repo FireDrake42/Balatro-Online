@@ -17,7 +17,7 @@
   check(value.revision===0?value.version===1&&value.totalXp===0&&value.lastTickAt===0:value.totalXp>0&&value.totalXp<=value.revision*10&&value.lastTickAt>0&&value.lastTickAt%grid===0&&value.lastTickAt>=value.revision*minInterval,'saved income does not match its highwater.');
   return {version:value.version,revision:value.revision,totalXp:value.totalXp,lastTickAt:value.lastTickAt};
  }
- function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');return p.level>=20&&p.level<100?Math.min(p.level>=42?10:p.level>=30?5:p.level>=26?3:2,p.xp*IS.effective(p.level,config).rateFraction*PG.jokerXpMultiplier(config)*PG.earnedXpMultiplier(p.level)):0}
+ function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');return p.level>=20&&p.level<100?Math.min(p.level>=43?10:p.level>=30?5:p.level>=26?3:2,p.xp*IS.effective(p.level,config).rateFraction*PG.jokerXpMultiplier(config)*PG.earnedXpMultiplier(p.level)*PG.pokerXpMultiplier(config)):0}
  function intervalMs(level,config){check(Number.isInteger(level)&&level>=1&&level<=100,'invalid actual player level.');return IS.effective(level,config).intervalMs}
  function step(progression,ledger,at,config){
   const state=normalize(ledger),amount=rate(progression,config),fromLevel=progression.level,interval=intervalMs(fromLevel,config),version=Math.max(state.version,interval<500?3:interval<INTERVAL_MS?2:1),grid=version===1?INTERVAL_MS:100;

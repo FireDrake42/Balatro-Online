@@ -1,0 +1,111 @@
+/* Emerald-owned Poker. All selectors are scoped; never skins personal Balatro. */
+#emerald-poker-table{box-sizing:border-box;max-width:1180px;min-width:0;margin:12px auto;padding:clamp(8px,2vw,24px);border:1px solid #76b78d;border-radius:24px;background:linear-gradient(150deg,#103d2b,#06271e)!important;color:#f2f8e9;box-shadow:0 16px 44px #0005}
+#emerald-poker-table *{box-sizing:border-box}
+#emerald-poker-table .poker-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+#emerald-poker-table h1{font-size:clamp(27px,5vw,44px);line-height:1.08;margin:3px 0 15px;color:#f4ebc9}
+#emerald-poker-table h2{font-size:21px;color:#b3facb;margin:9px 0 13px;text-align:center}
+#emerald-poker-table .poker-eyebrow{margin:0 0 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#a9d8ba}
+#emerald-poker-table .poker-close{min-width:44px;min-height:44px;flex:none;border:1px solid #a6e8bd88;border-radius:50%;background:#06251f;color:#effff1;font-size:27px;cursor:pointer}
+#emerald-poker-table .poker-modes{display:flex;align-items:stretch;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+#emerald-poker-table .poker-modes button{min-height:44px;max-width:100%;padding:10px 14px;border:1px solid #8be1aa;border-radius:10px;background:#164e33;color:#eaffef;font:inherit;font-size:13px;white-space:normal}
+#emerald-poker-table .poker-modes button[aria-pressed=true]{background:#b3efb6;color:#0b3525;font-weight:800;box-shadow:inset 0 1px 0 #f1ffcf}
+#emerald-poker-table .poker-modes button:disabled{opacity:.63;cursor:not-allowed}
+#emerald-poker-table .poker-bank{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:12px 0;padding:10px 13px;background:#06271e;border:1px solid #6ac68b60;border-radius:10px;font-size:12px}
+#emerald-poker-table #poker-bank{color:#ffe0a0;font-variant-numeric:tabular-nums}
+#emerald-poker-table .poker-felt{position:relative;min-width:0;padding:22px 16px;border:18px solid #064a31;border-radius:32px;background:radial-gradient(ellipse at 50% 38%,#21683d,#104a30 66%,#063523)!important;box-shadow:inset 0 0 0 1px #89f8b957,inset 0 0 48px #001b2199;overflow:visible}
+#emerald-poker-table .poker-felt::before{content:'';position:absolute;inset:-18px;border-radius:inherit;background:url('emerald-faceted-gem.svg') left top/40px 26px repeat-x,url('emerald-faceted-gem.svg') left bottom/40px 26px repeat-x,url('emerald-faceted-gem.svg') left top/23px 36px repeat-y,url('emerald-faceted-gem.svg') right top/23px 36px repeat-y;pointer-events:none}
+#emerald-poker-table .poker-level-block{max-width:720px;margin:0 auto 20px;min-width:0}
+#emerald-poker-table .poker-progress{font-size:12px;min-width:0;font-variant-numeric:tabular-nums;margin:10px 0;color:#ffe0f0}
+#emerald-poker-table .poker-progress>div:first-child{display:flex;justify-content:space-between;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin-bottom:6px;min-width:0}
+#emerald-poker-table .poker-progress span{overflow-wrap:anywhere}
+#emerald-poker-table .poker-own{color:#b1f9c7}
+#emerald-poker-table .poker-level-progress{color:#e9efaa}
+#emerald-poker-table .poker-meter{height:10px;background:#031b13;border:1px solid #b8dd9855;border-radius:8px;overflow:hidden}
+#emerald-poker-table .poker-meter i{display:block;height:100%;background:linear-gradient(90deg,#bd5999,#ffc5e3)}
+#emerald-poker-table .poker-own .poker-meter i{background:linear-gradient(90deg,#2e9a54,#a4fac0)}
+#emerald-poker-table .poker-level-progress .poker-meter i{background:linear-gradient(90deg,#9eb653,#ecf7a6)}
+#emerald-poker-table .poker-multiplier{margin:6px 0;text-align:center;font-size:12px;color:#e5f7ba}
+#emerald-poker-table summary{min-height:44px;cursor:pointer;line-height:1.5;padding:10px 3px;font-size:12px}
+#emerald-poker-table details p{font-size:12px;line-height:1.6;overflow-wrap:anywhere;margin:8px 0}
+#emerald-poker-table .poker-levels-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;min-width:0;border:1px solid #91d4a255;border-radius:8px}
+#emerald-poker-table .poker-levels table{width:100%;min-width:330px}
+#emerald-poker-table .poker-levels .is-current{background:#adf58730}
+#emerald-poker-table .poker-companion{max-width:640px;margin:0 auto 22px;text-align:center;min-width:0}
+#emerald-poker-table .poker-playing-portrait{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;overflow:visible}
+/* The native framed portrait retains its existing earned width, aspect and glow. */
+#emerald-poker-table .poker-companion h2{margin:8px 0 14px;font-size:24px}
+#emerald-poker-table .poker-rewards{margin:24px 0 16px;min-width:0}
+#emerald-poker-table .poker-rewards h2{font-size:18px}
+#emerald-poker-table .poker-rewards-scroll{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;border:1px solid #7ee0a166;border-radius:12px;background:#052f1e;scrollbar-color:#79d99b #06241d}
+#emerald-poker-table table{border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;color:#d8ffe1;background:#073821}
+#emerald-poker-table .poker-rewards table{min-width:930px;width:100%}
+#emerald-poker-table th,#emerald-poker-table td{padding:10px 9px;border-bottom:1px solid #91d4a22e;text-align:right;white-space:nowrap}
+#emerald-poker-table th:first-child{text-align:left}
+#emerald-poker-table thead th{background:#0f4c2f;color:#edffd0;font-size:11px}
+#emerald-poker-table td{color:#b8ffce}
+#emerald-poker-table td:last-child{text-align:left;color:#dbf9dc}
+#emerald-poker-table tbody tr:nth-child(even){background:#82e3a009}
+#emerald-poker-table .poker-reward-row.is-actual{background:#b1f89335;box-shadow:inset 4px 0 #d8ff9a,inset 0 0 0 1px #d8ff9a}
+#emerald-poker-table .poker-reward-row.is-actual th{color:#f1ffae}
+#emerald-poker-table .poker-target-bonus{font-size:12px;line-height:1.6;margin:12px 0;color:#cfffaa;text-align:center}
+#emerald-poker-table .poker-reward-notes{color:#c5e5ce}
+#emerald-poker-table .poker-reward-notes summary{font-size:11px}
+#emerald-poker-table .poker-center{max-width:720px;margin:20px auto;text-align:center;overflow-wrap:anywhere}
+#emerald-poker-table .poker-dialogue{margin:0 0 10px;padding:14px 12px;border:1px solid #89e9ab70;border-radius:14px;background:#032a1bbf;line-height:1.6;min-height:58px}
+#emerald-poker-table .poker-speaker{color:#b6ffd1}
+#emerald-poker-table .poker-reaction{display:inline;font:inherit;color:inherit}
+#emerald-poker-table .poker-target{font-size:13px;color:#e2f5ba}
+#emerald-poker-table .poker-player-seat{min-width:0;max-width:820px;margin:0 auto;text-align:center}
+#emerald-poker-table .poker-player-seat>h2{font-size:17px;margin-top:24px}
+#emerald-poker-table .poker-deal-row{--poker-min-card:34px;display:grid;grid-template-columns:minmax(34px,72px) minmax(0,1fr);align-items:start;gap:14px;min-width:0;width:100%}
+#emerald-poker-table .poker-deck{position:relative;min-width:0;min-height:120px;aspect-ratio:.65;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;border:2px solid #99d795;border-radius:9px;background:repeating-linear-gradient(45deg,#125036 0 5px,#0a3c2d 5px 10px);box-shadow:-3px 3px #03281b,-6px 6px #90bf8266;color:#dcffbf;font-size:12px;text-align:center}
+#emerald-poker-table .poker-deck b{font-size:34px;color:#d0fbc2}
+#emerald-poker-table .poker-deck small{display:block;max-width:100%;font-size:10px;overflow-wrap:anywhere;padding:0 2px}
+#emerald-poker-table .poker-hand{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;min-width:0;align-items:start}
+#emerald-poker-table .poker-card-slot{min-width:0;position:relative}
+#emerald-poker-table .poker-card{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:120px;aspect-ratio:.68;padding:0 2px 27px;border:2px solid #e3edc8;border-radius:9px;background:linear-gradient(145deg,#fffef5,#e7f0de);box-shadow:0 5px 10px #001d1a7a;color:#193b31;font-family:Georgia,'Times New Roman',serif;font-weight:700;cursor:pointer;touch-action:manipulation;transition:box-shadow .14s,border-color .14s}
+#emerald-poker-table .poker-card:disabled{opacity:1;cursor:default;filter:none}
+#emerald-poker-table .poker-card strong{font-size:clamp(22px,4.8vw,46px);line-height:1}
+#emerald-poker-table .poker-card-corner{position:absolute;left:6px;top:5px;font-size:clamp(12px,2vw,21px);line-height:1.05;color:inherit}
+#emerald-poker-table .poker-card-corner small{display:block;font-size:.9em;color:inherit}
+#emerald-poker-table .poker-card-bottom{position:absolute;right:4px;bottom:30px;font-size:13px;transform:rotate(180deg);color:inherit}
+#emerald-poker-table .poker-red{color:#ab2442}
+#emerald-poker-table .poker-hold{position:absolute;left:0;right:0;bottom:0;display:block;padding:5px 0;border-radius:0 0 6px 6px;border-top:1px solid #37654838;background:#d5e9cf;color:#204b31;font:800 10px/1.2 system-ui,sans-serif;letter-spacing:.025em}
+#emerald-poker-table .poker-card.is-held{border-color:#c7ff86;box-shadow:0 0 0 2px #73cb59,0 5px 12px #001d1a80}
+#emerald-poker-table .poker-card.is-held .poker-hold{background:#c8f598;color:#163c23}
+/* Deterministic public contributors only: no random cosmetic selection. */
+#emerald-poker-table .poker-card.poker-contributing{border:3px solid transparent;background:linear-gradient(145deg,#fffef5,#e7f0de) padding-box,conic-gradient(#ff91d2,#c5acff,#83eaff,#96ffc1,#fff191,#ff91d2) border-box;box-shadow:0 0 0 1px #e3ffc68c,0 0 13px #b2e8ff66}
+#emerald-poker-table .poker-card-placeholder{cursor:default;background:#0733215c;border:1px dashed #93d09a80;box-shadow:none;color:#a0c7a766;padding:0;font-size:25px}
+#emerald-poker-table .poker-shared{font-size:11px;color:#c2dfbd;line-height:1.5;margin:13px 0}
+#emerald-poker-table .poker-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:15px 0}
+#emerald-poker-table .poker-actions .btn{min-height:44px;min-width:130px;border:1px solid #b4f39c;border-radius:10px;padding:10px 18px;color:#123320;background:#d3eeb0;font:inherit;font-size:14px;font-weight:800;line-height:1.4;cursor:pointer}
+#emerald-poker-table .poker-actions .btn:disabled{opacity:.5;cursor:not-allowed}
+#emerald-poker-table button:focus-visible,#emerald-poker-table summary:focus-visible,#emerald-poker-table [tabindex]:focus-visible{outline:3px solid #f7ed9b;outline-offset:3px}
+#emerald-poker-table .poker-settlement{font-size:13px;border:1px solid #a7e69f66;border-radius:12px;padding:12px;background:#072e1d;line-height:1.7;overflow-wrap:anywhere}
+#emerald-poker-table .poker-settlement p{margin:4px 0}
+#emerald-poker-table .poker-settlement small{color:#d3f8b0}
+#emerald-poker-table .poker-footer{font-size:12px;line-height:1.6;color:#c0dac2;overflow-wrap:anywhere}
+#emerald-poker-table .poker-footer p{margin:12px 0}
+#emerald-poker-table .poker-footer small{display:block;font-size:11px}
+/* Only the playing portrait and companion progress cross the native zero shade. */
+.battery-active #emerald-poker-table .poker-playing-portrait,.battery-active #emerald-poker-table .poker-companion>.poker-progress{position:relative;z-index:72}
+@media(max-width:600px){
+ #emerald-poker-table{padding:8px;border-radius:18px}
+ #emerald-poker-table .poker-felt{border-width:12px;padding:15px 6px;border-radius:23px}
+ #emerald-poker-table .poker-felt::before{inset:-12px;background-size:30px 18px,30px 18px,15px 30px,15px 30px}
+ #emerald-poker-table .poker-deal-row{grid-template-columns:34px minmax(0,1fr);gap:6px}
+ #emerald-poker-table .poker-hand{gap:3px}
+ #emerald-poker-table .poker-card{border-radius:6px;min-height:82px;aspect-ratio:.56;padding-bottom:24px}
+ #emerald-poker-table .poker-card-corner{top:4px;left:3px;font-size:12px}
+ #emerald-poker-table .poker-card strong{font-size:24px}
+ #emerald-poker-table .poker-card-bottom{right:2px;bottom:24px;font-size:10px}
+ #emerald-poker-table .poker-hold{font-size:8px;padding:5px 0}
+ #emerald-poker-table .poker-deck{min-height:82px;aspect-ratio:.42;border-radius:6px;font-size:8px;gap:6px;box-shadow:-2px 2px #03281b,-4px 4px #90bf8266}
+ #emerald-poker-table .poker-deck b{font-size:22px}
+ #emerald-poker-table .poker-deck small{font-size:8px}
+ #emerald-poker-table .poker-progress>div:first-child{flex-direction:column;align-items:center;gap:4px;text-align:center}
+ #emerald-poker-table .poker-modes button{font-size:11px;padding:9px 10px}
+ #emerald-poker-table .poker-dialogue{padding:12px 8px;font-size:13px}
+ #emerald-poker-table .poker-rewards h2{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){#emerald-poker-table *,#emerald-poker-table *::before,#emerald-poker-table *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

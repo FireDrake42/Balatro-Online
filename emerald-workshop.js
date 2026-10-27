@@ -4,7 +4,7 @@
  * canonical deck and all three piles; never call destruction/reacquisition
  * callbacks (which would fabricate Joker triggers). Claim returns the SAME id.
  */
-(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports;const api=factory(node?require('./emerald-progress.js'):root.BOEmeraldProgress);if(node)module.exports=api;else root.BOEmeraldWorkshop=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P){'use strict';
+(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports;const api=factory(node?require('./emerald-progress.js'):root.BOEmeraldProgress,node?require('./emerald-poker-events.js'):root.BOEmeraldPokerEvents);if(node)module.exports=api;else root.BOEmeraldWorkshop=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P,E){'use strict';
  const VERSION=1,WORK_MS=120000,COOLDOWN_MS=300000,MAX_TIME=8640000000000000,MAX_CARDS=20000;
  const EDITIONS=Object.freeze(['foil','holo','poly']),ENHANCEMENTS=Object.freeze(['bonus','mult','wild','glass','steel','stone','gold','lucky']),SEALS=Object.freeze(['red','blue','gold','purple']),MODIFIERS=Object.freeze([...EDITIONS,...ENHANCEMENTS]);
  const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k),count=n=>Number.isSafeInteger(n)&&n>=0,timestamp=n=>count(n)&&n<=MAX_TIME;
@@ -82,9 +82,16 @@
   for(const key of ['hand','drawPile','discardPile'])r[key]=r[key].map(c=>map.get(String(c.id)));return r;
  }
  function validateRun(run){try{inspectedRun(run);return true}catch(_){return false}}
- function info(run,now){
-  check(timestamp(now),'Invalid absolute workshop timestamp.');const r=inspectedRun(run),s=own(r,'emeraldWorkshop')?r.emeraldWorkshop:create(r._uiId),j=s.job;
-  return {busy:!!j,silent:!!j&&now<j.completedAt,ready:!!j&&now>=j.completedAt,jobId:j?j.id:null,workRemainingMs:j?Math.max(0,j.completedAt-now):0,cooldownRemainingMs:Math.max(0,s.availableAt-now),nextGiveAt:s.availableAt};
+ function royal(context,now){
+  const keys=context&&own(context,'pokerEvents')?['pokerEvents']:[];check(fields(context,keys),'Invalid workshop event context.');if(!keys.length)return false;
+  check(context.pokerEvents!==undefined&&E&&typeof E.effectsAt==='function','Supply the saved Poker event ledger, or omit it.');return E.effectsAt(context.pokerEvents,now).zeroCooldowns;
+ }
+ // Never forgive time before the last frozen completion, even on clock rollback.
+ // The saved deadline stays native; expiry restores it without any cleanup write.
+ function cooldownBypassed(s,now,zero){return zero&&now>=s.availableAt-COOLDOWN_MS}
+ function info(run,now,context={}){
+  check(timestamp(now),'Invalid absolute workshop timestamp.');const r=inspectedRun(run),s=own(r,'emeraldWorkshop')?r.emeraldWorkshop:create(r._uiId),j=s.job,bypass=cooldownBypassed(s,now,royal(context,now));
+  return {busy:!!j,silent:!!j&&now<j.completedAt,ready:!!j&&now>=j.completedAt,jobId:j?j.id:null,workRemainingMs:j?Math.max(0,j.completedAt-now):0,cooldownRemainingMs:bypass?0:Math.max(0,s.availableAt-now),nextGiveAt:bypass?Math.min(now,s.availableAt):s.availableAt};
  }
  function authorize(run,options,keys){
   check(fields(options,keys),'Invalid workshop command fields.');check(timestamp(options.now),'Invalid absolute workshop timestamp.');
@@ -93,10 +100,13 @@
   const s=own(r,'emeraldWorkshop')?r.emeraldWorkshop:create(r._uiId);check(count(options.expectedRevision)&&options.expectedRevision===s.revision,'Workshop revision changed. Reopen the current action.');return {run:r,state:s};
  }
  function give(run,options){
-  const keys=['progress','actualLevel','expectedRevision','now','cardId','rolls'];if(options&&own(options,'friendshipLevel'))keys.push('friendshipLevel');
+  const keys=['progress','actualLevel','expectedRevision','now','cardId','rolls'];if(options&&own(options,'friendshipLevel'))keys.push('friendshipLevel');if(options&&own(options,'pokerEvents'))keys.push('pokerEvents');
   const a=authorize(run,options,keys),r=a.run,s=a.state,friendshipLevel=own(options,'friendshipLevel')?options.friendshipLevel:1;
-  check(Number.isInteger(friendshipLevel)&&friendshipLevel>=1&&friendshipLevel<=10,'Invalid workshop friendship level.');const workMs=WORK_MS-6000*(friendshipLevel-1);
-  check(!s.job,'Claim the existing workshop job before giving another card.');check(options.now>=s.availableAt,'Emerald workshop is cooling down after completion.');check(options.now<=MAX_TIME-workMs-COOLDOWN_MS,'Workshop completion timestamp would overflow.');
+  // Friendship11..15 adds progress, not more speed. Snapshot only the old
+  // benefit (at most10/66s); existing jobs and their version1 schema stay frozen.
+  check(Number.isInteger(friendshipLevel)&&friendshipLevel>=1&&friendshipLevel<=15,'Invalid workshop friendship level.');const workMs=WORK_MS-6000*(Math.min(friendshipLevel,10)-1);
+  const zero=royal(own(options,'pokerEvents')?{pokerEvents:options.pokerEvents}:{},options.now);
+  check(!s.job,'Claim the existing workshop job before giving another card.');check(options.now>=s.availableAt||cooldownBypassed(s,options.now,zero),'Emerald workshop is cooling down after completion.');check(options.now<=MAX_TIME-workMs-COOLDOWN_MS,'Workshop completion timestamp would overflow.');
   check(cardId(options.cardId),'Choose an owned playing-card id.');const card=r.cards.find(c=>String(c.id)===String(options.cardId));check(card,'That playing card is not owned or is unavailable.');check(s.sequence<Math.floor(Number.MAX_SAFE_INTEGER/2),'Workshop sequence overflow.');
   const rolls=dice(options.rolls),level=P.progress(options.progress,options.actualLevel).level>=10?10:9,input=cardData(card),result=transform(input,level,rolls),id=String(card.id);
   for(const key of ['cards','hand','drawPile','discardPile'])r[key]=r[key].filter(c=>String(c.id)!==id);

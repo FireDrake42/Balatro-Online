@@ -21,15 +21,25 @@
     if (!POT) throw new TypeError('The pure potion model is required for potion-aware passive XP.');
     return POT.normalize(profile.potions);
   }
+  function profileXpConfig(profile, now, config) {
+    // Keep existing potion/Joker/native wall-session policy. Only the optional
+    // whole-PROFILE event ledger supplies new event authority, never read defaults.
+    PG.pokerXpMultiplier(config,Math.floor(now));
+    var out=Object.assign({},config);delete out.pokerXpMultiplier;
+    if(record(profile)&&own(profile,'emeraldPokerEvents'))out.pokerEvents=pauseData(profile,'emeraldPokerEvents');
+    if(own(out,'pokerEvents'))out.now=Math.floor(now);
+    PG.pokerEffects(out,Math.floor(now));return out;
+  }
   function xpConfigAt(config, state, now) {
     // The whole profile's historical ledger, never a current Exp snapshot, owns passive payouts.
     var out = Object.assign({}, config);
-    delete out.potionState; delete out.now; out.xpSource='passive';
-    if (state !== undefined) { out.potionState = state; out.now = Math.floor(now); }
+    delete out.potionState; delete out.now; delete out.pokerXpMultiplier; out.xpSource='passive';
+    if (state !== undefined) out.potionState = state;
+    if (state !== undefined || own(out,'pokerEvents')) out.now=Math.floor(now);
     return out;
   }
   function rateWithEffects(p, rate, effects, config) {
-    return (effects.knowledgeXpPerSecond === 1 ? 1 : level(p) >= 20 ? 0 : rate.baseXp * (level(p) >= 15 ? 2 : 1) * effects.xpMultiplier) * PG.jokerXpMultiplier(config) * PG.earnedXpMultiplier(level(p));
+    return (effects.knowledgeXpPerSecond === 1 ? 1 : level(p) >= 20 ? 0 : rate.baseXp * (level(p) >= 15 ? 2 : 1) * effects.xpMultiplier) * PG.jokerXpMultiplier(config) * PG.earnedXpMultiplier(level(p)) * PG.pokerXpMultiplier(config);
   }
   function copyReceipts(source) {
     if (!record(source)) throw new RangeError('Invalid passive cooldown potion receipts.');
@@ -113,9 +123,10 @@
       sessionsStarted: 0, sessionsCompleted: 0, completionCounted: false};
   }
   function normalize(existing) {
-    var s = create(), pause;
+    var s = create(), pause, pokerTick;
+    if(record(existing)&&own(existing,'pokerTick')){pokerTick=pauseData(existing,'pokerTick');pauseRecord(pokerTick,['at','multiplier']);if(!safeTimestamp(pokerTick.at)||(pokerTick.multiplier!==1&&pokerTick.multiplier!==2))throw new RangeError('Invalid passive Poker tick snapshot.');pokerTick={at:pokerTick.at,multiplier:pokerTick.multiplier};}
     if (record(existing) && own(existing, 'powerPause')) pause = copyPowerPause(pauseData(existing, 'powerPause'));
-    if (!record(existing) || (existing.version !== 1 && existing.version !== 2 && existing.version !== 3)) return s;
+    if (!record(existing) || (existing.version !== 1 && existing.version !== 2 && existing.version !== 3)) {if(pokerTick)throw new RangeError('Poker tick needs a valid passive session.');return s;}
     if (pause) s.powerPause = pause;
     var version = existing.version, oldInterval = version === 1 ? 10000 : TICK_MS;
     if (own(existing, 'cooldownPotionReceipts')) s.cooldownPotionReceipts = copyReceipts(existing.cooldownPotionReceipts);
@@ -165,6 +176,7 @@
         s.cooldownPotionAnchorAt = existing.cooldownPotionAnchorAt;
       }
     }
+    if(pokerTick){if(!hasSession(s)||s.completionCounted||pokerTick.at!==s.startedAt+s.creditedMs||s.creditedMs>=s.sessionDurationMs)throw new RangeError('Poker tick must match the ONE pending passive left edge.');s.pokerTick=pokerTick;}
     return s;
   }
   function hasSession(s) { return s.sequence > 0 && s.sessionDurationMs > 0 && s.endsAt > s.startedAt; }
@@ -233,17 +245,17 @@
     // Anchor to the historical end, not this poll. Potion deadlines only shrink;
     // expiry/replacement cannot lengthen a wait that was already committed.
     var effects = effectsAt(state, now), cooldown = cooldownView(p, s, end, state);
-    var cooldownMs = cooldown.cooldownMs, cooldownUntil = cooldown.cooldownUntil;
-    var coolingDown = unlocked && session && !active && now < cooldownUntil;
+    var zeroCooldowns=PG.pokerEffects(xpConfig,Math.floor(now)).zeroCooldowns&&(!session||now>=end),cooldownMs = zeroCooldowns?0:cooldown.cooldownMs, cooldownUntil = cooldown.cooldownUntil;
+    var coolingDown = unlocked && session && !active && !zeroCooldowns && now < cooldownUntil;
     var elapsed = session ? Math.min(duration, Math.max(0, now - s.startedAt)) : 0;
     // This read-only estimate uses the current rate. Settlement re-evaluates it
     // after every own level-up, so a catch-up batch can cross rate/duration tiers.
     var pending = unlocked && session && !s.completionCounted ? Math.floor(Math.max(0, elapsed - s.creditedMs) / rate.intervalMs) : 0;
     var maxTicks = session ? s.creditedTicks + (s.completionCounted ? 0 : Math.floor((duration - s.creditedMs) / rate.intervalMs)) : Math.floor(duration / rate.intervalMs);
     var result = {unlocked: unlocked, active: active, ready: unlocked && !active && !coolingDown,
-      coolingDown: coolingDown, cooldownMs: cooldownMs, cooldownUntil: cooldownUntil,
+      coolingDown: coolingDown, cooldownMs: cooldownMs, cooldownUntil: cooldownUntil, zeroCooldowns:zeroCooldowns,
       baseCooldownMs: cooldown.baseCooldownMs, committedCooldownMs: cooldown.committedCooldownMs, cooldownPotionApplied: cooldown.cooldownPotionApplied,
-      cooldownMultiplier: effects.cooldownMultiplier, nextCooldownMs: cooldown.baseCooldownMs * effects.cooldownMultiplier,
+      cooldownMultiplier: effects.cooldownMultiplier, nextCooldownMs: zeroCooldowns?0:cooldown.baseCooldownMs * effects.cooldownMultiplier,
       cooldownRemainingMs: coolingDown ? Math.max(0, cooldownUntil - now) : 0,
       remainingMs: active ? Math.min(duration, Math.max(0, end - now)) : 0,
       nextTickMs: active && s.creditedMs + rate.intervalMs <= duration ? Math.max(0, s.startedAt + s.creditedMs + rate.intervalMs - now) : 0,
@@ -267,13 +279,13 @@
   }
   function status(profile, now, xpConfig) {
     if (!nonnegative(now)) throw new RangeError('Passive XP time must be a finite non-negative timestamp.');
-    return view(record(profile) ? profile.progression : null, normalize(record(profile) ? profile.passiveXp : null), now, potionState(profile), xpConfig);
+    return view(record(profile) ? profile.progression : null, normalize(record(profile) ? profile.passiveXp : null), now, potionState(profile), profileXpConfig(profile,now,xpConfig));
   }
   function validate(profile, now, xpConfig) {
     if (!record(profile) || !record(profile.progression)) return failure('invalid-profile', 'A full profile with progression is required.');
     if (!nonnegative(now)) return failure('invalid-time', 'Passive XP time must be a finite non-negative timestamp.');
     if (level(profile.progression) < UNLOCK_LEVEL) return failure('locked', 'Passive XP unlocks at player level 9.');
-    try { PG.cost(1, xpConfig); } catch (error) { return failure('invalid-config', error.message); }
+    try { PG.cost(1, profileXpConfig(profile,now,xpConfig)); } catch (error) { return failure('invalid-config', error.message); }
     try { potionState(profile); normalize(profile.passiveXp); } catch (error) { return failure('invalid-potions', error.message); }
     return null;
   }
@@ -299,6 +311,7 @@
         // exactly 120 XP, never 119, even when first polled after expiry.
         var tickTime = s.startedAt + s.creditedMs, effects = effectsAt(state, tickTime);
         var tickConfig = xpConfigAt(xpConfig, state, tickTime);tickConfig.jokerXpMultiplier=historicalJoker(s,tickTime);
+        if(s.pokerTick&&s.pokerTick.at===tickTime)tickConfig.pokerXpMultiplier=s.pokerTick.multiplier;
         var excluded = powerExcluded(s, tickTime);
         // Recorded power-off seconds consume the existing paid-time cursor with
         // zero new XP, just like ordinary zero-base ticks at actual level20+.
@@ -307,7 +320,7 @@
         p.xp = cleanXp(p.xp); p.totalXp = cleanXp(p.totalXp);
         PG.addXp(p, 0, undefined, tickConfig);
         p.xp = cleanXp(p.xp); p.totalXp = cleanXp(p.totalXp);
-        s.creditedMs += interval; paidMs += interval; s.creditedTicks++; ticks++;
+        s.creditedMs += interval; paidMs += interval; s.creditedTicks++; ticks++;delete s.pokerTick;
         // Future payouts use the current level's rate from this paid-time cursor.
         // Legacy 10s payout counts and paid milliseconds are never reset/replayed.
         setRate(s, rateForLevel(level(p)));
@@ -347,6 +360,7 @@
     if (!safeTimestamp(now)) return failure('invalid-time', 'Supply a safe passive power boundary timestamp.');
     if (typeof paused !== 'boolean') return failure('invalid-power', 'Passive power pause must be boolean.');
     var invalid = validate(profile, now, xpConfig); if (invalid) return invalid;
+    xpConfig=profileXpConfig(profile,now,xpConfig);
     var p = Object.assign({}, profile.progression), s = normalize(profile.passiveXp), state = potionState(profile);
     try {
       // An explicit boundary without an existing session cannot initialize a
@@ -384,6 +398,7 @@
   function poll(profile, now, xpConfig) {
     var invalid = validate(profile, now, xpConfig);
     if (invalid) return invalid;
+    xpConfig=profileXpConfig(profile,now,xpConfig);
     var p = Object.assign({}, profile.progression), s = normalize(profile.passiveXp), state = potionState(profile);
     try {
       if (powerPaused(s)) return powerResult(p, s, now, xpConfig, state, false);
@@ -391,9 +406,32 @@
       commit(profile, p, s); return result;
     } catch (error) { return failure('overflow', error.message); }
   }
+  function checkpointPokerEvents(profile, now, xpConfig) {
+    // Explicit atomic-proposal boundary BEFORE replacing Full House's raw window.
+    // Native poll's existing bounded wall-session policy is unchanged (it is not
+    // EI/PM's foreground clock). No separate write and no second elapsed stream.
+    if(!record(profile)||!record(profile.progression))return failure('invalid-profile','A complete profile is required.');
+    if(!safeTimestamp(now))return failure('invalid-time','Supply a safe Poker passive checkpoint time.');
+    try {
+      var config=profileXpConfig(profile,now,xpConfig),before=normalize(profile.passiveXp),from=level(profile.progression);
+      if(!hasSession(before)||before.completionCounted)return {ok:true,changed:false,checkpointed:false,ticks:0,baseXp:0,awardedXp:0,creditedMs:0,fromLevel:from,toLevel:from,levelsGained:0};
+      var next=Object.assign({},profile),result=poll(next,now,config);if(!result.ok)return result;
+      var s=normalize(next.passiveXp),left=s.startedAt+s.creditedMs;
+      if(hasSession(s)&&!s.completionCounted&&left<now&&left<s.endsAt&&!s.pokerTick)s.pokerTick={at:left,multiplier:PG.pokerXpMultiplier(xpConfigAt(config,potionState(profile),left),Math.floor(left))};
+      s=normalize(s);
+      // Paused native poll intentionally performs NO commit/normalization. Keep
+      // even legacy-v1 bytes in that branch; only our explicit edge may be added.
+      var stored=next.passiveXp===profile.passiveXp?Object.assign({},next.passiveXp):s;
+      if(s.pokerTick)stored.pokerTick={at:s.pokerTick.at,multiplier:s.pokerTick.multiplier};
+      var changed=JSON.stringify(stored)!==JSON.stringify(profile.passiveXp)||JSON.stringify(next.progression)!==JSON.stringify(profile.progression);
+      profile.progression=next.progression;profile.passiveXp=stored;
+      return Object.assign({},result,{changed:changed,checkpointed:!!s.pokerTick});
+    } catch(error) {return failure('invalid-poker-checkpoint',error.message);}
+  }
   function start(profile, now, xpConfig) {
     var invalid = validate(profile, now, xpConfig);
     if (invalid) return invalid;
+    xpConfig=profileXpConfig(profile,now,xpConfig);
     var p = Object.assign({}, profile.progression), s = normalize(profile.passiveXp), state = potionState(profile);
     try {
       var current = view(p, s, now, state, xpConfig);
@@ -414,7 +452,7 @@
         if (s.powerPause && s.completionCounted && s.creditedMs === s.sessionDurationMs) s.powerPause.exclusions = [];
         s.sequence++; s.sessionsStarted++; s.startedAt = now; s.endsAt = endsAt; s.sessionDurationMs = duration;
         s.creditedTicks = 0; s.creditedMs = 0; s.completionCounted = false; setRate(s, rateForLevel(level(p)));
-        delete s.jokerXpSegments;if(PG.jokerXpMultiplier(xpConfig)!==1)s.jokerXpSegments=[{at:now,multiplier:PG.jokerXpMultiplier(xpConfig)}];
+        delete s.pokerTick;delete s.jokerXpSegments;if(PG.jokerXpMultiplier(xpConfig)!==1)s.jokerXpSegments=[{at:now,multiplier:PG.jokerXpMultiplier(xpConfig)}];
         delete s.cooldownUntil; delete s.cooldownEndAt; delete s.cooldownPotionAnchorAt;
       }
       var result = Object.assign({}, settled, {started: !resumed, resumed: resumed, sequence: s.sequence,
@@ -462,5 +500,5 @@
 
   return {UNLOCK_LEVEL: UNLOCK_LEVEL, BASE_XP: 0.01, TICK_MS: TICK_MS, SESSION_MS: SESSION_MS, COOLDOWN_MS: COOLDOWN_MS, REDUCED_COOLDOWN_MS: REDUCED_COOLDOWN_MS,
     MAX_SESSION_MS: MAX_SESSION_MS, SESSION_MAX_TICKS: SESSION_MAX_TICKS, durationForLevel: durationForLevel, rateForLevel: rateForLevel, cooldownForLevel: cooldownForLevel,
-    create: create, normalize: normalize, captureJokerMultiplier:captureJokerMultiplier, status: status, start: start, poll: poll, setPowerPaused: setPowerPaused, applyCooldownPotion: applyCooldownPotion};
+    create: create, normalize: normalize, captureJokerMultiplier:captureJokerMultiplier, status: status, start: start, poll: poll, checkpointPokerEvents:checkpointPokerEvents, setPowerPaused: setPowerPaused, applyCooldownPotion: applyCooldownPotion};
 }));

@@ -22,12 +22,13 @@
   const actualPlayerLevel = value => Number.isInteger(value) && value >= 1 && value <= 100 ? value : 1;
   const tracksForPlayerLevel = actual => MUSIC_DATA && MUSIC_DATA.tracksForPlayerLevel ?
     MUSIC_DATA.tracksForPlayerLevel(actual) : TRACKS;
-  const SCENES = Object.freeze(['table', 'boss', 'final_boss', 'last_chance', 'frenzy', 'blackjack', 'baccarat', 'high-low']);
+  const SCENES = Object.freeze(['table', 'boss', 'final_boss', 'last_chance', 'frenzy', 'blackjack', 'baccarat', 'high-low', 'poker']);
   const sceneId = value => SCENES.includes(value) ? value : 'table';
-  const chillTableScene = value => value === 'baccarat' || value === 'high-low';
+  const chillTableScene = value => value === 'baccarat' || value === 'high-low' || value === 'poker';
   const CHILL_TABLE_TRACKS = Object.freeze({
     baccarat: Object.freeze({ id: 'baccarat_moon', name: 'Moonlit Baccarat' }),
-    'high-low': Object.freeze({ id: 'high_low_ambient', name: 'Stillwater Predictions' })
+    'high-low': Object.freeze({ id: 'high_low_ambient', name: 'Stillwater Predictions' }),
+    poker: Object.freeze({ id: 'poker_quiet_reels', name: 'Quiet Reels' })
   });
   const recordingScene = value => value !== 'frenzy' && value !== 'blackjack' && !chillTableScene(value);
   const BLACKJACK_ID = 'blackjack_playlist', BLACKJACK_NAME = 'Original Blackjack Playlist — After Hours';
@@ -37,9 +38,11 @@
   const LOOKAHEAD = 0.15, TICK_MS = 50, FX_LIMIT = 16, MUSIC_LIMIT = 36;
   const PENTATONIC = [0, 2, 4, 7, 9, 12, 14];
   const SFX_NAMES = new Set(['select', 'deselect', 'deal', 'discard', 'play', 'chip',
-    'mult', 'xmult', 'joker', 'coin', 'purchase', 'pack', 'win', 'lose', 'error', 'click', 'xp', 'money_gain', 'battery_charge']);
+    'mult', 'xmult', 'joker', 'coin', 'purchase', 'pack', 'win', 'lose', 'error', 'click', 'xp', 'money_gain', 'battery_charge',
+    'poker_select', 'poker_unselect', 'poker_level_up']);
   const COALESCE = { deal: 0.018, chip: 0.027, mult: 0.035, xmult: 0.075,
-    joker: 0.05, win: 0.25, lose: 0.25, pack: 0.12, purchase: 0.08, xp: 0.4, money_gain: 0.1, battery_charge: 0.8 };
+    joker: 0.05, win: 0.25, lose: 0.25, pack: 0.12, purchase: 0.08, xp: 0.4, money_gain: 0.1, battery_charge: 0.8,
+    poker_select: 0.045, poker_unselect: 0.045, poker_level_up: 0.55 };
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
   const number = (n, fallback) => {
     try { const v = Number(n); return Number.isFinite(v) ? v : fallback; }
@@ -456,6 +459,7 @@
   const trackId = (id, level) => tracksForPlayerLevel(actualPlayerLevel(level)).some(track => track.id === id) ? id : DEFAULTS.track;
 
   function effect(graph, name, at, options) {
+    if(name==='poker_select'||name==='poker_unselect'||name==='poker_level_up')return pokerSound(graph,name,at,options);
     if(name==='money_gain')return moneyGainSound(graph,at,options);
     if(name==='battery_charge')return batteryChargeSound(graph,at,options);
     const intensity = unit(options && options.intensity, 1);
@@ -937,7 +941,57 @@
       }
     }};
   }
-  const CHILL_TABLE_COMPOSITIONS=Object.freeze({baccarat:baccaratComposition(),'high-low':highLowComposition()});
+  const CHILL_TABLE_COMPOSITIONS=Object.freeze({baccarat:baccaratComposition(),'high-low':highLowComposition(),poker:pokerComposition()});
+
+  // Quiet Reels: original A-major/F-sharp-minor 16-bar, 72-BPM felt-lounge score.
+  // Tiny reel/detent clusters occur once per four bars, not on a casino-effects
+  // timer. They live on the music bus and inherit its scheduler, mute and pause.
+  function pokerComposition() {
+    const beat=60/72,score=[];
+    const harmony=[
+      [45,[52,56,59,61]],[42,[52,57,61,64]],[38,[54,57,61,64]],[40,[56,59,62,66]],
+      [45,[52,56,61,64]],[37,[52,56,59,64]],[38,[54,57,59,64]],[40,[54,57,59,64]],
+      [42,[52,57,61,64]],[35,[54,57,61,64]],[38,[54,57,61,66]],[40,[56,59,62,66]],
+      [45,[52,56,59,64]],[38,[54,57,61,64]],[40,[54,57,59,64]],[40,[56,59,61,64]]
+    ];
+    const hook=[[64,68],[69],[66,64],[62],[61,64],[68],[66,69],[64],
+      [69,73],[71],[69,66],[68],[64,68],[66],[64,62],[61]];
+    const add=(bar,b,type,data)=>score.push({beat:bar*4+b,bar,type,...data});
+    for(let bar=0;bar<16;bar++) {
+      const [rootNote,notes]=harmony[bar];
+      add(bar,.04,'felt_chord',{notes,length:3.25,velocity:bar%4===0?.38:.32});
+      add(bar,.02,'felt_bass',{note:rootNote,length:2.9,velocity:.36});
+      if(bar%2===0)add(bar,2.65,'felt_bass',{note:rootNote+7,length:1.05,velocity:.22});
+      hook[bar].forEach((note,i)=>add(bar,i?2.75:1.25,'felt_note',{note,length:i?1.05:1.5,velocity:i?.32:.4}));
+      if(bar%2===0)add(bar,0,'felt_pad',{notes:notes.slice(1),length:8.3,velocity:.3});
+      add(bar,2.05,'felt_brush',{velocity:.085});
+      if(bar%4===2)add(bar,2.5,'reel',{velocity:.13});
+    }
+    score.sort((a,b)=>a.beat-b.beat);
+    return {beat,loopBeats:64,score,play(graph,event,at) {
+      const type=event.type,vel=event.velocity,length=(event.length||.2)*beat;
+      const v=voice(graph,'music',at,type==='felt_chord'?-.18:type==='felt_note'?.19:type==='reel'?-.25:0,
+        type==='felt_note'?.3:type==='felt_pad'?.38:type==='reel'?.025:.14);
+      if(type==='felt_chord') {
+        const level=vel/Math.sqrt(event.notes.length);
+        event.notes.forEach((note,i)=>tone(graph,v,at+i*.012,note,length,level*.18,'piano',1450,.02,.42));
+      } else if(type==='felt_note') {
+        tone(graph,v,at,event.note,length,vel*.11,'sine',1800,.024,.5);
+        tone(graph,v,at,event.note+12.01,length*.55,vel*.012,'sine',2400,.015,.3);
+      } else if(type==='felt_bass')expandedBass(graph,v,at,event.note,vel*.65,length,'subtle_sub');
+      else if(type==='felt_pad')ambientPad(graph,v,at,event.notes,vel,length);
+      else if(type==='reel') {
+        // A soft wooden pawl, two filtered detents and a rounded tine; no jackpot,
+        // continuous spinning loop, crowd recording or reward/selection callback.
+        for(const [i,offset]of [0,.12,.27].entries()) {
+          const level=vel*(i===2?.7:1);
+          noise(graph,v,at+offset,.045,level*.052,1050+i*170,.7,false);
+          tone(graph,v,at+offset,57+i*7,.055,level*.042,'triangle',1350,.006,.25);
+        }
+        tone(graph,v,at+.31,76,.22,vel*.025,'sine',1700,.012,.3);
+      } else noise(graph,v,at,.18,vel*.075,1750,.55,false);
+    }};
+  }
 
   // Actual Level 37 is decided by the caller, never by audio reading a profile.
   // This strict, transient option selects an independent score. The original
@@ -1465,6 +1519,21 @@
   // mute/volume/hidden guards. No track selection or music scheduling changes.
   function batteryChargeSound(target,at,options){const v=voice(target,'fx',at,0,.1),intensity=unit(options&&options.intensity,1);tone(target,v,at,76,.09,.065*intensity,'sine',1800,.006,.35);tone(target,v,at+.035,83,.10,.035*intensity,'triangle',2200,.006,.35);return v;}
   function batteryCharge(){return sfx('battery_charge');}
+  // Poker actions are explicit, original motifs on the ordinary guarded SFX bus.
+  // Callers own durable action/level-up checks; audio never reads state or saves.
+  function pokerSound(target,name,at,options) {
+    const v=voice(target,'fx',at,0,.1),intensity=unit(options&&options.intensity,1);
+    const notes=name==='poker_select'?[[0,73,.095,.06],[.035,76,.12,.035]]:
+      name==='poker_unselect'?[[0,71,.085,.05],[.04,69,.13,.035]]:
+      [[0,57,.38,.055],[.095,64,.38,.05],[.19,69,.42,.05],[.285,73,.43,.043],[.38,76,.58,.04]];
+    for(const [offset,note,length,level]of notes)
+      tone(target,v,at+offset,note,length,level*intensity,'sine',2100,.009,.4);
+    return v;
+  }
+  function setScene(nextScene){return configure({scene:nextScene});}
+  function pokerSelect(){return sfx('poker_select');}
+  function pokerUnselect(){return sfx('poker_unselect');}
+  function pokerLevelUp(){return sfx('poker_level_up');}
   function status() {
     const tableTrack = chillTableScene(scene) ? CHILL_TABLE_TRACKS[scene] : null;
     const effectiveTrack = tableTrack?tableTrack.id:scene==='blackjack'?BLACKJACK_ID:playingMusic ? activeTrackId : effectiveId(prefs.track,!!bufferFor(prefs.track));
@@ -1586,6 +1655,6 @@
     } catch (error) { disposeGraph(offlineGraph); return Promise.reject(error); }
   }
 
-  root.BOAudio = Object.freeze({ configure, unlock, sfx, moneyGain, batteryCharge, cancelEffects, status, close,
+  root.BOAudio = Object.freeze({ configure, unlock, sfx, moneyGain, batteryCharge, setScene, pokerSelect, pokerUnselect, pokerLevelUp, cancelEffects, status, close,
     tracks: TRACKS, tracksForPlayerLevel, renderOffline });
 })(typeof window !== 'undefined' ? window : globalThis);

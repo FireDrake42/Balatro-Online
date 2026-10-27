@@ -9,6 +9,18 @@
   // The absent-model fallback only keeps historical vanilla UMD consumers valid.
   // Potion actions require BOPotions, loaded before this engine in the browser.
   var NO_POTIONS={potionId:null,xpMultiplier:1,luckMultiplier:1,cardMult:0,cardChips:0,roundMoney:0,interestDivisor:5,baseCritChance:0,knowledgeXpPerSecond:null,cooldownMultiplier:1,daylightMult:0,planetBonusLevels:0,allSuits:false,bossDisableChance:0,handSizeBonus:0,xpCostMultiplier:1,gamingHP:null,scoringDurationMultiplier:1};
+  // Event authority is transient host context, NEVER a run/Joker field. A copied
+  // atomic draft inherits it privately; nested scopes restore their exact parent.
+  var pokerContexts=new WeakMap();
+  function withPokerEvents(s,context,fn) {
+    check(s&&typeof s==='object'&&typeof fn==='function','Supply a run and synchronous native Poker-event callback.');
+    check(context&&typeof context==='object'&&[Object.prototype,null].includes(Object.getPrototypeOf(context)),'Invalid Poker event context.');
+    var keys=Reflect.ownKeys(context),out={};check(keys.length===2,'Supply only Poker XP and score snapshots.');
+    keys.forEach(function(k){var d=Object.getOwnPropertyDescriptor(context,k);check(['pokerXpMultiplier','pokerScoreMultiplier'].includes(k)&&d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')&&(d.value===1||d.value===2),'Poker event snapshots must be enumerable 1 or 2 data fields.');out[k]=d.value;});
+    var previous=pokerContexts.get(s);pokerContexts.set(s,Object.freeze(out));
+    try {var result=fn();check(!(result&&(typeof result==='object'||typeof result==='function')&&'then' in result),'Poker event callbacks must be synchronous.');return result;}
+    finally {if(previous)pokerContexts.set(s,previous);else pokerContexts.delete(s);}
+  }
   // Optional Frenzy is strict even on legacy actions. Validate before atomic's
   // JSON clone so it cannot silently erase forged fields, accessors or undefined.
   function validateFrenzy(s) {
@@ -565,6 +577,7 @@
     check(Number.isFinite(baseXp)&&Number.isSafeInteger(s.progressSeq)&&s.progressSeq<Number.MAX_SAFE_INTEGER,'Invalid progression XP.');
     var event=Object.assign({seq:++s.progressSeq,kind:kind,baseXp:baseXp},context);
     if(s.potions)event.potionXpMultiplier=potionEffects(s).xpMultiplier;
+    var poker=pokerContexts.get(s);if(poker)event.pokerXpMultiplier=poker.pokerXpMultiplier;
     if(xpMultiplier(s)!==1)event.jokerXpMultiplier=xpMultiplier(s);
     s.progressEvents.push(event);
   }
@@ -603,14 +616,14 @@
   function refresh(s) {rebalanceJokers(s);var v=summary(s);s.handSize=v.handSize;s.jokerSlots=v.jokerSlots;s.consumableSlots=v.consumableSlots;}
   function hydrate(s) {if(s.level10Deal===undefined)s.level10Deal=false;normalizeProgression(s);if(s.potions){check(Potions,'Load the potion model before the engine.');s.potions=Potions.recover(s.potions,null);}rebalanceJokers(s);if(s.stake===undefined)s.stake='white';if(s.stakeIndex===undefined)s.stakeIndex=runStake(s).index;var map={};s.cards.forEach(function(c){map[c.id]=c;});['hand','drawPile','discardPile'].forEach(function(k){s[k]=(s[k]||[]).map(function(c){check(map[c.id],'Save contains an unknown playing card.');return map[c.id];});});refreshPrices(s);}
   function atomic(fn) {return function(s){
-    check(s&&s.version===1,'This save is not supported.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);
+    check(s&&s.version===1,'This save is not supported.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));
     try{hydrate(next);fn.apply(null,[next].concat(args));refresh(next);
       // Settle AFTER native scoring/on-play/Matador/lifecycle evaluation: this
       // dollar cannot alter Vagabond/Bull/Ox eligibility midway through a hand.
       effects.forEach(function(){addMoney(next,1);});
       if(effects.length){note(next,'Level 19: +$'+effects.length+' from '+bossById[effects[0].bossId].name+' special effect'+(effects.length===1?'':'s')+'.');refreshPendingInterest(next);}
       sortHand(next,fn===setPotionState||fn===setPlayerLevel||fn===setCoinUnlocks||fn===setLevel10Deal||fn===abandon);
-    }finally{bossEffectActions.delete(next);}
+    }finally{bossEffectActions.delete(next);pokerContexts.delete(next);}
     Object.keys(s).forEach(function(k){delete s[k];});Object.keys(next).forEach(function(k){s[k]=next[k];});return s;
   };}
   function phase(s,list) {check(list.indexOf(s.phase)!==-1,'This action is not available during '+s.phase+'.');}
@@ -1023,9 +1036,11 @@
     // Use the same finite ceiling even when the native product has saturated.
     var total=finite(Math.floor(chips*mult)),finalScoreBoost=s.progressionEnabled===true&&actualLevel>=54&&actualLevel<=100;
     if(finalScoreBoost){var baseTotal=total;total=finite(baseTotal+Math.floor(baseTotal/10));lines.push('Level 54 +10% FINAL score: '+baseTotal+' → '+total);}
+    var poker=pokerContexts.get(s),pokerScoreBoost=!!poker&&poker.pokerScoreMultiplier===2;
+    if(pokerScoreBoost){var beforePoker=total;total=finite(total*2);lines.push('Poker event X2 FINAL score: '+beforePoker+' → '+total);}
     // Keep the original final stages, battery AND final score in capped logs.
     var resultLines=deal&&lines.length>250?lines.slice(0,248).concat(lines.slice(-2)):lines.slice(0,250);
-    if((frenzyReceipt||batteryChips||finalScoreBoost)&&lines.length>250){var tail=(potion.daylightMult?1:0)+(deal?2:0)+(frenzyReceipt&&frenzyReceipt.active?1:0)+(batteryChips?1:0)+(finalScoreBoost?1:0);if(tail)resultLines=lines.slice(0,250-tail).concat(lines.slice(-tail));}
+    if((frenzyReceipt||batteryChips||finalScoreBoost||pokerScoreBoost)&&lines.length>250){var tail=(potion.daylightMult?1:0)+(deal?2:0)+(frenzyReceipt&&frenzyReceipt.active?1:0)+(batteryChips?1:0)+(finalScoreBoost?1:0)+(pokerScoreBoost?1:0);if(tail)resultLines=lines.slice(0,250-tail).concat(lines.slice(-tail));}
     var result={name:r.name,key:r.key,handLevel:lv+1,chips:chips,mult:mult,total:total,lines:resultLines};
     if(frenzyReceipt){result.scoringTriggers=scoringTriggers;result.scoringCards=scoringCards;result.frenzy=frenzyReceipt;}
     if(critEvents.length)result.critEvents=critEvents;if(critTotals)result.critTotals=critTotals;return result;
@@ -1338,7 +1353,7 @@
   function describeCard(c) {check(c&&SUIT_NAMES[c.suit],'Unknown playing card.');var lines=[(RANK_NAMES[c.rank]||c.rank)+' of '+SUIT_NAMES[c.suit]];if(c.enhancement)lines.push(ENHANCEMENTS[c.enhancement]||'Unknown enhancement.');else lines.push('Base card: +'+rankChips(c)+' Chips when scored.');if(c.edition)lines.push(EDITIONS[c.edition]||'Unknown edition.');if(c.seal)lines.push(SEALS[c.seal]||'Unknown Seal.');if(c.bonusChips)lines.push('Permanent bonus: +'+c.bonusChips+' Chips when scored.');if(c.debuffed)lines.push('Debuffed: no Chips, card effects, edition, Seal or card-triggered Joker effects.');if(c.faceDown)lines.push('Face down for this Blind.');return lines.join('\n');}
   return {version:1,decks:decks,stakes:stakes,jokers:jokers,tags:tags,planets:planets,tarots:tarots,spectrals:spectrals,vouchers:vouchers,bosses:bosses,packs:PACKS,enhancements:clone(ENHANCEMENTS),editions:clone(EDITIONS),seals:clone(SEALS),hands:clone(HANDS),
     achievements:[{id:'first_blind',name:'First Blind',description:'Win a Blind.'},{id:'ante_eight',name:'Eight Antes',description:'Defeat the Ante 8 Boss.'}],
-    validateDeckProfile:validateDeckProfile,deckDescription:deckDescription,newRun:newRun,evaluate:evaluate,preview:preview,selectionLimit:selectionLimit,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
+    validateDeckProfile:validateDeckProfile,deckDescription:deckDescription,withPokerEvents:withPokerEvents,newRun:newRun,evaluate:evaluate,preview:preview,selectionLimit:selectionLimit,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
     setHandSort:atomic(setHandSort),setLevel10Deal:atomic(setLevel10Deal),setPotionState:atomic(setPotionState),drinkPotion:atomic(drinkPotion),setCoinUnlocks:atomic(setCoinUnlocks),setPlayerLevel:atomic(setPlayerLevel),disableBossOnce:atomic(disableBossOnce),mothimAttack:atomic(mothimAttack),startBlind:atomic(startBlind),skipBlind:atomic(skipBlind),play:atomic(play),discard:atomic(discard),cashout:atomic(cashout),buy:atomic(buy),buyUse:atomic(buyUse),reroll:atomic(reroll),buyVoucher:atomic(buyVoucher),openPack:atomic(openPack),openPendingTagPack:atomic(openPendingTagPack),choosePack:atomic(choosePack),sellJoker:atomic(sellJoker),moveJoker:atomic(moveJoker),useConsumable:atomic(useConsumable),sellConsumable:atomic(sellConsumable),abandon:atomic(abandon),continueRun:atomic(continueRun),leaveShop:atomic(leaveShop),nextRound:atomic(leaveShop),rerollBoss:atomic(rerollBoss),sellValue:sellValue,
     coverage:{decks:decks.length,jokers:jokers.length,tarots:tarots.length,planets:planets.length,spectrals:spectrals.length,vouchers:vouchers.length,tags:tags.length,bosses:bosses.length,stakes:stakes.length,stickers:3},
     _test:{addJoker:function(s,id,edition){return addJoker(s,id,edition);},addConsumable:function(s,id){return addConsumable(s,id);},grantTag:function(s,id){grantTag(s,id);},generateShop:function(s){generateShop(s);},rollShopStickers:rollShopStickers,chance:chance,edition:edition,resolveJokerAbility:resolveJokerAbility,captureJokerBindings:captureJokerBindings,eachAbility:eachAbility}

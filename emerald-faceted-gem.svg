@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 64" width="80" height="64">
+ <defs>
+  <linearGradient id="stone" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b7ffdf"/><stop offset=".3" stop-color="#16c27d"/><stop offset=".68" stop-color="#03794e"/><stop offset="1" stop-color="#012e24"/></linearGradient>
+  <linearGradient id="heart" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0a5a3c"/><stop offset=".45" stop-color="#41e5a1"/><stop offset="1" stop-color="#075331"/></linearGradient>
+ </defs>
+ <path d="M13 3H61L77 19V45L61 61H13L1 45V19Z" fill="#001b15" stroke="#063d29" stroke-width="2"/>
+ <polygon points="15,6 59,6 73,20 73,44 59,58 15,58 4,44 4,20" fill="url(#stone)" stroke="#7af7bd" stroke-width="1.2"/>
+ <polygon points="15,6 59,6 52,17 21,17" fill="#c0ffe1" fill-opacity=".86"/>
+ <polygon points="59,6 73,20 61,25 52,17" fill="#79f6b3"/>
+ <polygon points="73,20 73,44 61,39 61,25" fill="#0b915c"/>
+ <polygon points="73,44 59,58 52,47 61,39" fill="#004a36"/>
+ <polygon points="59,58 15,58 21,47 52,47" fill="#037c48"/>
+ <polygon points="15,58 4,44 15,39 21,47" fill="#19b873"/>
+ <polygon points="4,44 4,20 15,25 15,39" fill="#00553e"/>
+ <polygon points="4,20 15,6 21,17 15,25" fill="#59e8ab"/>
+ <polygon points="21,17 52,17 61,25 61,39 52,47 21,47 15,39 15,25" fill="url(#heart)" stroke="#90ffd2" stroke-opacity=".7"/>
+ <path d="M21 17L52 47M52 17L21 47M15 25H61M15 39H61" fill="none" stroke="#b4ffdf" stroke-opacity=".24" stroke-width=".8"/>
+ <path d="M17 8H56M6 21V41M23 19H49" fill="none" stroke="#effff6" stroke-opacity=".9"/>
+</svg>

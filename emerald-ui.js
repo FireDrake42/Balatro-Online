@@ -48,7 +48,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   function suppressAutomatic(){turnSource='manual';autoDone=true;autoVisibleMs=0;wasEligible=false}
   function gameContext(s){return root.BOEmerald?.visible(s)===true}
   function allowed(s){const model=root.BOEmerald;return !!model&&(model.presentationVisible?model.presentationVisible(s):model.visible(s))&&!root.document.hidden}
-   function cardTable(s){return s?.page==='home'&&['blackjack','baccarat','high-low'].includes(s.section)}
+   function cardTable(s){return s?.page==='home'&&['blackjack','baccarat','high-low','poker'].includes(s.section)}
    function trim(map){if(map.size>128)map.delete(map.keys().next().value)}
    function tableSpeech(s){const c=s.cardGame,key=JSON.stringify([s.identity,s.section,c?.roundId||c?.round?.id||'ready',c?.revision||0,c?.phase||'',s.language,s.gamesEnabled!==false,s.backgroundEnabled!==false,s.gameJustCompleted===true]);if(key!==gameSpeechKey){gameSpeechKey=key;let invite=false;const roundKey=JSON.stringify([s.identity,s.section,c?.roundId||c?.round?.id]);if(attentive?.completion(s)&&s.gameJustCompleted===true){if(!seenInvitations.has(roundKey)){try{seenInvitations.set(roundKey,s.backgroundEnabled!==false&&attentive.kindness(s)>=120&&attentive.invitation(()=>root.crypto.getRandomValues(new Uint32Array(1))[0]))}catch(_){seenInvitations.set(roundKey,false)}trim(seenInvitations)}invite=seenInvitations.get(roundKey)}const presentation=s.gameJustCompleted===true?s:{...s,cardGame:c?{...c,dealing:true}:c};gameSpeechText=attentive?.gameSpeech(presentation,invite)||s.gameMessage||''}return gameSpeechText}
    function pointTo(entry,s){if(!entry?.target){for(const target of document.querySelectorAll('.emerald-visible-target'))target.classList.remove('emerald-visible-target');return}if(!photo||pointedKey===entry.id)return;pointedKey=entry.id;const attribute=entry.target.kind==='joker'?'data-joker-uid':'data-card',target=Array.from(document.querySelectorAll('['+attribute+']')).find(node=>node.getAttribute(attribute)===entry.target.id&&node.getClientRects().length);if(!target)return;for(const previous of document.querySelectorAll('.emerald-visible-target'))previous.classList.remove('emerald-visible-target');target.classList.add('emerald-visible-target');if(!['left','right','below'].includes(s.placement)&&attentive?.motion(s)!==false&&!root.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches){const from=photo.getBoundingClientRect(),to=target.getBoundingClientRect();if(to.bottom>0&&to.top<root.innerHeight){const transform='translate('+(to.left+to.width/2-from.left-from.width/2)+'px,'+(to.top-from.top)+'px)';photo.animate?.([{transform:'translate(0,0)'},{transform,offset:.3},{transform,offset:.75},{transform:'translate(0,0)'}],{duration:900,easing:'ease-out'})}}}
@@ -179,6 +179,9 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   }
   function update(force=true){if(destroyed)return;let s;const at=now();try{s=host.state()}catch(_){s=null}latestState=s;checkContext(s,at);if(root.BOEmerald)cycleAuto(s,at);
    if(root.BOEmerald)updateFrenzy(s);
+   // These four are Emerald's own tables: their single playing portrait owns speech.
+   // Keep all personal Balatro placement/following/automatic-speech state untouched.
+   if(cardTable(s)){remove();wasEligible=false;autoWasEligible=false;lastObserved=at;return}
    if(!allowed(s)||!document.querySelector('#app')||!root.BOEmeraldAsset){remove();wasEligible=false;autoWasEligible=false;lastObserved=at;return}
    refresh(s);
    if(nextAt===null){cursor=0;const first=entries[0];if(first)begin({...first,kind:'entry'},s,at,gameContext(s)?'automatic':'manual');else{nextAt=at+COOLDOWN;lastSpeechAt=at}}

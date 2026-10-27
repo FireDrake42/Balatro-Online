@@ -1,11 +1,15 @@
 /* Pure, optional RUN-owned Passive Money v1/v2. No storage, clocks, timers, DOM,
- * PROFILE, potion, Wallet, XP or RNG dependencies. Explicit start alone creates
+ * potion, Wallet, XP or RNG dependencies. Explicit start alone creates
  * RUN.passiveMoney. All commands propose a whole RUN clone; failures do not
  * mutate their input. Ordinary current-run Bank is RUN.money.
  *
- * start/create(run, actualLevel, now, {pauseClock:true} [optional]),
- * poll(run, actualLevel, now, observedMs), setPaused(run, level, now, paused, observedMs)
+ * start/create(run, actualLevel, now, {pauseClock:true} [optional], context?),
+ * poll(run, actualLevel, now, observedMs, context?),
+ * setPaused(run, level, now, paused, observedMs, context?), status(run, level, now, context?)
  * -> {run, result:{ok,changed,awardedCents,earnedMs,code,status,...}}.
+ * Optional pure context is ONLY {pokerEvents}, evaluated at the supplied absolute
+ * now. Royal virtually bypasses EXPIRED-session manual restart cooldown only;
+ * no active/paused restart, saved deadline rewrite, rate change or auto start.
  * status is read-only. normalize(undefined) is null; invalid state throws;
  * validate accepts the optional undefined case and otherwise returns boolean.
  *
@@ -16,9 +20,9 @@
  */
 (function (root, factory) {
   'use strict';
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.BOPassiveMoney = factory();
-}(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./emerald-poker-events'));
+  else root.BOPassiveMoney = factory(root.BOEmeraldPokerEvents);
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (E) {
   'use strict';
   const VERSION = 1, PAUSE_VERSION = 2, UNLOCK_LEVEL = 40, TICK_MS = 1000, MAX_TIME = Number.MAX_SAFE_INTEGER;
   const PHASES = Object.freeze(['select', 'play', 'cashout', 'shop', 'pack']);
@@ -110,45 +114,56 @@
     return {run:r, state:normalize(own(r, 'passiveMoney') ? r.passiveMoney : undefined)};
   }
   function usable(run) { return PHASES.includes(run.phase) && run.abandoned !== true; }
-  function view(run, s, actualLevel, now, tier) {
+  function effectsAt(context, now) {
+    if (context === undefined) return {zeroCooldowns:false};
+    const keys = dataKeys(context);
+    check(keys.every(key => key === 'pokerEvents'), 'invalid-context', 'Supply only an optional Poker event ledger.');
+    if (!own(context, 'pokerEvents')) return {zeroCooldowns:false};
+    check(E && typeof E.effectsAt === 'function', 'missing-events', 'The Poker events model is required for event authority.');
+    return E.effectsAt(Object.getOwnPropertyDescriptor(context, 'pokerEvents').value, now);
+  }
+  function view(run, s, actualLevel, now, tier, effects) {
     const unlocked = actualLevel >= UNLOCK_LEVEL, eligibleRun = usable(run), rollback = !!s && now < s.lastAt;
     const paused = !!s && s.version === PAUSE_VERSION && s.pausedAt !== null;
     const at = s ? paused ? s.pausedAt : rollback ? s.lastAt : now : now;
     const sessionRemainingMs = s && !s.settled ? Math.max(0, s.endsAt - at) : 0;
     const active = unlocked && eligibleRun && !!s && !paused && !s.settled && !rollback && at < s.endsAt;
-    const coolingDown = !!s && at >= s.endsAt && at < s.cooldownEndsAt;
+    // Saved native cooldown/deadlines remain authoritative after event expiry.
+    // The event changes only present manual readiness AFTER the original end.
+    const zeroCooldowns = effects.zeroCooldowns && !paused && !rollback && (!s || now >= s.endsAt);
+    const coolingDown = !!s && !zeroCooldowns && at >= s.endsAt && at < s.cooldownEndsAt;
     return {ok:true, unlocked, eligibleRun, active, paused, hasSession:!!s, legacyClock:!!s && s.version === VERSION,
-      sessionRemainingMs, ready:unlocked && eligibleRun && !paused && !rollback && (!s || at >= s.cooldownEndsAt),
-      coolingDown, clockRollback:rollback, expired:!!s && at >= s.endsAt, settled:!!s && s.settled,
+      sessionRemainingMs, ready:unlocked && eligibleRun && !paused && !rollback && (!s || at >= s.cooldownEndsAt || zeroCooldowns),
+      coolingDown, zeroCooldowns, clockRollback:rollback, expired:!!s && at >= s.endsAt, settled:!!s && s.settled,
       sequence:s ? s.sequence : 0, startedAt:s ? s.startedAt : 0, endsAt:s ? s.endsAt : 0,
       cooldownEndsAt:s ? s.cooldownEndsAt : 0, durationMs:s ? s.durationMs : tier.durationMs,
-      cooldownMs:s ? s.cooldownMs : tier.cooldownMs, nextDurationMs:tier.durationMs, nextCooldownMs:tier.cooldownMs,
+      cooldownMs:zeroCooldowns ? 0 : s ? s.cooldownMs : tier.cooldownMs, nextDurationMs:tier.durationMs, nextCooldownMs:zeroCooldowns ? 0 : tier.cooldownMs,
       remainingMs:active || paused ? sessionRemainingMs : 0, cooldownRemainingMs:coolingDown ? s.cooldownEndsAt - at : 0,
       visibleMs:s ? s.visibleMs : 0, creditedCents:s ? s.creditedCents : 0,
       maxCents:(s ? s.durationMs : tier.durationMs) / TICK_MS, centsPerSecond:1};
   }
   function failure(error) { return {ok:false,changed:false,awardedCents:0,earnedMs:0,code:error.code || 'invalid-input',reason:error.message || String(error)}; }
-  function status(run, actualLevel, now) {
+  function status(run, actualLevel, now, context) {
     try { const tier = tierForLevel(actualLevel); check(clock(now), 'invalid-time', 'Supply a nonnegative safe-integer absolute timestamp.');
-      const a = inspectedRun(run); return view(a.run, a.state, actualLevel, now, tier);
+      const effects = effectsAt(context, now), a = inspectedRun(run); return view(a.run, a.state, actualLevel, now, tier, effects);
     } catch (error) { return failure(error); }
   }
-  function command(run, actualLevel, now, operation) {
+  function command(run, actualLevel, now, operation, context) {
     try {
       const tier = tierForLevel(actualLevel); check(clock(now), 'invalid-time', 'Supply a nonnegative safe-integer absolute timestamp.');
-      const a = inspectedRun(run);
+      const effects = effectsAt(context, now), a = inspectedRun(run);
       check(actualLevel >= UNLOCK_LEVEL, 'locked', 'Passive Money unlocks at actual player Level 40.');
       check(usable(a.run), 'ineligible-run', 'Passive Money needs the active, non-abandoned origin run.');
       check(!a.state || now >= a.state.lastAt, 'clock-rollback', 'The absolute clock moved backwards. No time was forced forward.');
-      const result = operation(a.run, a.state, tier);
-      result.status = view(a.run, own(a.run, 'passiveMoney') ? a.run.passiveMoney : null, actualLevel, now, tier);
+      const result = operation(a.run, a.state, tier, effects);
+      result.status = view(a.run, own(a.run, 'passiveMoney') ? a.run.passiveMoney : null, actualLevel, now, tier, effects);
       return {run:a.run, result};
     } catch (error) { return {run, result:failure(error)}; }
   }
-  function start(run, actualLevel, now, options) {
-    return command(run, actualLevel, now, (r, s, tier) => {
+  function start(run, actualLevel, now, options, context) {
+    return command(run, actualLevel, now, (r, s, tier, effects) => {
       check(options === undefined || (dataKeys(options).length === 1 && own(options, 'pauseClock') && typeof options.pauseClock === 'boolean'), 'invalid-options', 'Supply only an explicit boolean pauseClock option.');
-      check(!s || ((s.version !== PAUSE_VERSION || s.pausedAt === null) && now >= s.cooldownEndsAt), s && s.version === PAUSE_VERSION && s.pausedAt !== null ? 'paused' : s && now < s.endsAt ? 'active' : 'cooldown', 'This session is active, paused or still cooling down.');
+      check(!s || ((s.version !== PAUSE_VERSION || s.pausedAt === null) && now >= s.endsAt && (now >= s.cooldownEndsAt || effects.zeroCooldowns)), s && s.version === PAUSE_VERSION && s.pausedAt !== null ? 'paused' : s && now < s.endsAt ? 'active' : 'cooldown', 'This session is active, paused or still cooling down.');
       check(!s || s.sequence < MAX_TIME, 'sequence-overflow', 'Passive Money sequence cannot safely advance.');
       check(now <= MAX_TIME - tier.durationMs - tier.cooldownMs, 'clock-overflow', 'The captured session deadlines would overflow.');
       r.passiveMoney = {version:VERSION, sequence:s ? s.sequence + 1 : 1, startedAt:now, endsAt:now + tier.durationMs,
@@ -156,7 +171,7 @@
         lastAt:now, visibleMs:0, creditedCents:0, settled:false};
       if (options && options.pauseClock) Object.assign(r.passiveMoney, {version:PAUSE_VERSION,pausedAt:null,pausedMs:0});
       return {ok:true,changed:true,awardedCents:0,earnedMs:0,code:'started',sequence:r.passiveMoney.sequence};
-    });
+    }, context);
   }
   function cleanCentNoise(value) {
     const cents = Math.round(value * 100), nearest = cents / 100;
@@ -187,7 +202,7 @@
       'precision', 'A full cent award cannot be represented without losing existing Bank or income precision.');
     return out;
   }
-  function poll(run, actualLevel, now, observedMs) {
+  function poll(run, actualLevel, now, observedMs, context) {
     return command(run, actualLevel, now, (r, s) => {
       check(count(observedMs), 'invalid-observation', 'Observable eligible milliseconds must be a nonnegative safe integer.');
       if (!s || s.settled || (s.version === PAUSE_VERSION && s.pausedAt !== null)) return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:s && s.version === PAUSE_VERSION && s.pausedAt !== null ? 'paused' : s ? 'settled' : 'idle'};
@@ -202,18 +217,18 @@
       const changed = now !== s.lastAt || earnedMs > 0 || settled !== s.settled;
       if (changed) { s.lastAt = now; s.visibleMs = visibleMs; s.creditedCents = creditedCents; s.settled = settled; r.passiveMoney = s; }
       return {ok:true,changed,awardedCents,earnedMs,code:settled ? 'settled' : awardedCents ? 'earned' : 'observed',sequence:s.sequence};
-    });
+    }, context);
   }
   // Explicit power command only. v1 reads remain absolute and byte-preserving;
   // converting a live ledger records remaining NOW, never an invented past pause.
-  function setPaused(run, actualLevel, now, paused, observedMs = 0) {
+  function setPaused(run, actualLevel, now, paused, observedMs = 0, context) {
     return command(run, actualLevel, now, (r, s) => {
       check(typeof paused === 'boolean' && count(observedMs), 'invalid-observation', 'Supply a boolean pause and nonnegative observed milliseconds.');
       const wasPaused = !!s && s.version === PAUSE_VERSION && s.pausedAt !== null;
       if (!s || wasPaused === paused || (!wasPaused && now >= s.cooldownEndsAt))
         return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:wasPaused ? 'paused' : s ? 'unchanged' : 'idle'};
       if (paused) {
-        const proposed = poll(r, actualLevel, now, observedMs);
+        const proposed = poll(r, actualLevel, now, observedMs, context);
         check(proposed.result.ok, proposed.result.code, proposed.result.reason);
         Object.assign(r, proposed.run); s = normalize(r.passiveMoney);
         Object.assign(s, {version:PAUSE_VERSION,pausedMs:s.version === PAUSE_VERSION ? s.pausedMs : 0,pausedAt:now,lastAt:now});
@@ -225,7 +240,7 @@
       s.pausedMs += gap; s.endsAt += gap; s.cooldownEndsAt += gap; s.lastAt = now; s.pausedAt = null;
       r.passiveMoney = s; normalize(s);
       return {ok:true,changed:true,awardedCents:0,earnedMs:0,code:'resumed',sequence:s.sequence};
-    });
+    }, context);
   }
   return Object.freeze({VERSION,PAUSE_VERSION,UNLOCK_LEVEL,TICK_MS,MAX_TIME,PHASES,STATE_FIELDS,PAUSE_STATE_FIELDS,create:start,start,poll,setPaused,status,normalize,validate,tierForLevel,copyData});
 }));
