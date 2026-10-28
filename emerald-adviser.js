@@ -57,8 +57,21 @@
   return out;
  }
  function quotes(E,s){return quoteEntries(E,s).map(x=>x.message)}
+ // Facts from the supplied public final snapshot only. No hidden cards, deck,
+ // RNG, counterfactual outcome or invented reason for a player's choice.
+ function abandonedFeedback(s){
+  if(!s||!validLevel(s.level)||s.level<31||!s.run||(s.run.abandoned!==true&&s.abandoned!==true)||s.survey||s.protected)return [];
+  const r=s.run,out=[],lang=s.language==='es'?1:s.language==='fr'?2:0,t=(en,es,fr)=>[en,es,fr][lang],safe=n=>Number.isFinite(n)&&n>=0;
+  out.push(t('You abandoned this run; that choice does not show why the run ended.','Has abandonado esta partida; esa decisión no indica por qué terminó.','Tu as abandonné cette partie ; ce choix ne révèle pas pourquoi elle s’est terminée.'));
+  if(safe(r.ante))out.push(t('Last recorded Ante: '+number(r.ante)+'.','Última Ante registrada: '+number(r.ante)+'.','Dernière Ante enregistrée : '+number(r.ante)+'.'));
+  if(safe(r.score)&&safe(r.target)&&r.target>0)out.push(t('Recorded blind score: '+number(r.score)+' / '+number(r.target)+'; '+number(Math.max(0,r.target-r.score))+' points short at that moment.','Puntuación de la ciega registrada: '+number(r.score)+' / '+number(r.target)+'; faltaban '+number(Math.max(0,r.target-r.score))+' puntos en ese momento.','Score enregistré : '+number(r.score)+' / '+number(r.target)+' ; il manquait alors '+number(Math.max(0,r.target-r.score))+' points.'));
+  if(safe(r.hands)&&safe(r.discards))out.push(t('Resources left: '+number(r.hands)+' hands and '+number(r.discards)+' discards. Next run, compare the visible scoring preview before committing a hand.','Quedaban '+number(r.hands)+' manos y '+number(r.discards)+' descartes. En la próxima partida, compara la vista previa visible antes de jugar.','Il restait '+number(r.hands)+' mains et '+number(r.discards)+' défausses. À la prochaine partie, compare l’aperçu visible avant de jouer.'));
+  if(Number.isFinite(r.money))out.push(t('Recorded Bank: $'+number(r.money)+'. You can compare affordable shop effects with your build next time; I cannot predict an unseen draw.','Banca registrada: $'+number(r.money)+'. La próxima vez puedes comparar los efectos asequibles con tu estrategia; no puedo saber qué habría cambiado un robo oculto.','Banque enregistrée : $'+number(r.money)+'. Compare les effets abordables à ta stratégie la prochaine fois ; je ne peux pas savoir ce qu’un tirage caché aurait changé.'));
+  return out;
+ }
  function advice(E,state){const s=state||{},run=s.run;if(!visible(s))return {visible:false,messages:[],recommendation:null};
-  const messages=[],out={visible:true,messages,recommendation:null};
+  const messages=abandonedFeedback(s),out={visible:true,messages,recommendation:null};
+  if(run.abandoned===true&&s.level>=31)return out;
   if(s.faucetReady===true)messages.push('Your faucet is ready! Claim it when you want your free game coins and XP.');
   const x=s.xp;if(x&&!x.capped&&Number.isFinite(x.required)&&x.required>0&&Number.isFinite(x.remaining)&&x.remaining>0&&x.remaining<=x.required*.1)messages.push('You’re nearly leveling up — '+number(x.remaining)+' XP to go!');
   if(run.phase==='play'){
@@ -1130,20 +1143,27 @@
    else if(topic==='survey-reading')eligible=section==='surveys';
    else if(topic==='survey-context')eligible=section==='surveys'&&s.surveyCompletion?.verified===true&&typeof s.surveyCompletion.id==='string'&&Number.isSafeInteger(s.surveyCompletion.completedAt);
    if(eligible)out.push({id:source+':'+row[0],source,message:row[locale]});
-  }return out;
+  }
+  // Round-robin topic families, not dozens of near variants in a row. All
+  // authored IDs/texts remain reachable; no gameplay RNG or extra gift rolls.
+  const families=new Map();for(const entry of out){const topic=entry.id.split('l49-')[1].split('--')[0];if(!families.has(topic))families.set(topic,[]);families.get(topic).push(entry)}
+  const keys=Array.from(families.keys()),priority=phase==='shop'?'shops':game&&s.run.hands===1?'planning':null;
+  if(priority&&keys.includes(priority)){keys.splice(keys.indexOf(priority),1);keys.unshift(priority)}
+  const varied=[];for(let i=0;varied.length<out.length;i++)for(const key of keys){const entry=families.get(key)[i];if(entry)varied.push(entry)}return varied;
  }
  function speech49Support(s){return s.language==='es'?' Estoy de tu lado: tómate tu tiempo.':s.language==='fr'?' Je suis de ton côté : prends ton temps.':' I’m on your side — take your time.'}
-function catalog(E,s,preference){if(s?.looker===true){const r=looker(E,s);return r?[{id:'looker:'+r.ids.map(String).join(','),source:'looker',message:r.message}]:[]}if(!presentationVisible(s)||scoringFrenzyVisible(s))return [];const t=tips(preference===undefined?s.tips:preference),out=[];
+function mixedCatalog(out,s,t){const extra=speech49Entries(s,t);if(!extra.length)return out;const mixed=[];for(let i=0;i<Math.max(out.length,extra.length);i++){if(out[i])mixed.push(out[i]);if(extra[i])mixed.push(extra[i])}return mixed}
+ function catalog(E,s,preference){if(s?.looker===true){const r=looker(E,s);return r?[{id:'looker:'+r.ids.map(String).join(','),source:'looker',message:r.message}]:[]}if(!presentationVisible(s)||scoringFrenzyVisible(s))return [];const t=tips(preference===undefined?s.tips:preference),out=[];
   if(!visible(s)){
    // Home/collection/settings share page='home'. Never inspect a parked run,
    // readiness, money, Frenzy or selected cards while outside its game context.
    const add=(source,id,message)=>out.push({id:source+':menu:'+id,source,message});
    if(t.first){add('first','explore','Take your time exploring the game menus — I’ll keep you company.');add('first','score','Balatro tip: Chips × Mult makes your score. Read each effect before choosing.');add('first','fictional','Everything here uses fictional game currency. Nothing can be cashed out.');}
    if(t.second){add('second','hello','I’m right here with you!');add('second','team','Your Level is Level '+s.level+', and I’m level '+ownLevel(s)+'! We make a great team!');add('second','pace','One thing at a time. You’ve got this!');}
-   out.push(...speech49Entries(s,t));return kinder(out,s);
+   return kinder(mixedCatalog(out,s,t),s);
   }
   if(t.first)advice(E,s).messages.forEach(message=>out.push({id:'first:'+message,source:'first',message}));
-  if(t.second)out.push(...quoteEntries(E,s));out.push(...speech49Entries(s,t));return kinder(out,s);
+  if(t.second)out.push(...quoteEntries(E,s));return kinder(mixedCatalog(out,s,t),s);
  }
- return Object.freeze({DEFAULT_TIPS,MAX_POOL,MAX_SELECTION,displayName,displayText,advice,number,visible,presentationVisible,scoringFrenzyVisible,validateTips,tips,publicRun,selectionLimit,frenzyInfo,royalOnTable,quotes,looker,catalog,SPEECH_49,speech49Entries});
+ return Object.freeze({DEFAULT_TIPS,MAX_POOL,MAX_SELECTION,displayName,displayText,advice,abandonedFeedback,number,visible,presentationVisible,scoringFrenzyVisible,validateTips,tips,publicRun,selectionLimit,frenzyInfo,royalOnTable,quotes,looker,catalog,SPEECH_49,speech49Entries});
 });

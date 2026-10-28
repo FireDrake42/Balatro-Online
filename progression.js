@@ -144,6 +144,14 @@
         table[Number(key) - 1] = entry.value;
       });
     }
+    // Newly unlocked future transitions only. Keep the Level40 reduction at50+;
+    // reaching50 (outgoing49) alone is exempt. Earlier earned levels/totalXP
+    // are never reconstructed, reset or refunded. Apply after final old prices.
+    table = table.map(function (required, index) {
+      if (required === null) return null;
+      if (index >= 39 && index !== 48) required = Math.max(1, Math.floor(required / 10) * 8 + Math.ceil((required % 10) * 8 / 10));
+      return index >= 49 ? discountCost(required) : required;
+    });
     var baseCosts = table.slice(), effects = potionContext(config).effects;
     if (effects.xpCostMultiplier === 0.9) table = table.map(discountCost);
     table.baseCosts = baseCosts;
@@ -166,6 +174,25 @@
     return {required: table[p.level - 1], interestCostMultiplier: 1};
   }
   function manualXpMultiplier(level,config) {return level>=22&&(!record(config)||config.xpSource!=='passive')?1.2:1;}
+  // An absent/other source is deliberately NOT Balatro: surveys, passive XP,
+  // faucet, offers and companion tables retain their independent policies.
+  function balatroXpMultiplier(level,config) {return level>=31&&record(config)&&(config.xpSource==='balatro'||config.sourceKind==='balatro')?1.1:1;}
+  function extraRewardMultiplier(config) {
+    var m=record(config)&&own(config,'extraRewardMultiplier')?optionalData(config,'extraRewardMultiplier'):1;
+    if(m!==1&&m!==6)throw new RangeError('The timed extra XP multiplier must be 1 or 6.');
+    if(m===1)return 1;
+    var kind=record(config)&&own(config,'sourceKind')?optionalData(config,'sourceKind'):null;
+    if(typeof kind!=='string'||!/^[a-z][a-z0-9:-]{0,63}$/.test(kind))throw new TypeError('Extra XP requires a canonical sourceKind.');
+    // Never boost Emerald Poker (including strict/derived sub-kinds) or either
+    // explicitly excluded Triple outcome. Double-seven is intentionally eligible.
+    if(/^(?:emerald-poker|poker|strict-poker)(?:$|[-:])/.test(kind)||/^(?:slots[-:])?triple-(?:emerald|seven|7)(?:$|[-:])/.test(kind))return 1;
+    return m;
+  }
+  function coinSourceMultiplier(config) {
+    var m=record(config)&&own(config,'coinSourceMultiplier')?optionalData(config,'coinSourceMultiplier'):1;
+    if(m!==1&&m!==1.7)throw new RangeError('The timed coin multiplier must be 1 or 1.7.');
+    return m;
+  }
   // New earned rewards only: never double a stored bank, cost/refund or an
   // already-final capped payment. Evaluate before this award can level up.
   function earnedXpMultiplier(level) {validLevel(level);return level>=52?2:1;}
@@ -177,7 +204,10 @@
       selectionLimit: level >= 35 ? 6 : 5, handSizeBonus: level >= 43 ? 1 : 0,
       numberSuffixes: level >= 7, passiveXp: level >= 9, themes: level >= 10, potions: level >= 12, bossDisable: false,
       xpMultiplier: level >= 15 ? 2 : 1, luckMultiplier: level >= 17 ? 1.25 : 1,
-      enhancedLevelsUI: level >= 18, bossEffectMoney: level >= 19 ? 1 : 0,
+      enhancedLevelsUI: level >= 18, bossEffectMoney: 0, packOptionBonus: level >= 19 ? 1 : 0,
+      runStartingMoneyBonus: level >= 6 ? 1 : 0, balatroXpMultiplier: level >= 31 ? 1.1 : 1,
+      potionSlots: level >= 47 ? 4 : level >= 40 ? 3 : 2, stockDurationMs: level >= 40 ? 60000 : 600000,
+      richerStats: level >= 34, richerProgress: level >= 40, captchaCharacters: level >= 40 ? 5 : 6,
       bossBonusHands: level >= 20 ? 1 : 0, bossBonusDiscards: level >= 20 ? 1 : 0,
       stockMarket: level >= 21, casinoTrack: level >= 24, moreTracks:level>=27, faucet: level >= 25, faucetNotifications:level>=28,
       animationDurationMultiplier:level>=22?.8:1,manualXpMultiplier:level>=22?1.2:1,roundCashoutBonus:level>=23?1:0,shopDiscount:level>=24?1:0,
@@ -456,7 +486,10 @@
       commit(p, draft);
       return Object.assign(summary(draft, fromLevel, 0, table), {baseXp: baseXp, duplicate: true});
     }
-    var multiplier = fixedAward ? 1 : (draft.level >= 15 ? 2 : 1) * potionContext(config).effects.xpMultiplier * jokerXpMultiplier(config) * manualXpMultiplier(draft.level,config) * earnedXpMultiplier(draft.level) * pokerXpMultiplier(config);
+    var multiplier = fixedAward ? 1 : (draft.level >= 15 ? 2 : 1) * potionContext(config).effects.xpMultiplier * jokerXpMultiplier(config) * manualXpMultiplier(draft.level,config) * balatroXpMultiplier(draft.level,config) * earnedXpMultiplier(draft.level) * pokerXpMultiplier(config);
+    // Apply a host-confirmed timed reward ONCE, even to already-capped final
+    // interest. Legacy callers stay final; source exclusions remain mandatory.
+    multiplier *= extraRewardMultiplier(config);
     var earned = award(draft, baseXp, multiplier, table);
     if (eventId !== undefined) {
       if (!draft.receipts) draft.receipts = {};
@@ -466,7 +499,8 @@
     return Object.assign(summary(draft, fromLevel, earned, table), {baseXp: baseXp, duplicate: false});
   }
   function addXp(p, baseXp, eventId, config) { return addXpWithPolicy(p, baseXp, eventId, config, false); }
-  // Explicit FINAL awards (notably capped compound interest) are not multiplied.
+  // Explicit FINAL awards retain normal caps/policies; only the separately
+  // supplied, source-checked timed6x hook can multiply that finalized payment.
   function addAwardedXp(p, awardedXp, eventId, config) { return addXpWithPolicy(p, awardedXp, eventId, config, true); }
   // Raw, already-source-scaled earnings such as Hi-Lo/Knowledge get only the
   // new level52 bonus, not the level15/manual/potion multipliers a second time.
@@ -530,7 +564,7 @@
       }
       if (event.seq !== cursor + 1) throw new RangeError('Missing progression event sequence ' + (cursor + 1) + '; no events applied.');
       // Capture this BEFORE the current Boss receipt can release banked XP.
-      var multiplier = (draft.level >= 15 ? 2 : 1) * (own(event, 'potionXpMultiplier') ? event.potionXpMultiplier : 1) * jokerXpMultiplier(event) * manualXpMultiplier(draft.level) * earnedXpMultiplier(draft.level) * pokerXpMultiplier(event);
+      var multiplier = (draft.level >= 15 ? 2 : 1) * (own(event, 'potionXpMultiplier') ? event.potionXpMultiplier : 1) * jokerXpMultiplier(event) * manualXpMultiplier(draft.level) * balatroXpMultiplier(draft.level,{xpSource:'balatro'}) * earnedXpMultiplier(draft.level) * pokerXpMultiplier(event) * extraRewardMultiplier(Object.assign({},config,{sourceKind:'balatro'}));
       // A Small WIN that reaches cap through its own XP is not after-cap proof.
       // Gate opening precedes XP settlement, so existing bank/carry is released
       // by the unchanged cost policy, and never credited to two gates at once.
@@ -704,7 +738,7 @@
     if (!integer(pokerLevel,1,40)) throw new RangeError('Poker faucet level must be an integer from 1 to 40.');
     if(record(config)&&own(config,'pokerEvents')||record(playerConfig)&&own(playerConfig,'pokerEvents')) {var ledger=record(config)&&own(config,'pokerEvents')?optionalData(config,'pokerEvents'):optionalData(playerConfig,'pokerEvents');playerConfig=Object.assign({},playerConfig);playerConfig.pokerEvents=ledger;playerConfig.now=now;}
     if(record(config)&&own(config,'pokerXpMultiplier')){playerConfig=Object.assign({},playerConfig);playerConfig.pokerXpMultiplier=optionalData(config,'pokerXpMultiplier');}
-    return {table: table, incompleteRate: rate, potion: potionContext(playerConfig), poker:pokerEffects(config,now), pokerLevel:pokerLevel, pokerXp:pokerXpMultiplier(playerConfig,now), playerConfig:playerConfig, playerTable: playerCosts(playerConfig)};
+    return {table: table, incompleteRate: rate, potion: potionContext(playerConfig), poker:pokerEffects(config,now), pokerLevel:pokerLevel, pokerXp:pokerXpMultiplier(playerConfig,now), extraXp:extraRewardMultiplier(Object.assign({},record(config)&&own(config,'extraRewardMultiplier')?config:playerConfig,{sourceKind:'faucet'})), coinSource:coinSourceMultiplier(record(config)&&own(config,'coinSourceMultiplier')?config:playerConfig), playerConfig:playerConfig, playerTable: playerCosts(playerConfig)};
   }
   function claimTier(claims) {
     var limits = [80, 100, 120, 150], rates = [100, 80, 60, 40];
@@ -723,14 +757,19 @@
     var active = dailyClock(f, faucetDay(now)), daily = active.daily, runs = qualifiedRuns(f, daily.dayKey);
     var complete = runs >= TASK_REQUIRED, taskRate = complete ? 100 : settings.incompleteRate, tier = claimTier(daily.claims);
     // Exact integer rational, ONE final nearest-hundredth ROUND (positive ties up):
-    // base half-coins * 50 * task/100 * tier/100 * (100+PokerLv-1)/100 * event.
+    // base half-coins * 50 * task/100 * tier/100 * genuine timed event.
     // Bounded numerator <= 141780000; integer carry remains the native 0..49.
-    var numerator=(f.level+1)*taskRate*tier.percent*(100+settings.pokerLevel-1)*settings.poker.faucetMultiplier;
-    var reward = Math.floor((numerator+10000)/20000), carry = coinCarry(f);
+    // Poker level remains accepted metadata for old callers, never a faucet
+    // reward multiplier. Only a genuine timed Poker event can multiply it.
+    var numerator=(f.level+1)*taskRate*tier.percent*100*settings.poker.faucetMultiplier;
+    // Keep exact rational coin accounting: ×1.7 is numerator×17/10 BEFORE
+    // the sole positive-half-up hundredth rounding. Never multiply balances.
+    var coinNumerator=numerator*(settings.coinSource===1.7?17:10);
+    var reward = Math.floor((coinNumerator+100000)/200000), carry = coinCarry(f);
     var trackedEarned = f.earnedLifetimeHundredths || 0;
     var baseCooldownMs = (600 - 10 * (f.level - 1)) * 1000, effects = settings.potion.effects;
     var cooldownMs=zeroCooldowns?0:baseCooldownMs*effects.cooldownMultiplier;
-    var awardedXp = 10 * effects.xpMultiplier * jokerXpMultiplier(settings.playerConfig) * manualXpMultiplier(p.level) * earnedXpMultiplier(p.level) * settings.pokerXp;
+    var awardedXp = 10 * effects.xpMultiplier * jokerXpMultiplier(settings.playerConfig) * manualXpMultiplier(p.level) * earnedXpMultiplier(p.level) * settings.pokerXp * settings.extraXp;
     var lifetimeKnown = own(f, 'earnedLifetimeHundredths') && f.lifetimeEarningsKnown === true;
     return {
       unlocked: p.level >= 25, level: f.level, claims: f.claims, totalClaims: f.totalClaims, actualTotalClaims:f.totalClaims, pokerClaims:f.pokerClaims?f.pokerClaims.total:0, progressionClaims:shownClaims,
@@ -916,7 +955,7 @@
   }
 
   return {MAX_PLAYER_LEVEL: MAX_PLAYER_LEVEL, MAX_FAUCET_LEVEL: MAX_FAUCET_LEVEL, CAP_THRESHOLDS: CAP_THRESHOLDS,
-    create: create, normalize: normalize, buffs: buffs, jokerXpMultiplier:jokerXpMultiplier, interestCostMultiplier: interestCostMultiplier, cost: cost, addXp: addXp, addAwardedXp: addAwardedXp, addEarnedXp: addEarnedXp, earnedXpMultiplier: earnedXpMultiplier,
+    create: create, normalize: normalize, buffs: buffs, extraRewardMultiplier:extraRewardMultiplier, coinSourceMultiplier:coinSourceMultiplier, jokerXpMultiplier:jokerXpMultiplier, interestCostMultiplier: interestCostMultiplier, cost: cost, addXp: addXp, addAwardedXp: addAwardedXp, addEarnedXp: addEarnedXp, earnedXpMultiplier: earnedXpMultiplier,
     applyEvents: applyEvents, setGateMode: setGateMode, progress: progress, format: format, applyCooldownPotion: applyCooldownPotion,
     faucetCosts: faucetCosts, faucetDay: faucetDay, faucetInfo: faucetInfo, claimFaucet: claimFaucet, creditPokerClaims:creditPokerClaims, pokerEffects:pokerEffects, pokerXpMultiplier:pokerXpMultiplier, unlockJoker: unlockJoker};
 }));

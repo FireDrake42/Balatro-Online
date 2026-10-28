@@ -6,7 +6,14 @@
   if (root) root.BOPotions = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
-  var MAX_INVENTORY = 2, DURATION_MS = 120000;
+  // Validation ceiling is not an unlock. Existing bottles survive reload and a
+  // lower current level; only NEW receipts use the actual-level capacity gate.
+  var MAX_INVENTORY = 4, DURATION_MS = 120000;
+  function capacity(level) {
+    if(level === undefined) return 2; // old callers cannot silently gain slots
+    if(!Number.isInteger(level)||level<1||level>100) throw new RangeError('Supply the actual player level from 1 to 100.');
+    return level>=47?4:level>=40?3:2;
+  }
   var CATALOG = [
     ['exp','Exp Potion','Double ordinary earned XP for2 minutes, including surveys and faucet; interest and Knowledge keep their own rates.'],
     ['luck','Luck Potion','Double listed luck for 2 minutes; Boss disabling stays fixed at 5%.'],
@@ -138,11 +145,11 @@
     var b={uid:nextUid,potionId:combined[0]};if(combined.length>1)b.components=combined;
     s.inventory=s.inventory.filter(function(x){return inventoryUids.indexOf(x.uid)<0;});s.inventory.push(b);revise(s);return {state:s,bottle:copy(b)};
   }
-  function receiveDrop(value, id, receiptId, now) {
-    clock(now);potionId(id);key(receiptId,'drop receipt');var s=writable(normalize(value));
+  function receiveDrop(value, id, receiptId, now, actualLevel) {
+    clock(now);potionId(id);key(receiptId,'drop receipt');var limit=capacity(actualLevel),s=writable(normalize(value));
     if(s.dropReceipts.indexOf(receiptId)>=0)return {state:s,received:false,reason:'duplicate'};
     s.dropReceipts.push(receiptId);revise(s);
-    if(s.inventory.length>=MAX_INVENTORY)return {state:s,received:false,reason:'full'};
+    if(s.inventory.length>=limit)return {state:s,received:false,reason:'full'};
     var nextUid;
     do {check(s.sequence < Number.MAX_SAFE_INTEGER,'Potion bottle sequence is exhausted.');nextUid='potion-'+(++s.sequence);} while(s.inventory.concat(s.timeline).some(function(b){return b.uid===nextUid;}));
     s.inventory.push({uid:nextUid,potionId:id});return {state:s,received:true,reason:'received'};
@@ -153,5 +160,5 @@
     if(!e || !hasEffect(e,'gaming') || e.hp===hp)return s;
     s.active.hp=hp;s.timeline[s.timeline.length-1].hp=hp;return revise(s);
   }
-  return {CATALOG:CATALOG,DROP_CATALOG:DROP_CATALOG,SHOP_CATALOG:SHOP_CATALOG,MAX_INVENTORY:MAX_INVENTORY,DURATION_MS:DURATION_MS,create:create,normalize:normalize,recover:recover,current:current,effectsAt:effectsAt,drink:drink,merge:merge,components:components,hasEffect:hasEffect,displayName:displayName,receiveDrop:receiveDrop,endActive:endActive,patchActiveHp:patchActiveHp,dayOfMonth:dayOfMonth};
+  return {CATALOG:CATALOG,DROP_CATALOG:DROP_CATALOG,SHOP_CATALOG:SHOP_CATALOG,MAX_INVENTORY:MAX_INVENTORY,capacity:capacity,DURATION_MS:DURATION_MS,create:create,normalize:normalize,recover:recover,current:current,effectsAt:effectsAt,drink:drink,merge:merge,components:components,hasEffect:hasEffect,displayName:displayName,receiveDrop:receiveDrop,endActive:endActive,patchActiveHp:patchActiveHp,dayOfMonth:dayOfMonth};
 });

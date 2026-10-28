@@ -33,12 +33,21 @@
  }
  function seedRun(profile,run){if(own(profile,'frenzy'))run.frenzy=F.normalize(profile.frenzy)}
  function capture(run,actualLevel,effect,handNames){return {...(handNames?{handNames:Object.fromEntries(Object.entries(handNames).map(([k,v])=>[k,v[0]]))}:{}),run,id:run?._uiId,phase:run?.phase,ante:run?.ante,blindIndex:run?.blindIndex,endless:run?.endless===true,abandoned:run?.abandoned===true,outcome:!!run?._uiOutcome,actualLevel,effect,jokers:(run?.jokers||[]).map(j=>({uid:j.uid,id:j.id,eternal:j.eternal===true})),levels:clone(run?.levels||{})}}
- function afterAction(profile,run,before){
+ function winOptions(context){
+  if(context===undefined)return undefined;
+  check(context&&typeof context==='object'&&!Array.isArray(context)&&[null,Object.prototype].includes(Object.getPrototypeOf(context)),'Invalid Emerald action context.');
+  const keys=Reflect.ownKeys(context),d=Object.getOwnPropertyDescriptor(context,'emeraldWinMultiplier');
+  check(keys.length===1&&keys[0]==='emeraldWinMultiplier'&&d&&own(d,'value')&&d.enumerable===true&&(d.value===1||d.value===2),'Supply only an Emerald win multiplier of 1 or 2.');return {winMultiplier:d.value};
+ }
+ // Optional context is an explicit host snapshot, not a clock/Slots lookup.
+ function afterAction(profile,run,before,context){
   const messages=[];if(!before||before.run!==run||before.id!==run?._uiId)return messages;
   // The engine completes a GAME at final cashout, never at a blind/old won load.
   if(before.effect==='cashout'&&before.phase==='cashout'&&before.ante===8&&before.blindIndex===2&&!before.endless&&!before.abandoned&&!before.outcome&&P.unlocked(before.actualLevel)&&run.phase==='won'&&run.abandoned!==true&&!run.endless){
-   const state=own(profile,'emerald')?profile.emerald:P.create(seed(run._uiId));
-   profile.emerald=P.creditWin(state,{runId:run._uiId,actualLevel:before.actualLevel,beforePhase:'cashout',afterPhase:'won',endless:false,abandoned:false,source:'fresh-completion'},state.revision).state;
+   const options=winOptions(context),d=Object.getOwnPropertyDescriptor(profile,'emerald');
+   check(!d||own(d,'value')&&d.enumerable===true,'Emerald progress must be an enumerable data field.');
+   const state=d?P.copy(d.value):P.create(seed(run._uiId));
+   profile.emerald=P.creditWin(state,{runId:run._uiId,actualLevel:before.actualLevel,beforePhase:'cashout',afterPhase:'won',endless:false,abandoned:false,source:'fresh-completion'},state.revision,options).state;
   }
   if(before.actualLevel>=5)for(const [key,n]of Object.entries(run.levels||{})){if(![10,20,30,40,50].includes(n)||before.levels[key]===n)continue;const name=before.handNames?.[key]||key;const message=n===10?'Your poker hand is level 10. Nice.':n===20?'Your '+name+' is level 20!? WOW!!!':n===30?'Your poker hand is level 30, but how!?!?':n===40?'LEVEL 40!!! YOURE UNSTOPPABLE!!!!!':'LEVEL 50!! The legendary poker hand!!!';messages.push({message,handKey:key,handLevel:n})}
   if(before.effect!=='play'||!capabilities(profile,before.actualLevel).eventCommentary)return messages;
@@ -53,8 +62,8 @@
   check(run&&P.validRunId(run._uiId),'Choose the active origin run before Emerald speaks.');
   const current=profile.emerald;check(P.validate(current),'Emerald progress needs attention.');
   const pt=PT.normalize(profile.potions);check(!pt.blockedReason,pt.blockedReason||'Potion inventory needs attention.');
-  const change=P.recordSpeech(current,{runId:run._uiId,actualLevel,source:'automatic',sequence:current.speech.sequence+1,at:now,inventoryFree:pt.inventory.length<PT.MAX_INVENTORY},current.revision),next=clone(profile);next.emerald=change.state;
-  if(change.giftResult.granted){const drop=PT.receiveDrop(pt,'speed',change.giftResult.nonce,now);check(drop.received,'The Speed gift could not be stored. No speech roll was committed.');next.potions=drop.state}
+  const change=P.recordSpeech(current,{runId:run._uiId,actualLevel,source:'automatic',sequence:current.speech.sequence+1,at:now,inventoryFree:pt.inventory.length<PT.capacity(actualLevel)},current.revision),next=clone(profile);next.emerald=change.state;
+  if(change.giftResult.granted){const drop=PT.receiveDrop(pt,'speed',change.giftResult.nonce,now,actualLevel);check(drop.received,'The Speed gift could not be stored. No speech roll was committed.');next.potions=drop.state}
   return {profile:next,gift:change.giftResult};
  }
  function rolls(run,cardId){

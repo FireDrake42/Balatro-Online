@@ -2,7 +2,7 @@
  * No migration, default writes, clocks, currencies or presentation. The cloud,
  * native guarded writer and Poker actor all use these SAME paired invariants.
  * Public UI must project the already-authenticated model, not call this module. */
-(function(root,factory){'use strict';const n=typeof module==='object'&&module.exports,api=factory(n?require('./emerald-poker'):root.BOEmeraldPoker,n?require('./emerald-friendship'):root.BOEmeraldFriendship,n?require('./emerald-poker-events'):root.BOEmeraldPokerEvents,n?()=>require('./passive-xp'):()=>root.BOPassiveXP);if(n)module.exports=api;else root.BOEmeraldPokerProfile=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P,F,E,getPX){'use strict';
+(function(root,factory){'use strict';const n=typeof module==='object'&&module.exports,api=factory(n?require('./emerald-poker'):root.BOEmeraldPoker,n?require('./emerald-friendship'):root.BOEmeraldFriendship,n?require('./emerald-poker-events'):root.BOEmeraldPokerEvents,n?()=>require('./passive-xp'):()=>root.BOPassiveXP,n?require('./expansion-profile'):root.BOExpansionProfile);if(n)module.exports=api;else root.BOEmeraldPokerProfile=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P,F,E,getPX,X){'use strict';
  const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k),count=n=>Number.isSafeInteger(n)&&n>=0&&!Object.is(n,-0);
  function check(ok,message){if(!ok)throw Error('Poker save: '+message)}
  function record(o){return !!o&&typeof o==='object'&&[Object.prototype,null].includes(Object.getPrototypeOf(o))}
@@ -34,7 +34,8 @@
   }
   check(count(totals.medals*2),'Poker Medal half-unit source exceeds safe capacity.');return totals;
  }
- function validateProfile(p){authenticate(p);return true}
- function medalsHalf(p){return authenticate(p).medals*2}
- return Object.freeze({validateProfile,medalsHalf});
+ function validateProfile(p){authenticate(p);check(X&&X.validateProfile(p),'new reward source validation is unavailable.');return true}
+ function medalsHalf(p){return authenticate(p).medals*2+(X?X.medalsMilli(p)/500:0)}
+ function medalsMilliText(p){return String(BigInt(authenticate(p).medals*2)*500n+BigInt(X?X.medalsMilli(p):0))}
+ return Object.freeze({validateProfile,medalsHalf,medalsMilliText});
 });

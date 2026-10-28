@@ -1,7 +1,12 @@
 /* Injected synchronous Passive Money commit controller; no listeners, timers,
  * startup writes, DOM, global clocks, audio or PROFILE writes. Parent wires its
- * existing heartbeat and calls resetObservation on visibility/eligibility
- * transitions (also before cloud/slot/run replacement).
+ * existing heartbeat and calls resetObservation on lifecycle/cancellation.
+ * DEFAULT clockMode:'elapsed' uses only the DURABLE RUN lastAt cursor, so other
+ * app tabs, reload and closed time cannot discard unclaimed session fractions.
+ * host.eligible is a SAFE-TO-COMMIT/OWNER predicate, not a foreground time budget.
+ * No commit while an action/slot/cloud/ownership boundary is unsafe; the next
+ * safe tick catches up. All elapsed income is bounded by captured active time.
+ * Optional clockMode:'observed' retains the prior foreground-only contract.
  *
  * const c = BOPassiveMoneyController.create(host);
  * c.status(); c.start(); c.tick(); c.syncPower({explicit:true}); c.resetObservation(); c.destroy();
@@ -52,6 +57,9 @@
       check(host && typeof host[key] === 'function', 'invalid-host', 'Missing synchronous Passive Money host.' + key);
     for (const key of ['getFeatureEnabled','getPaused'])
       check(host[key] === undefined || typeof host[key] === 'function', 'invalid-host', 'Invalid synchronous Passive Money host.' + key);
+    check(host.clockMode === undefined || ['elapsed','observed'].includes(host.clockMode), 'invalid-host', 'Invalid Passive Money clockMode.');
+    const elapsedClock = host.clockMode !== 'observed';
+    check(!elapsedClock || ['pollElapsed','startElapsed','setPausedElapsed'].every(key => typeof M[key] === 'function'), 'missing-model', 'The elapsed Passive Money model is required.');
     const pauseClock = typeof host.getFeatureEnabled === 'function' || typeof host.getPaused === 'function';
     function power() {
       const enabled = typeof host.getFeatureEnabled === 'function' ? host.getFeatureEnabled() : true;
@@ -63,13 +71,13 @@
     function resetObservation() {
       epoch++;
       // A reset inside a transaction is cancellation, never an earning pause.
-      if (busy || retaining || destroyed || uncertain) { observation = null; carry = null; return; }
+      if (elapsedClock || busy || retaining || destroyed || uncertain) { observation = null; carry = null; return; }
       retainObserved(true);
     }
     function guard() {
       check(!destroyed && !uncertain, uncertain ? 'uncertain' : 'destroyed', uncertain ? 'Saving is uncertain. Reload safely; do not retry or reset.' : 'This Passive Money controller was destroyed.');
       const allowed = host.assertWritable(); check(allowed !== false && !thenable(allowed), 'read-only', 'This save is not writable.');
-      check(host.eligible() === true, 'ineligible', 'Only observable foreground eligible time earns Passive Money.');
+      check(host.eligible() === true, 'ineligible', 'The selected-slot owner is not safe to commit Passive Money yet. Earned elapsed time remains in its durable cursor.');
       check(!power().powerPaused, 'power-paused', 'Low Power or a disabled Passive Money feature pauses earnings.');
     }
     function eventContext(profile) {
@@ -244,7 +252,7 @@
         check(next.runJSON === intended && next.profile === c.profile && next.profileJSON === c.profileJSON && next.level === c.level &&
           next.page === c.page && next.powerKey === c.powerKey && host.stamp() === c.stamp && epoch === c.epoch && !destroyed,
           'apply-context', 'The confirmed run application changed its origin context.');
-        if (!proposal.run.passiveMoney.settled)
+        if (!elapsedClock && !proposal.run.passiveMoney.settled)
           observation = identify({...next,id:next.source._uiId,stamp:c.stamp}, now, mono, fraction);
         if (typeof host.changed === 'function') host.changed(proposal.result);
         return proposal.result;
@@ -270,7 +278,7 @@
     }
     function start() {
       return perform(() => {
-        const clock = clocks(), c = capture(), proposal = M.start(c.source, c.level, clock.now, pauseClock ? {pauseClock:true} : undefined, c.modelContext);
+        const clock = clocks(), c = capture(), proposal = (elapsedClock ? M.startElapsed : M.start)(c.source, c.level, clock.now, pauseClock ? {pauseClock:true} : undefined, c.modelContext);
         if (!proposal.result.ok) return proposal.result;
         return commitObserved(c, proposal, clock.now, clock.mono, 0);
       });
@@ -283,6 +291,15 @@
         if (s.version === M.PAUSE_VERSION && s.pausedAt !== null)
           return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'paused',status:M.status(c.source,c.level,clock.now,c.modelContext)};
         if (s.settled) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'settled',status:M.status(c.source,c.level,clock.now,c.modelContext)}; }
+        if (elapsedClock) {
+          const proposal = M.pollElapsed(c.source, c.level, clock.now, c.modelContext);
+          if (!proposal.result.ok) return proposal.result;
+          if (proposal.result.changed && (proposal.result.awardedCents > 0 || proposal.run.passiveMoney.settled))
+            return commit(c, proposal, clock.now, clock.mono, 0);
+          // Avoid 250ms zero-cent writes. The saved cursor stays PUT, so a reload
+          // recovers this whole fractional edge; no private observation to lose.
+          return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'accruing',status:M.status(c.source,c.level,clock.now,c.modelContext)};
+        }
         if (!sameOrigin(carry, c)) carry = null;
         if (carry && (clock.now < carry.now || clock.mono < carry.mono) ||
             matches(c) && (clock.now < observation.now || clock.mono < observation.mono)) { carry = null; observation = null; }
@@ -333,6 +350,15 @@
         const wasPaused = s.version === M.PAUSE_VERSION && s.pausedAt !== null;
         if (wasPaused === c.powerPaused) return unchanged(wasPaused ? 'paused' : 'unchanged');
         if (s.version === M.VERSION && !config.explicit) return unchanged('legacy-power-pending');
+        if (elapsedClock) {
+          const proposal = M.setPausedElapsed(c.source, c.level, clock.now, c.powerPaused, c.modelContext);
+          if (!proposal.result.ok || !proposal.result.changed) return proposal.result;
+          // This essential pre-policy checkpoint bypasses ONLY the transient
+          // earning-policy/foreground predicate. All owner/slot/raw/live/readback
+          // fences remain, including after the one atomic RUN write.
+          c.powerTransition = true;
+          return commit(c, proposal, clock.now, clock.mono, 0);
+        }
         let previous = sameOrigin(carry, c) ? carry : null, current = sameOrigin(observation, c) ? observation : null;
         if (previous && (clock.now < previous.now || clock.mono < previous.mono) ||
             current && (clock.now < current.now || clock.mono < current.mono)) {

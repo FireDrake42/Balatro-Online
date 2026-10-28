@@ -10,14 +10,22 @@ function comparePrices(a,b){const x=priceUnits(a),y=priceUnits(b);return x>y?1:x
 function deadlineOpenTime(deadline){requireThat(time(deadline)&&deadline>=1000,'Invalid deadline.');return Math.floor(deadline/1000)*1000-1000}
 function maxStake(level){requireThat(Number.isInteger(level)&&level>=1&&level<=100,'Invalid actual player level.');return level>=47?20:10}
 function stakeReceipt(a){if(!object(a))return false;const marked=Object.prototype.hasOwnProperty.call(a,'stakeLevel'),d=marked?Object.getOwnPropertyDescriptor(a,'stakeLevel'):null;return (!marked||d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')&&Number.isInteger(d.value)&&d.value>=47&&d.value<=100)&&Number.isInteger(a.stake)&&a.stake>=1&&a.stake<=(marked?20:10)}
+function durationFor(level){requireThat(Number.isInteger(level)&&level>=1&&level<=100,'Invalid actual player level.');return level>=40?60000:DURATION_MS}
+function predictionDuration(a){
+ const marked=Object.prototype.hasOwnProperty.call(a,'durationMs')||Object.prototype.hasOwnProperty.call(a,'durationLevel');
+ if(!marked)return DURATION_MS; // never shorten an already-accepted old prediction
+ for(const k of ['durationMs','durationLevel']){const d=Object.getOwnPropertyDescriptor(a,k);requireThat(d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value'),'Prediction duration provenance needs recovery.');}
+ requireThat(Number.isInteger(a.durationLevel)&&a.durationLevel>=40&&a.durationLevel<=100&&a.durationMs===60000,'Prediction duration provenance needs recovery.');
+ requireThat(time(a.startedAt)&&a.deadlineAt===a.startedAt+a.durationMs,'Prediction duration does not match its deadline.');return a.durationMs;
+}
 function create(){return {version:1,revision:0,active:null,history:[],receipts:{},graph:null,blockedReason:''}}
 function normalize(value){
  if(!object(value))return create();
- for(const a of [value.active,...(Array.isArray(value.history)?value.history:[]),...(object(value.receipts)?Object.values(value.receipts):[])])if(a&&(!stakeReceipt(a)))return {...create(),blockedReason:'Prediction stake provenance needs recovery. No payment was made.'};
+ for(const a of [value.active,...(Array.isArray(value.history)?value.history:[]),...(object(value.receipts)?Object.values(value.receipts):[])])if(a){if(!stakeReceipt(a))return {...create(),blockedReason:'Prediction stake provenance needs recovery. No payment was made.'};try{predictionDuration(a)}catch(e){return {...create(),blockedReason:'Prediction duration provenance needs recovery. No payment was made.'}}}
  const s=copy(value);
  if(s.version!==1||!time(s.revision)||!Array.isArray(s.history)||!object(s.receipts))return {...create(),blockedReason:'Market save is unreadable. Export a backup before resetting progress.'};
  s.blockedReason=typeof s.blockedReason==='string'?s.blockedReason:'';
- if(s.active){const a=s.active;try{requireThat(identifier(a.id)&&identifier(a.runId)&&['call','put'].includes(a.direction)&&stakeReceipt(a)&&time(a.startedAt)&&a.deadlineAt===a.startedAt+DURATION_MS&&time(a.serverDeadlineAt),'Unreadable pending prediction.');priceUnits(a.entryPrice)}catch(e){s.blockedReason='Pending prediction save needs recovery. No new prediction or automatic payment is allowed.'}}
+ if(s.active){const a=s.active;try{requireThat(identifier(a.id)&&identifier(a.runId)&&['call','put'].includes(a.direction)&&stakeReceipt(a)&&time(a.startedAt)&&a.deadlineAt===a.startedAt+predictionDuration(a)&&time(a.serverDeadlineAt),'Unreadable pending prediction.');priceUnits(a.entryPrice)}catch(e){s.blockedReason='Pending prediction save needs recovery. No new prediction or automatic payment is allowed.'}}
  return s;
 }
 function recover(profileState,runMirror){const a=normalize(profileState),b=normalize(runMirror);return b.revision>a.revision?b:a}
@@ -41,13 +49,14 @@ function start(state,run,p){
  requireThat(identifier(run?._uiId),'This run needs a stable save ID.');requireThat(['call','put'].includes(p.direction),'Choose Call (up) or Put (down).');
  requireThat(Number.isInteger(p.stake)&&p.stake>=1&&p.stake<=maxStake(p.level),'Stake must be a whole game$ amount from 1 to '+maxStake(p.level)+'.');
  requireThat(validHalf(run.money)&&run.money>=p.stake,'Predictions require available cash; credit and debt cannot be used.');validateFreshQuote(p.quote,p.now);
- const s=next(state),serverNow=p.quote.serverTime+(p.now-p.quote.observedAt);
- s.active={id:p.id,runId:run._uiId,direction:p.direction,stake:p.stake,...(p.stake>10?{stakeLevel:p.level}:{}),entryPrice:p.quote.price,entryOpenTime:p.quote.openTime,entryCloseTime:p.quote.closeTime,startedAt:p.now,deadlineAt:p.now+DURATION_MS,serverDeadlineAt:serverNow+DURATION_MS,source:SOURCE,symbol:SYMBOL,dataError:'',lastAttemptAt:0};
+ const s=next(state),serverNow=p.quote.serverTime+(p.now-p.quote.observedAt),duration=durationFor(p.level);
+ requireThat(time(p.now+duration)&&time(serverNow+duration),'Prediction deadline overflow.');
+ s.active={id:p.id,runId:run._uiId,direction:p.direction,stake:p.stake,...(p.stake>10?{stakeLevel:p.level}:{}),entryPrice:p.quote.price,entryOpenTime:p.quote.openTime,entryCloseTime:p.quote.closeTime,startedAt:p.now,...(p.level>=40?{durationMs:duration,durationLevel:p.level}:{}),deadlineAt:p.now+duration,serverDeadlineAt:serverNow+duration,source:SOURCE,symbol:SYMBOL,dataError:'',lastAttemptAt:0};
  return {state:s,balanceDelta:-p.stake};
 }
 function settle(state,run,p){
  if(Object.hasOwn(state.receipts,p.id))return {state,balanceDelta:0,receipt:copy(state.receipts[p.id]),duplicate:true};
- const a=state.active;requireThat(a&&a.id===p.id,'Prediction is no longer pending.');requireThat(run?._uiId===a.runId,'Only the origin run can receive this prediction.');requireThat(time(p.now)&&p.now>=a.deadlineAt,'The ten-minute deadline has not arrived.');baseQuote(p.quote);
+ const a=state.active;requireThat(a&&a.id===p.id,'Prediction is no longer pending.');requireThat(run?._uiId===a.runId,'Only the origin run can receive this prediction.');requireThat(time(p.now)&&p.now>=a.deadlineAt,'The accepted prediction deadline has not arrived.');baseQuote(p.quote);
  const open=deadlineOpenTime(a.serverDeadlineAt);requireThat(p.quote.kind==='deadline'&&p.quote.openTime===open&&p.quote.closeTime===open+999&&p.quote.serverTime>=a.serverDeadlineAt,'Exact historical deadline data is not yet available.');
  const comparison=comparePrices(p.quote.price,a.entryPrice),won=a.direction==='call'?comparison>0:comparison<0,status=comparison===0?'tie':won?'won':'lost',payout=status==='tie'?a.stake:won?a.stake*1.5:0;
  const receipt={...copy(a),status,payout,endPrice:p.quote.price,endOpenTime:open,endCloseTime:open+999,settledAt:p.now,reason:status==='tie'?'Equal deadline price: stake refunded.':won?'Correct direction: 1.5× gross return.':'Wrong direction: stake lost.'};
@@ -57,5 +66,5 @@ function awaitData(state,id,error,now){if(!state.active||state.active.id!==id||s
 function forfeit(state,reason,now){if(!state.active)return state;requireThat(typeof reason==='string'&&reason.trim().length>0&&time(now),'A readable forfeit reason is required.');const s=next(state),a=s.active,receipt={...a,status:'forfeited',payout:0,endPrice:null,settledAt:now,reason};s.active=null;s.history.push(receipt);s.receipts[a.id]=copy(receipt);return s}
 function graphEligible(state,bossesWon){requireThat(time(bossesWon),'Invalid cumulative Boss count.');return !state.blockedReason&&(!state.graph||Math.floor(bossesWon/2)>state.graph.threshold)}
 function recordGraph(state,graph,bossesWon){requireThat(graphEligible(state,bossesWon),'Graph refresh is not eligible.');requireThat(object(graph)&&graph.source===SOURCE&&graph.symbol===SYMBOL&&Array.isArray(graph.candles)&&graph.candles.length>=2&&time(graph.observedAt),'Invalid public chart data.');const s=next(state);s.graph={...copy(graph),threshold:Math.floor(bossesWon/2)};return s}
-return Object.freeze({SOURCE,SYMBOL,DURATION_MS,QUOTE_MAX_AGE_MS,maxStake,stakeReceipt,create,normalize,recover,status,deadlineOpenTime,comparePrices,validateFreshQuote,applyBalance,start,settle,awaitData,forfeit,graphEligible,recordGraph});
+return Object.freeze({SOURCE,SYMBOL,DURATION_MS,QUOTE_MAX_AGE_MS,durationFor,predictionDuration,maxStake,stakeReceipt,create,normalize,recover,status,deadlineOpenTime,comparePrices,validateFreshQuote,applyBalance,start,settle,awaitData,forfeit,graphEligible,recordGraph});
 });

@@ -1,0 +1,133 @@
+/* Isolated free-fictional Slots view; no existing layout or media overrides. */
+.emerald-slots {
+  --slots-ink: #f5faf8;
+  --slots-muted: #c0d5ce;
+  --slots-gold: #ffe2a0;
+  --slots-purple: #d6abff;
+  color: var(--slots-ink);
+  background: #101d1a;
+  border: 1px solid #527769;
+  border-radius: 18px;
+  padding: clamp(10px, 2.5vw, 24px);
+  width: 100%;
+  max-width: 1080px;
+  min-width: 0;
+  margin: 0 auto;
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+.emerald-slots *, .emerald-slots *::before, .emerald-slots *::after { box-sizing: border-box; }
+.emerald-slots h1, .emerald-slots h2, .emerald-slots h3, .emerald-slots p { margin: 0; }
+.emerald-slots h1 { font-size: clamp(1.25rem, 3vw, 2rem); }
+.emerald-slots h2 { font-size: 1.15rem; }
+.emerald-slots h3 { font-size: 1rem; }
+.emerald-slots small { font-size: .8rem; line-height: 1.5; }
+.emerald-slots .slots-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.emerald-slots .slots-eyebrow { color: var(--slots-gold); font-size: .8rem; margin-bottom: 4px; }
+.emerald-slots .slots-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  max-width: 100%;
+  border: 1px solid #8caf9f;
+  border-radius: 10px;
+  background: #223b33;
+  color: #fffdf4;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.emerald-slots .slots-primary { background: #d8f9ae; color: #142319; border-color: #e4ffd0; box-shadow: 0 3px 0 #486b3d; }
+.emerald-slots .slots-button:not(:disabled):hover { filter: brightness(1.12); }
+.emerald-slots .slots-button:disabled { color: #bccbc5; background: #23352e; border-color: #64776c; box-shadow: none; cursor: default; }
+.emerald-slots :focus-visible { outline: 3px solid #ffe2a0; outline-offset: 3px; }
+.emerald-slots .slots-warning { background: #4b241d; color: #ffebe5; border: 1px solid #e6a58e; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.emerald-slots .slots-counters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 12px; }
+.emerald-slots .slots-counters p { display: flex; flex-direction: column; justify-content: center; padding: 10px 8px; background: #1b3029; border: 1px solid #527769; border-radius: 10px; text-align: center; }
+.emerald-slots .slots-counters span { font-size: .78rem; color: var(--slots-muted); }
+.emerald-slots .slots-counters strong { font-size: 1.1rem; color: var(--slots-gold); }
+.emerald-slots .slots-counters small { font-size: .7rem; }
+.emerald-slots .slots-first { color: #d8f9ae; text-align: center; font-size: .85rem; margin-bottom: 12px; }
+.emerald-slots .slots-felt { display: flex; flex-direction: column; align-items: center; gap: 16px; border: 1px solid #658876; border-radius: 15px; padding: clamp(8px, 2vw, 20px); background: radial-gradient(ellipse at top, #285745, #15382d 70%); }
+.emerald-slots .slots-level-block { width: min(100%, 540px); padding: 10px; border: 1px solid #a283cd; background: #241e35; border-radius: 10px; }
+.emerald-slots .slots-level-block > div:first-child { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-bottom: 7px; }
+.emerald-slots .slots-level-block > div:first-child > span { color: #e6cbff; font-size: .8rem; }
+.emerald-slots .slots-level-block > small { color: #eedfff; display: block; margin-top: 5px; }
+.emerald-slots .slots-level-progress { height: 13px; width: 100%; border: 1px solid #9d78ca; background: #15111f; border-radius: 7px; overflow: hidden; }
+.emerald-slots .slots-level-progress > span { display: block; height: 100%; background: linear-gradient(90deg, #b78be7, #e8b8ff); }
+.emerald-slots .slots-companion { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; width: min(100%, 520px); }
+.emerald-slots .slots-companion-photo { display: block; width: 128px; height: 122px; max-width: 100%; object-fit: contain; filter: drop-shadow(0 0 9px #84ffc259); }
+.emerald-slots .slots-dialogue { font-size: .9rem; line-height: 1.5; color: #edf7f1; max-width: 48ch; }
+.emerald-slots .slots-machine { width: min(100%, 510px); min-width: 0; background: #282d33; border: 2px solid #e0c98f; border-radius: 18px; box-shadow: inset 0 0 0 3px #363e43, 0 8px 16px #061d1d55; padding: clamp(8px, 2vw, 18px); }
+.emerald-slots .slots-payline-note { color: #ffe8aa; font-size: .82rem; font-weight: 700; text-align: center; margin-bottom: 10px; }
+.emerald-slots .slots-window { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; width: 100%; min-width: 0; padding: 4px; background: #0b1113; border: 1px solid #a5ada6; border-radius: 11px; }
+.emerald-slots .slots-reel { list-style: none; margin: 0; padding: 0; min-width: 0; display: grid; grid-template-rows: repeat(3, 70px); gap: 3px; }
+.emerald-slots .slots-symbol { min-width: 0; display: flex; align-items: center; justify-content: center; background: #eaf3ed; border: 1px solid #becbc2; border-radius: 4px; color: #243b33; overflow: hidden; }
+.emerald-slots .slots-symbol:not(.slots-middle) { background: #d0ddd6; }
+.emerald-slots .slots-middle { background: #ffffdf; border: 3px solid #40895e; box-shadow: inset 0 0 0 1px #f1ffc7; }
+.emerald-slots .slots-symbol-art { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: clamp(28px, 7vw, 46px); line-height: 1; font-weight: 800; color: #293c35; }
+.emerald-slots .slots-symbol-art > img { display: block; height: 58px; width: 62px; max-height: 100%; max-width: 100%; object-fit: contain; }
+.emerald-slots .slots-symbol-joker { background: #e5b16d; }
+.emerald-slots .slots-symbol-seven { color: #a12326; }
+.emerald-slots .slots-symbol-xp { color: #225372; font-size: clamp(25px, 6.5vw, 40px); }
+.emerald-slots .slots-symbol-coin { color: #76500b; }
+.emerald-slots .slots-coin-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 3px double #8d5d12; background: #f2ce68; text-shadow: 0 1px #ffffc5; font-size: 23px; }
+.emerald-slots .slots-symbol-unknown { color: #597367; background: repeating-linear-gradient(0deg, #e4ede7 0 15px, #d6e1da 15px 30px); }
+.emerald-slots .slots-reel-waiting .slots-symbol-unknown { animation: slots-pending-breathe 2.5s ease-in-out infinite alternate; }
+.emerald-slots .slots-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
+.emerald-slots .slots-actions > button { flex: 1 1 160px; }
+.emerald-slots .slots-pending-note { font-size: .72rem; line-height: 1.5; color: #d0ded6; text-align: center; margin-top: 10px; }
+.emerald-slots .slots-player { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; text-align: center; }
+.emerald-slots .slots-player-placeholder, .emerald-slots .slots-player-photo { display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; border: 2px solid #b7ded0; background: #23443c; color: #d9f6eb; font-size: 38px; object-fit: cover; }
+.emerald-slots .slots-result { width: 100%; border: 1px solid #c4a667; border-radius: 9px; background: #243d2c; padding: 12px; text-align: center; line-height: 1.6; }
+.emerald-slots .slots-result > strong { color: #ffe2a0; font-size: 1.12rem; }
+.emerald-slots .slots-effects { margin-top: 16px; border: 1px solid #729988; border-radius: 10px; padding: 12px; background: #1b3029; }
+.emerald-slots .slots-effects h3 { color: #e5c3ff; margin-bottom: 8px; }
+.emerald-slots .slots-effects ul { list-style: none; display: grid; gap: 7px; padding: 0; margin: 0 0 8px; }
+.emerald-slots .slots-effects li { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px 16px; padding: 7px; background: #243f35; border-radius: 7px; }
+.emerald-slots .slots-effects time { color: var(--slots-gold); font-variant-numeric: tabular-nums; }
+.emerald-slots .slots-effects p { margin-bottom: 8px; color: var(--slots-muted); }
+.emerald-slots .slots-effects small { color: #d1e4da; }
+.emerald-slots .slots-policy { display: block; color: #d3e1da; line-height: 1.55; margin: 12px 0; }
+.emerald-slots .slots-table-scroll { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; border: 1px solid #6f8f7d; border-radius: 9px; margin: 12px 0; }
+.emerald-slots table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; font-size: .86rem; line-height: 1.45; }
+.emerald-slots .slots-payout-table { min-width: 840px; }
+/* Amounts are indivisible: keep36,363/777.7 legible on narrow screens. */
+.emerald-slots .slots-payout-table th:not(:last-child), .emerald-slots .slots-payout-table td:not(:last-child) { white-space: nowrap; }
+.emerald-slots .slots-payout-table td:last-child { min-width: 230px; max-width: 300px; }
+.emerald-slots caption { text-align: left; font-size: 1rem; font-weight: 700; padding: 12px; color: #ffe2a0; background: #192f28; }
+.emerald-slots th, .emerald-slots td { padding: 10px 8px; border-bottom: 1px solid #44614f; vertical-align: top; }
+.emerald-slots thead th { color: #e5c3ff; background: #20372f; }
+.emerald-slots tbody th { color: #ffebba; font-weight: 700; }
+.emerald-slots tbody tr:nth-child(even) { background: #1c3027; }
+.emerald-slots td small { display: block; color: #cbdcd2; }
+.emerald-slots tfoot th, .emerald-slots tfoot td { color: #e2f8e9; background: #284335; font-weight: 700; }
+.emerald-slots .slots-rules, .emerald-slots .slots-level-table { margin-top: 12px; padding: 10px; border: 1px solid #6b8a77; border-radius: 10px; background: #15291f; }
+.emerald-slots summary { display: list-item; min-height: 44px; padding: 10px 4px; font-weight: 700; color: #ffe2a0; cursor: pointer; }
+.emerald-slots details p { margin: 10px 0; font-size: .87rem; line-height: 1.55; color: #d6e3db; }
+.emerald-slots .slots-level-table table { min-width: 340px; }
+.emerald-slots .slots-current-level > * { border-top: 2px solid #ce98ff; border-bottom: 2px solid #ce98ff; background: #33283f; }
+.emerald-slots .slots-current-level > :first-child { border-left: 2px solid #ce98ff; }
+.emerald-slots .slots-current-level > :last-child { border-right: 2px solid #ce98ff; }
+.emerald-slots .slots-level-badge { display: inline-block; margin-left: 3px; padding: 2px 5px; border: 1px solid #ddbbff; border-radius: 4px; background: #5d417c; color: #fff6ff; font-size: .62rem; }
+.emerald-slots .slots-medal-ribbon { color: var(--slots-ribbon, #e6c07e); margin-right: 5px; text-shadow: 0 1px #050d09; }
+@keyframes slots-pending-breathe { from { opacity: .72; } to { opacity: 1; } }
+@media (max-width: 390px) {
+  .emerald-slots .slots-header > button { width: 100%; }
+  .emerald-slots .slots-counters p { padding: 8px 4px; }
+  .emerald-slots .slots-counters span { font-size: .7rem; }
+  .emerald-slots .slots-counters strong { font-size: .96rem; }
+  .emerald-slots .slots-reel { grid-template-rows: repeat(3, 64px); }
+  .emerald-slots .slots-companion-photo { width: 108px; height: 103px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .emerald-slots *, .emerald-slots *::before, .emerald-slots *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+[data-reduced-motion="true"] .emerald-slots *, .reduced-motion .emerald-slots *, .emerald-slots[data-reduced-motion="true"] * { animation: none !important; transition: none !important; }

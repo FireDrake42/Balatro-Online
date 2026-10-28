@@ -15,8 +15,15 @@
  *
  * Sessions CAPTURE duration/cooldown at start: levels 40/42/44 -> 10/20/30 min
  * and 5/4/2.5 min cooldown. Upgrades apply to the NEXT session only. Potions
- * never alter these timers or income. No hidden/offline time is reconstructed:
- * only the supplied observable interval intersecting [startedAt, endsAt) earns.
+ * never alter these timers or income. Legacy poll/setPaused remain observed-
+ * time APIs. Explicit elapsed APIs pollElapsed/startElapsed/setPausedElapsed
+ * use the saved lastAt high-water cursor, including other app tabs and closed
+ * time, bounded by the CAPTURED active session. No automatic activation/restart.
+ * The whole RUN is the journal: Bank, income, creditedCents, visibleMs (including
+ * the millisecond fraction) and lastAt must commit and read back TOGETHER.
+ * Wall rollback never advances or rewinds lastAt. A forward clock jump can earn
+ * only the remaining finite session budget, never an unbounded offline award.
+ * Legacy discarded gaps BEFORE lastAt are not reconstructed or migrated.
  */
 (function (root, factory) {
   'use strict';
@@ -242,5 +249,39 @@
       return {ok:true,changed:true,awardedCents:0,earnedMs:0,code:'resumed',sequence:s.sequence};
     }, context);
   }
-  return Object.freeze({VERSION,PAUSE_VERSION,UNLOCK_LEVEL,TICK_MS,MAX_TIME,PHASES,STATE_FIELDS,PAUSE_STATE_FIELDS,create:start,start,poll,setPaused,status,normalize,validate,tierForLevel,copyData});
+  // Elapsed time is authorized only through these explicit APIs. Descriptor-first
+  // inspection and command() retain all legacy shape/level/run/clock checks.
+  function pollElapsed(run, actualLevel, now, context) {
+    return command(run, actualLevel, now, (r, s) => {
+      const proposal = poll(r, actualLevel, now, s ? now - s.lastAt : 0, context);
+      check(proposal.result.ok, proposal.result.code, proposal.result.reason);
+      Object.assign(r, proposal.run);
+      return proposal.result;
+    }, context);
+  }
+  // A denied restart discards the ENTIRE proposal, including any hypothetical
+  // settlement. A successful restart journals the old award and new session in
+  // one RUN write; it cannot erase an unclaimed expired session on reload.
+  function startElapsed(run, actualLevel, now, options, context) {
+    const folded = pollElapsed(run, actualLevel, now, context);
+    if (!folded.result.ok) return folded;
+    const next = start(folded.run, actualLevel, now, options, context);
+    if (!next.result.ok) return {run,result:next.result};
+    next.result = {...next.result,awardedCents:folded.result.awardedCents,earnedMs:folded.result.earnedMs};
+    return next;
+  }
+  // Essential pre-policy checkpoint: fold through the exact boundary BEFORE
+  // pausing. Resuming a paused ledger credits no closed/policy-off interval and
+  // shifts the captured remaining session/cooldown deadlines by the saved gap.
+  function setPausedElapsed(run, actualLevel, now, paused, context) {
+    const folded = pollElapsed(run, actualLevel, now, context);
+    if (!folded.result.ok) return folded;
+    const next = setPaused(folded.run, actualLevel, now, paused, 0, context);
+    if (!next.result.ok) return {run,result:next.result};
+    next.result = {...next.result,changed:folded.result.changed || next.result.changed,
+      awardedCents:folded.result.awardedCents + next.result.awardedCents,
+      earnedMs:folded.result.earnedMs + next.result.earnedMs};
+    return next;
+  }
+  return Object.freeze({VERSION,PAUSE_VERSION,UNLOCK_LEVEL,TICK_MS,MAX_TIME,PHASES,STATE_FIELDS,PAUSE_STATE_FIELDS,create:start,start,poll,setPaused,pollElapsed,startElapsed,setPausedElapsed,status,normalize,validate,tierForLevel,copyData});
 }));

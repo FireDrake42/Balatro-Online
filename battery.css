@@ -38,3 +38,16 @@ body.battery-empty.battery-compact #fictional-battery-dock{position:fixed;top:ca
 .battery-display-settings label{margin:8px 0;min-height:44px}
 .battery-display-settings select{min-width:64px}
 @media(prefers-reduced-motion:reduce){:is(#fictional-battery-dock,#fictional-battery-compact) *{animation:none!important;transition:none!important}}
+/* The portal is aligned from the actual username rectangle. Pinch zoom uses
+ * the visual viewport for BOTH members of this screen-corner pair; normal page
+ * zoom/resize retains the native username/HUD placement. No game panel transform
+ * or stale --bo-hud-space + guessed badge height controls the battery anchor. */
+#fictional-battery-compact{box-sizing:border-box;max-width:calc(var(--battery-viewport-width,100vw) - 16px)}
+body.battery-compact.battery-viewport-zoom:not(.bo-survey-page) #player-username-badge.local-badge{top:var(--battery-badge-top);left:var(--battery-badge-left);right:auto;max-width:min(32ch,calc(var(--battery-viewport-width,100vw) - 24px))}
+body.battery-empty.battery-compact.battery-viewport-zoom #fictional-battery-dock{left:calc(var(--battery-viewport-left,0px) + 8px);right:auto;max-width:calc(var(--battery-viewport-width,100vw) - 16px);margin-left:0;margin-right:0;gap:6px;padding:6px;flex-wrap:wrap}
+[data-battery-insights]{border:1px solid #83baa8;border-radius:12px;padding:12px;margin:16px 0;background:#102a27}
+.battery-insight-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin:12px 0}
+.battery-settings .battery-insight-grid dt{font-size:13px;font-weight:800;color:#baf3dc;margin:8px 0 0}
+.battery-settings .battery-insight-grid dd{font-size:13px;font-weight:500;line-height:1.6;margin:0;overflow-wrap:anywhere;min-width:0}
+@media(min-width:600px){.battery-insight-grid{grid-template-columns:minmax(110px,1fr) minmax(0,3fr);gap:12px}.battery-settings .battery-insight-grid dt{margin:0}}
+

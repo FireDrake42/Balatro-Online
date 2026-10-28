@@ -53,6 +53,7 @@
   }
   function potionEffects(s) {return s&&s.potions&&Potions?Potions.effectsAt(s.potions,s.potionNow===undefined?0:s.potionNow):NO_POTIONS;}
   function potionEligible(s) {return s.progressionEnabled===true&&Number.isInteger(s.playerLevel)&&s.playerLevel>=12&&s.playerLevel<=100;}
+  function potionCapacity(s) {return Potions&&potionEligible(s)?Potions.capacity(s.playerLevel):2;}
   function potionBossSuppressed(s) {
     var source=s.potionBossDisable,e=s.potions&&Potions&&Potions.current(s.potions,s.potionNow===undefined?0:s.potionNow);
     return !!(source&&source.success&&s.phase==='play'&&s.blindIndex===2&&source.round===s.round&&source.bossId===s.bossId&&e&&Potions.hasEffect(e,'boss_disabler')&&e.uid===source.uid);
@@ -120,7 +121,7 @@
   decks.slice(15).forEach(function(d){d.unlockLevel=29;});
   // Enhanced decks are a NEW-run contract. Missing snapshot always means the
   // historical deck, even after the live player-level sync passes Level 45.
-  var DECK45_DESCRIPTIONS={red:'+2 discards every round.',blue:'+2 hands every round.',yellow:'Start with $16 extra.',green:'No interest. At winning cashout earn $3 per remaining hand, $2 per remaining discard, and $1 extra per completed round.',black:'+2 Joker slots; -1 hand size. No hand-count penalty.',magic:'Start with Omen Globe, Crystal Ball and two copies of The Fool.',nebula:'Start with Telescope and Observatory; no consumable-slot penalty.',ghost:'Exactly 20% of ordinary shop shelf selections are Spectral. Start with Hex and Ankh.',abandoned:'Start with Ride the Bus and 40 cards: no Jacks, Queens or Kings.',checkered:'Start with exactly 80 cards: 40 Hearts and 40 Spades. Each suit adds A, K, Q, J, 10 through 2, A to its original 26 cards.',zodiac:'Start with Tarot Merchant, Tarot Tycoon, Planet Merchant, Planet Tycoon, Overstock, Overstock Plus, Reroll Surplus and Reroll Glut.',painted:'+3 hand size; -1 Joker slot.',anaglyph:'Gain two Double Tags after each real Boss Blind.',plasma:'Balance Chips and Mult to their average before multiplication. Normal Blind requirements.',erratic:'The saved seed independently sets starting hands, discards, hand size, Joker slots, consumable slots and Bank to 1–10 each; ranks and suits are randomized separately.',copper:'Earn $5 extra at every winning round cashout.',scholar:'Every poker hand, including custom hands, starts at Level 3.',twilight:'+2 hand size and +2 consumable slots.',prism:'All 52 starting cards are Wild. Start with The Tribe.',sprout:'Starting ranks 2–10 are Bonus cards: +30 Chips when scored.'};
+  var DECK45_DESCRIPTIONS={red:'+2 discards every round.',blue:'+2 hands every round.',yellow:'Start with $20 extra.',green:'No interest. At winning cashout earn $3 per remaining hand, $2 per remaining discard, and $1 extra per completed round.',black:'+2 Joker slots; -1 hand size. No hand-count penalty.',magic:'Start with Omen Globe, Crystal Ball and two copies of The Fool.',nebula:'Start with Telescope and Observatory; no consumable-slot penalty.',ghost:'Exactly 20% of ordinary shop shelf selections are Spectral. Start with Hex and Ankh.',abandoned:'Start with Ride the Bus and 40 cards: no Jacks, Queens or Kings.',checkered:'Start with exactly 80 cards: 40 Hearts and 40 Spades. Each suit adds A, K, Q, J, 10 through 2, A to its original 26 cards.',zodiac:'Start with Tarot Merchant, Tarot Tycoon, Planet Merchant, Planet Tycoon, Overstock, Overstock Plus, Reroll Surplus and Reroll Glut.',painted:'+3 hand size; -1 Joker slot.',anaglyph:'Gain two Double Tags after each real Boss Blind.',plasma:'Balance Chips and Mult to their average before multiplication. Normal Blind requirements.',erratic:'The saved seed independently sets starting hands, discards, hand size, Joker slots, consumable slots and Bank to 1–10 each; ranks and suits are randomized separately.',copper:'Earn $5 extra at every winning round cashout.',scholar:'Every poker hand, including custom hands, starts at Level 3.',twilight:'+2 hand size and +2 consumable slots.',prism:'All 52 starting cards are Wild. Start with The Tribe.',sprout:'Starting ranks 2–10 are Bonus cards: +30 Chips when scored.'};
   var ERRATIC_KEYS=['hands','discards','handSize','jokerSlots','consumableSlots','money'];
   function dataFields(value,keys){if(!value||typeof value!=='object'||![Object.prototype,null].includes(Object.getPrototypeOf(value)))return false;var names=Reflect.ownKeys(value);return names.length===keys.length&&names.every(function(k){var d=Object.getOwnPropertyDescriptor(value,k);return keys.indexOf(k)>=0&&d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value');});}
   function validateDeckProfile(s){try{if(!s||!('deckProfile' in s))return true;var d=Object.getOwnPropertyDescriptor(s,'deckProfile');if(!d||!d.enumerable||!Object.prototype.hasOwnProperty.call(d,'value'))return false;var p=d.value,erratic=s.deckId==='erratic';return dataFields(p,['version','startingLevel','deckId'].concat(erratic?['stats']:[]))&&p.version===1&&Number.isInteger(p.startingLevel)&&p.startingLevel>=45&&p.startingLevel<=100&&p.deckId===s.deckId&&Object.prototype.hasOwnProperty.call(DECK45_DESCRIPTIONS,p.deckId)&&(!erratic||dataFields(p.stats,ERRATIC_KEYS)&&ERRATIC_KEYS.every(function(k){return Number.isInteger(p.stats[k])&&p.stats[k]>=1&&p.stats[k]<=10;}));}catch(_){return false;}}
@@ -471,7 +472,7 @@
       ['bloodstone','Bloodstone',2],['critical_joker','Critical Joker CRIT',25],['hallucination','Hallucination',2],['gros_michel','Gros Michel extinction',6],['cavendish','Cavendish extinction',1000],['wheel_boss','The Wheel face down',7]
     ].map(function(x){return {id:x[0],label:x[1],denominator:x[2],numerator:Math.min(x[2],multiplier),baseline:1/x[2],effective:listedProbability(s,x[2])};});
     var packTotal=PACKS.reduce(function(n,p){return n+p.weight;},0),weights=shelfWeights(s),shelfTotal=weights.reduce(function(n,w){return n+w.w;},0);
-    return {activeOops:activeOops,oopsMultiplier:oopsMultiplier,playerLuckMultiplier:playerLuck,multiplier:multiplier,listed:listed,potionLuckMultiplier:potion.luckMultiplier,baseCritChance:permanentCrit(s,actualLevel)+potion.baseCritChance,baseCritEffectiveChance:Math.min(1,(permanentCrit(s,actualLevel)+potion.baseCritChance)*multiplier),permanentCritChance:permanentCrit(s,actualLevel),potionDropChance:Math.min(.5,multiplier/10),potionDropEligible:potionEligible(s)&&!(s.potions&&s.potions.blockedReason)&&(!s.potions||s.potions.inventory.length<2),bossDisablePotionChance:potion.bossDisableChance,potionDrop:{unlocked:potionEligible(s),full:!!(s.potions&&s.potions.inventory.length>=2),blocked:!!(s.potions&&s.potions.blockedReason),denominator:10,numerator:Math.min(5,multiplier),effective:Math.min(.5,multiplier/10),maximum:.5},potionCrit:{baseline:potion.baseCritChance,effective:Math.min(1,potion.baseCritChance*multiplier)},shopJokerEditions:editionWeights(s,'joker'),standardCardEditions:editionWeights(s,'standard'),
+    return {activeOops:activeOops,oopsMultiplier:oopsMultiplier,playerLuckMultiplier:playerLuck,multiplier:multiplier,listed:listed,potionLuckMultiplier:potion.luckMultiplier,baseCritChance:permanentCrit(s,actualLevel)+potion.baseCritChance,baseCritEffectiveChance:Math.min(1,(permanentCrit(s,actualLevel)+potion.baseCritChance)*multiplier),permanentCritChance:permanentCrit(s,actualLevel),potionDropChance:Math.min(.5,multiplier/10),potionDropEligible:potionEligible(s)&&!(s.potions&&s.potions.blockedReason)&&(!s.potions||s.potions.inventory.length<potionCapacity(s)),bossDisablePotionChance:potion.bossDisableChance,potionDrop:{unlocked:potionEligible(s),full:!!(s.potions&&s.potions.inventory.length>=potionCapacity(s)),blocked:!!(s.potions&&s.potions.blockedReason),denominator:10,numerator:Math.min(5,multiplier),effective:Math.min(.5,multiplier/10),maximum:.5},potionCrit:{baseline:potion.baseCritChance,effective:Math.min(1,potion.baseCritChance*multiplier)},shopJokerEditions:editionWeights(s,'joker'),standardCardEditions:editionWeights(s,'standard'),
       shopCardEditions:editionWeights(s,'shop_card'),wheelEditions:{foil:0.5,holo:0.35,poly:0.15},rarity:{common:0.7,uncommon:0.25,rare:0.05},
       shelf:weights.map(function(w){return {type:w.type,weight:w.w,probability:w.w/shelfTotal};}),packs:PACKS.map(function(p){return {id:p.id,weight:p.weight,probability:p.weight/packTotal};}),
       stickers:{eternal:stake.eternal?0.3:0,perishable:stake.perishable?0.3:0,rental:stake.rental?0.3:0,eternalPerishableDisjoint:true,rentalIndependent:true},
@@ -618,10 +619,8 @@
   function atomic(fn) {return function(s){
     check(s&&s.version===1,'This save is not supported.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));
     try{hydrate(next);fn.apply(null,[next].concat(args));refresh(next);
-      // Settle AFTER native scoring/on-play/Matador/lifecycle evaluation: this
-      // dollar cannot alter Vagabond/Bull/Ox eligibility midway through a hand.
-      effects.forEach(function(){addMoney(next,1);});
-      if(effects.length){note(next,'Level 19: +$'+effects.length+' from '+bossById[effects[0].bossId].name+' special effect'+(effects.length===1?'':'s')+'.');refreshPendingInterest(next);}
+      // Level19 now adds a pack option, replacing the former Boss-special
+      // dollar award. Retain native Boss evaluation/receipts without payment.
       sortHand(next,fn===setPotionState||fn===setPlayerLevel||fn===setCoinUnlocks||fn===setLevel10Deal||fn===abandon);
     }finally{bossEffectActions.delete(next);pokerContexts.delete(next);}
     Object.keys(s).forEach(function(k){delete s[k];});Object.keys(next).forEach(function(k){s[k]=next[k];});return s;
@@ -739,7 +738,8 @@
     var enhanced=meta&&options.playerLevel>=45;
     var levels={};Object.keys(HANDS).forEach(function(k){levels[k]=deckId==='scholar'?(enhanced?3:2):1;});
     var s={version:1,seed:seed,rng:hash(seed),nextId:1,deckId:deckId,stake:stakeId,stakeIndex:stakeById[stakeId].index,phase:'select',ante:1,blindIndex:0,round:0,money:deckId==='yellow'?14:4,hands:0,discards:0,handSize:8,jokerSlots:5,consumableSlots:2,target:0,score:0,hand:[],drawPile:[],discardPile:[],cards:[],jokers:[],consumables:[],levels:levels,vouchers:{},tags:[],doubleTags:0,skips:0,unusedDiscards:0,handSizeBonus:0,handsBonus:0,discardsBonus:0,tarotsUsed:0,planetTypes:{},ectoplasms:0,antePlayed:[],roundHandBonus:0,endless:false,shop:{items:[],rerollCost:5,voucher:null,packs:[]},pack:null,payout:{lines:[],total:0},lastResult:{name:'',chips:0,mult:0,total:0,glassBroken:0,lines:[]},log:[],stats:{handsPlayed:0,discardsUsed:0,cardsPlayed:0,cardsDiscarded:0,blindsWon:0,moneyEarned:0,bestHand:0,highestAnte:1,handCounts:{}}};
-    if(enhanced){s.deckProfile={version:1,startingLevel:options.playerLevel,deckId:deckId};if(deckId==='yellow')s.money=20;if(deckId==='erratic'){var statsDice={rng:hash(seed+'|deck45:erratic')},stats={};ERRATIC_KEYS.forEach(function(k){stats[k]=int(statsDice,10)+1;});s.deckProfile.stats=stats;s.money=stats.money;}}
+    if(meta&&options.playerLevel>=6)s.money+=1;
+    if(enhanced){s.deckProfile={version:1,startingLevel:options.playerLevel,deckId:deckId};if(deckId==='yellow')s.money=25;if(deckId==='erratic'){var statsDice={rng:hash(seed+'|deck45:erratic')},stats={};ERRATIC_KEYS.forEach(function(k){stats[k]=int(statsDice,10)+1;});s.deckProfile.stats=stats;s.money=stats.money;}}
     if(meta)enableProgression(s,options.playerLevel);
     setHandSort(s,Object.prototype.hasOwnProperty.call(options,'handSortMode')?options.handSortMode:'rank');
     setLevel10Deal(s,Object.prototype.hasOwnProperty.call(options,'level10Deal')?options.level10Deal:false);s.handDrawOrder=[];
@@ -1078,7 +1078,7 @@
     if(random(s)>=probability)return;
     var pool=Potions.DROP_CATALOG||Potions.CATALOG,def=pool[int(s,pool.length)],now=s.potionNow===undefined?0:s.potionNow;
     var receipt='boss:'+hash(String(s._uiId||s.seed))+':'+s.round+':'+s.potionDropSeq+':'+(state.sequence+1);
-    var result=Potions.receiveDrop(state,def.id,receipt,now);
+    var result=Potions.receiveDrop(state,def.id,receipt,now,s.playerLevel);
     s.potions=result.state;if(s.potionNow===undefined)s.potionNow=now;
     if(result.received)note(s,'Boss potion drop: '+def.name+'.');
   }
@@ -1089,7 +1089,7 @@
     return amount;
   }
   function finishRound(s) {
-    var dealTax=snapshotRoundDeal(s,'win'),potion=potionEffects(s),drop=Potions&&potionEligible(s)&&s.blindIndex===2&&(!s.potions||!s.potions.blockedReason&&s.potions.inventory.length<Potions.MAX_INVENTORY)?Math.min(.5,listedLuckMultiplier(s)/10):0;
+    var dealTax=snapshotRoundDeal(s,'win'),potion=potionEffects(s),drop=Potions&&potionEligible(s)&&s.blindIndex===2&&(!s.potions||!s.potions.blockedReason&&s.potions.inventory.length<potionCapacity(s))?Math.min(.5,listedLuckMultiplier(s)/10):0;
     s.phase='cashout';s.stats.blindsWon++;s.unusedDiscards=(s.unusedDiscards||0)+s.discards;var lines=[{label:'Blind reward',amount:blindInfo(s).reward}],boss=s.blindIndex===2,rentalCost=0;
     if(s.progressionEnabled===true){progressEvent(s,'blind-win',[3,5,10][s.blindIndex]*s.ante,{ante:s.ante,blindIndex:s.blindIndex});if(boss){s.stats.bossesWon++;s.stats.highestAnteDefeated=Math.max(s.stats.highestAnteDefeated,s.ante);}}
     // Rental charges are unconditional, before interest/payout, and can go into
@@ -1259,8 +1259,10 @@
   function packConsumable(s,type,used) {var showman=has(s,'showman'),special=(type==='tarot'?['soul']:type==='planet'?['black_hole']:['soul','black_hole']).filter(function(id){return showman||used.indexOf(id)<0&&!s.consumables.some(function(c){return c.id===id;});});if(special.length){var roll=random(s);if(roll<0.003*special.length)return consumableById[special[Math.floor(roll/0.003)]];}return randomConsumable(s,type,showman?null:used);}
   // Shared native generation: free Tag rewards use identical pools, stickers,
   // choices and pack-open triggers without payment, shop generation or buy XP.
-  function beginPack(s,def,context) {var choices=[],used=[];
-    for(var i=0;i<def.count;i++){var choice;if(def.type==='joker'){choice=jokerItem(s,undefined);if(!has(s,'showman')){var tries=0;while(used.indexOf(choice.id)>=0&&tries++<30)choice=jokerItem(s,undefined);}}
+  function beginPack(s,def,context) {var choices=[],used=[],extra=s.progressionEnabled===true&&Number.isInteger(s.playerLevel)&&s.playerLevel>=19&&s.playerLevel<=100?1:0;
+    // More offered options, NOT another selection. Frozen already-open packs
+    // are untouched; paid packs and free Tag packs share this generation path.
+    for(var i=0;i<def.count+extra;i++){var choice;if(def.type==='joker'){choice=jokerItem(s,undefined);if(!has(s,'showman')){var tries=0;while(used.indexOf(choice.id)>=0&&tries++<30)choice=jokerItem(s,undefined);}}
       else if(def.type==='card'){choice=cardItem(s,true);choice.card.enhancement=random(s)<0.4?pick(s,Object.keys(ENHANCEMENTS)):null;choice.card.seal=random(s)<0.2?pick(s,Object.keys(SEALS)):null;choice.description=describeCard(choice.card);}
       else {var type=def.type;if(type==='tarot'&&owned(s,'omen_globe')&&random(s)<0.2)type='spectral';if(i===0&&def.type==='planet'&&owned(s,'telescope'))choice=clone(planets.find(function(p){return p.hand===topHand(s);}));else choice=clone(packConsumable(s,type,used));}
       delete choice.sold;choices.push(choice);used.push(choice.id);

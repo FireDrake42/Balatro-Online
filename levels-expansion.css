@@ -1,0 +1,34 @@
+/* LEVELS lane: scoped, presentation-only. Shared style.css remains untouched. */
+.level-number-suffix{font-weight:800;text-shadow:0 0 .35em currentColor}
+.level-number-suffix.suffix-red{color:#ff858b}.level-number-suffix.suffix-orange{color:#ffb46b}.level-number-suffix.suffix-yellow{color:#ffe782}.level-number-suffix.suffix-green{color:#85efad}
+/* Actual level3 upgrade, blue arrows are decorative and never capture input. */
+.level-celebration.level-celebration-colourful{border:2px solid #8dc7ff;background:linear-gradient(130deg,#172d45 0%,#244738 44%,#403353 100%);box-shadow:0 12px 45px #0009,0 0 22px #80b8ff55;color:#fff;max-width:calc(100vw - 24px);overflow:visible}
+.level-celebration-colourful .level-star{color:#ffe995;text-shadow:0 0 16px #ffda7877}
+.level-celebration-colourful .level-up-blue-arrows{background:none!important;color:#82c6ff!important;border-radius:0;display:block;width:20px;height:32px;font-style:normal;font-size:30px;font-weight:900;line-height:1;text-shadow:0 0 12px #479dff;pointer-events:none;animation-name:levels-blue-rise}
+@keyframes levels-blue-rise{from{opacity:0;transform:translate(0,20px) scale(.7)}20%{opacity:1}to{opacity:0;transform:translate(var(--particle-x),calc(var(--particle-y) - 68px)) scale(1.1)}}
+/* Native progress retains the same semantic value; only owner-level paint varies. */
+.levels-owner-progress{--levels-progress-gradient:linear-gradient(90deg,#7ca3ca,#a8c7df);transition:background .25s ease,box-shadow .25s ease}
+progress.levels-owner-progress{accent-color:#88c3ed;background-color:#122331;border-radius:9px;overflow:hidden}
+progress.levels-owner-progress::-webkit-progress-value{background:var(--levels-progress-gradient)}
+progress.levels-owner-progress::-moz-progress-bar{background:var(--levels-progress-gradient)}
+#level-hud.levels-rich-progress .xp-track{height:13px;border:1px solid #b6d7f447;box-shadow:inset 0 1px 4px #0007}
+#level-hud.levels-rich-progress .xp-track>span{border-radius:inherit}
+#level-hud.levels-rich-progress .player-level-button{border-color:#9cceef70;box-shadow:0 0 14px #71baff25}
+/* Level34 clean, colourful tabs and extra evidence-only overview/Insights. */
+.levels-rich-dashboard .stats-tabs{display:flex;gap:7px;flex-wrap:wrap;padding:9px;border-radius:13px;background:linear-gradient(115deg,#15364588,#282d4588);border:1px solid #9dc9dc33}
+.levels-rich-dashboard .stats-tabs .tab{min-height:44px;flex:1 1 auto;border-radius:9px;border:1px solid #b1cfe038;background:#15232b;color:inherit}
+.levels-rich-dashboard .stats-tabs .tab.active{background:linear-gradient(110deg,#214f57,#3c3c62);border-color:#a4dfed;box-shadow:0 0 12px #94d7f32a}
+.levels-rich-dashboard .stats-tabs .tab:nth-child(3n+2){border-bottom-color:#e5c477}
+.levels-rich-dashboard .stats-tabs .tab:nth-child(3n){border-bottom-color:#cfabeb}
+.levels-rich-dashboard .stats-panel{border-radius:14px;border:1px solid #9dc6da38;box-shadow:0 5px 16px #0002}
+.levels-rich-stats .stats-panel{background:linear-gradient(120deg,#14394370,#2c304c70)}
+.levels-rich-dashboard .stat-grid{gap:10px}.levels-rich-dashboard .stat-box{border-radius:10px;padding:12px;background:#0f222b55;border:1px solid #a1c2d51a}
+.levels-rich-dashboard .stat-box strong{font-variant-numeric:tabular-nums}.levels-rich-dashboard .stats-note{line-height:1.4}
+/* Level40 faucet polish leaves each original claim/cooldown/guard control intact. */
+.levels-rich-faucet{border:1px solid #9bd4df44;border-radius:17px;background:linear-gradient(140deg,#12323b88,#1c293f77);padding:clamp(12px,2.5vw,22px)}
+.levels-rich-faucet .faucet-daily-tier,.levels-rich-faucet .faucet-task,.levels-rich-faucet .faucet-activity-task{border:1px solid #9bd4df33;border-radius:12px;padding:12px;background:#0e212b55;margin-block:10px}
+.levels-rich-faucet .faucet-task progress{display:block;width:100%;height:11px;margin-top:8px;border:0;border-radius:8px}
+.levels-rich-faucet button{min-height:44px}.levels-rich-faucet .button-row{gap:8px;flex-wrap:wrap}.levels-rich-faucet small{line-height:1.45}
+@media(max-width:420px){.levels-rich-dashboard .stats-tabs{gap:5px;padding:7px}.levels-rich-dashboard .stats-tabs .tab{flex-basis:40%;padding:8px 6px}.levels-rich-faucet .faucet-title{align-items:flex-start}.levels-rich-faucet .faucet-title h2{font-size:1.3rem}.level-celebration-colourful .level-up-blue-arrows{font-size:25px}}
+@media(prefers-reduced-motion:reduce){.levels-owner-progress{transition:none}.level-celebration-colourful .level-up-blue-arrows{animation:none!important;opacity:.55;transform:translate(var(--particle-x),var(--particle-y))}.level-celebration.level-celebration-colourful{animation:none!important}}
+.level-celebration-colourful.levels-motion-static .level-up-blue-arrows,body.reduced-motion .level-celebration-colourful .level-up-blue-arrows,body.low-power .level-celebration-colourful .level-up-blue-arrows,body.motion-off .level-celebration-colourful .level-up-blue-arrows,body.reduce-motion .level-celebration-colourful .level-up-blue-arrows,body[data-motion="off"] .level-celebration-colourful .level-up-blue-arrows{animation:none!important}

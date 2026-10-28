@@ -1,0 +1,13 @@
+/* New integration surfaces only. Native cards, media and game colours retained. */
+.expansion-mode-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.expansion-mode-nav button{min-height:44px}
+.expansion-mode-nav [aria-pressed=true]{outline:2px solid #85dcff;outline-offset:2px}
+#original-game-offers-host{min-width:0}.emerald-slots .slots-felt{display:flex;flex-direction:column;align-items:center;gap:16px}
+.emerald-slots .slots-level-block,.emerald-slots .slots-machine{width:min(100%,620px)}
+.emerald-slots .slots-companion{order:1}.emerald-slots .slots-level-block{order:0}.emerald-slots .slots-machine{order:2}.emerald-slots .slots-player{order:3}.emerald-slots .slots-result{order:4;width:min(100%,620px)}
+.emerald-slots .slots-window{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));max-width:100%;margin-inline:auto}
+.emerald-slots .slots-reel{display:grid;grid-template-rows:repeat(3,minmax(56px,1fr));padding:0;margin:0;list-style:none;min-width:0}
+.emerald-slots .slots-symbol{min-width:0}.emerald-slots .slots-middle{outline:2px solid #f5d56e;outline-offset:-2px}
+.levels-owner-progress{background:var(--levels-progress-gradient)!important;box-shadow:0 0 8px var(--levels-progress-glow)}
+progress.levels-owner-progress::-webkit-progress-value{background:var(--levels-progress-gradient)}
+progress.levels-owner-progress::-moz-progress-bar{background:var(--levels-progress-gradient)}
+@media(max-width:420px){.emerald-slots .slots-window{gap:4px}.emerald-slots .slots-symbol-art img{max-width:100%;height:auto}.emerald-slots .slots-machine{padding:10px}}

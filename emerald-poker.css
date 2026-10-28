@@ -108,4 +108,14 @@
  #emerald-poker-table .poker-dialogue{padding:12px 8px;font-size:13px}
  #emerald-poker-table .poker-rewards h2{font-size:16px}
 }
-@media(prefers-reduced-motion:reduce){#emerald-poker-table *,#emerald-poker-table *::before,#emerald-poker-table *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* Shared EMB medal ribbons and current-level badge. Purely decorative sources. */
+:is(#emerald-poker-table,#emerald-strict-poker-table) .poker-level-ribbon{display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:28px;padding:2px 6px;clip-path:polygon(0 0,100% 0,100% 100%,50% 85%,0 100%);background:#e9bd7f;color:#2e281b;font-weight:800}
+:is(#emerald-poker-table,#emerald-strict-poker-table) .poker-level-ribbon[data-tier="1"]{background:#c0e4f3;color:#18384a}
+:is(#emerald-poker-table,#emerald-strict-poker-table) .poker-level-ribbon[data-tier="2"]{background:#eee6a5;color:#3c3515}
+:is(#emerald-poker-table,#emerald-strict-poker-table) .poker-level-ribbon[data-tier="3"],:is(#emerald-poker-table,#emerald-strict-poker-table) .poker-level-ribbon[data-tier="4"]{background:#dac3fa;color:#3a2154}
+:is(#emerald-poker-table,#emerald-strict-poker-table) .poker-levels .is-current{outline:2px solid #ce9eff;outline-offset:-2px;background:#adf58730}
+:is(#emerald-poker-table,#emerald-strict-poker-table) .poker-level-badge{display:inline-block;padding:3px 6px;margin-left:7px;border:1px solid #e0b6ff;border-radius:5px;background:#4b2964;color:#fff0ff;font-size:9px;font-weight:800}
+/* Slow Chill deal/redraw, explicit transition flag only. Never locks controls. */
+#emerald-poker-table .poker-card-slot.poker-dealing .poker-card{animation:poker-chill-slow-deal .8s cubic-bezier(.18,.7,.24,1) both;animation-delay:calc(var(--poker-reveal-index,0)*.22s)}
+@keyframes poker-chill-slow-deal{from{opacity:0;transform:translateY(-14px) rotate(-5deg)}to{opacity:1;transform:translateY(0) rotate(0)}}
+@media(prefers-reduced-motion:reduce){#emerald-poker-table *,#emerald-poker-table *::before,#emerald-poker-table *::after{animation:none!important;animation-delay:0s!important;transition:none!important;scroll-behavior:auto!important}}

@@ -3,7 +3,7 @@
  * Host must pair all receipt streams with their native game in the same commit;
  * this pure proposal model has no storage, clock, RNG, UI or migration effects. */
 (function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldFriendship=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
- const LEGACY_VERSION=1,VERSION=2,MAX_LEVEL=15,MAX_COUNT=Number.MAX_SAFE_INTEGER;
+ const LEGACY_VERSION=1,VERSION=2,DECIMAL_VERSION=3,MAX_LEVEL=15,MAX_COUNT=Number.MAX_SAFE_INTEGER;
  const THRESHOLDS=Object.freeze([100,150,200,250,300,350,400,500,750,1000]);
  // Stage-local costs to ENTER levels2..15. The final100000 is the disclosed
  // default; there is no next-stage requirement at terminal level15.
@@ -38,27 +38,30 @@
   const fp=Number(half)/2;
   check(fp<=MAX_COUNT&&(Number.isInteger(fp)?BigInt(fp)*2n:BigInt(fp*2))===half,'Friendship FP precision would overflow; no credits were changed.');return fp;
  }
+ function milliOfNumber(n){check(typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=MAX_COUNT,'Friendship precision would overflow.');const [whole,fraction='']=String(n).split('.');check(/^\d+$/.test(whole)&&/^\d{0,3}$/.test(fraction),'Friendship precision exceeds thousandths.');return BigInt(whole)*1000n+BigInt(fraction.padEnd(3,'0'));}
+ function numericMilli(n){const fp=Number(String(n/1000n)+'.'+String(n%1000n).padStart(3,'0'));check(milliOfNumber(fp)===n,'Friendship FP precision would overflow; no credits were changed.');return fp}
+ function validExpansion(e){if(!e||typeof e!=='object'||!fields(e,Object.keys(e))||Object.keys(e).length<1||!Object.keys(e).every(k=>['poker','strict','slots'].includes(k)))return false;return Object.values(e).every(v=>fields(v,['sequence','pointsMilli','lastId'])&&pokerCount(v.sequence)&&pokerCount(v.pointsMilli)&&(v.sequence===0?v.pointsMilli===0&&v.lastId===null:roundId(v.lastId)))}
  function rawTotals(s){
   const c=own(s,'chill')?s.chill:null,p=own(s,'poker')?s.poker:null,legacyFP=BigInt(s.rounds)+BigInt(c?c.baccarat:0)+BigInt(c?c.highlow:0);
   check(legacyFP<=BigInt(MAX_COUNT),'Friendship legacy-round counter would overflow.');
   const legacyRoundFP=Number(legacyFP),pokerRounds=p?p.rounds:0,pokerPointsHalf=p?p.pointsHalf:0,totalHalf=legacyFP*2n+BigInt(pokerPointsHalf);
-  const totalFP=numericFP(totalHalf);
-  return {totalLegacyRoundFP:legacyRoundFP,pokerRounds,pokerPointsHalf,totalFP,totalCredits:totalFP,totalFPHalfText:String(totalHalf)};
+  let totalFP=numericFP(totalHalf),extra=0n,sequences=0n;if(own(s,'expansion')){for(const v of Object.values(s.expansion)){extra+=BigInt(v.pointsMilli);sequences+=BigInt(v.sequence)}totalFP=numericMilli(totalHalf*500n+extra)}
+  return {totalLegacyRoundFP:legacyRoundFP,pokerRounds,pokerPointsHalf,totalFP,totalCredits:totalFP,totalFPHalfText:extra?String(totalFP*2):String(totalHalf),...(own(s,'expansion')?{totalFPMilliText:String(totalHalf*500n+extra),expansionSequencesText:String(sequences)}:{})};
  }
- function derivedExpanded(totalFP){let level=1,fp=totalFP;while(level<MAX_LEVEL&&fp>=STAGE_COSTS[level-1]){fp-=STAGE_COSTS[level-1];level++}return {level,fp};}
+ function derivedExpanded(totalFP){let level=1,fp=milliOfNumber(totalFP);while(level<MAX_LEVEL&&fp>=BigInt(STAGE_COSTS[level-1])*1000n){fp-=BigInt(STAGE_COSTS[level-1])*1000n;level++}return {level,fp:numericMilli(fp)};}
  function validateExpanded(s){
-  if(!fields(s,['version','revision','rounds','level','fp','lastRoundId'].concat(own(s,'chill')?['chill']:[],own(s,'poker')?['poker']:[]))||s.version!==VERSION||!count(s.rounds)||!count(s.revision))return false;
-  if(own(s,'chill')&&!validChill(s.chill)||own(s,'poker')&&!validPoker(s.poker))return false;
-  const t=rawTotals(s);if(BigInt(s.revision)!==BigInt(t.totalLegacyRoundFP)+BigInt(t.pokerRounds))return false;
+  if(!fields(s,['version','revision','rounds','level','fp','lastRoundId'].concat(own(s,'chill')?['chill']:[],own(s,'poker')?['poker']:[],s.version===DECIMAL_VERSION?['expansion']:[]))||![VERSION,DECIMAL_VERSION].includes(s.version)||!count(s.rounds)||!count(s.revision))return false;
+  if(own(s,'chill')&&!validChill(s.chill)||own(s,'poker')&&!validPoker(s.poker)||s.version===DECIMAL_VERSION&&!validExpansion(s.expansion))return false;
+  const t=rawTotals(s);if(BigInt(s.revision)!==BigInt(t.totalLegacyRoundFP)+BigInt(t.pokerRounds)+BigInt(t.expansionSequencesText||'0'))return false;
   const d=derivedExpanded(t.totalFP);return s.level===d.level&&s.fp===d.fp&&(s.rounds===0?s.lastRoundId===null:roundId(s.lastRoundId));
  }
  function validate(state){try{
   // Inspect the descriptor before reading version: a poisoned discriminator
   // must not execute an accessor merely to choose a schema branch.
   const d=state&&typeof state==='object'?Object.getOwnPropertyDescriptor(state,'version'):null;
-  if(!d||!own(d,'value'))return false;return d.value===LEGACY_VERSION?validateLegacy(state):d.value===VERSION&&validateExpanded(state);
+  if(!d||!own(d,'value'))return false;return d.value===LEGACY_VERSION?validateLegacy(state):[VERSION,DECIMAL_VERSION].includes(d.value)&&validateExpanded(state);
  }catch(_){return false}}
- function copy(state){check(validate(state),'Emerald friendship save needs attention. No round was credited.');return {version:state.version,revision:state.revision,rounds:state.rounds,level:state.level,fp:state.fp,lastRoundId:state.lastRoundId,...(own(state,'chill')?{chill:{...state.chill}}:{}),...(own(state,'poker')?{poker:{...state.poker}}:{})}}
+ function copy(state){check(validate(state),'Emerald friendship save needs attention. No round was credited.');return {version:state.version,revision:state.revision,rounds:state.rounds,level:state.level,fp:state.fp,lastRoundId:state.lastRoundId,...(own(state,'chill')?{chill:{...state.chill}}:{}),...(own(state,'poker')?{poker:{...state.poker}}:{}),...(own(state,'expansion')?{expansion:JSON.parse(JSON.stringify(state.expansion))}:{})}}
  function totals(state=undefined){return rawTotals(state===undefined?create():copy(state))}
  function info(state=undefined){
   const s=state===undefined?create():copy(state);
@@ -71,13 +74,13 @@
   const next=copy(state);check(count(expectedRevision)&&expectedRevision===next.revision,'Emerald friendship revision changed. Read the current save before crediting a round.');
   check(fields(receipt,['roundId','completedRounds'])&&roundId(receipt.roundId)&&count(receipt.completedRounds),'Invalid native Blackjack round receipt.');
   check(next.rounds<MAX_COUNT&&next.revision<MAX_COUNT,'Emerald friendship completed-round counter would overflow.');check(receipt.completedRounds===next.rounds+1,'Only the next completed Blackjack round can credit friendship.');check(receipt.roundId!==next.lastRoundId,'That Blackjack round was already credited.');
-  next.version=VERSION;next.rounds++;next.revision++;next.lastRoundId=receipt.roundId;return settled(next);
+  next.version=Math.max(VERSION,next.version);next.rounds++;next.revision++;next.lastRoundId=receipt.roundId;return settled(next);
  }
  function completeChill(state,game,receipt,expectedRevision){
   const next=copy(state);check(expectedRevision===next.revision&&next.revision<MAX_COUNT,'Friendship revision changed.');
   check(['baccarat','highlow'].includes(game)&&fields(receipt,['roundId','credited'])&&count(receipt.credited)&&roundId(receipt.roundId)&&receipt.roundId.startsWith(game+':'),'Invalid native card-game friendship receipt.');
   const c=next.chill||{baccarat:0,highlow:0,lastBaccaratId:null,lastHighlowId:null},last=game==='baccarat'?'lastBaccaratId':'lastHighlowId';
-  check(receipt.credited===c[game]+1&&receipt.roundId!==c[last],'That card-game reward is not the next receipt.');c[game]++;c[last]=receipt.roundId;next.chill=c;next.version=VERSION;next.revision++;return settled(next);
+  check(receipt.credited===c[game]+1&&receipt.roundId!==c[last],'That card-game reward is not the next receipt.');c[game]++;c[last]=receipt.roundId;next.chill=c;next.version=Math.max(VERSION,next.version);next.revision++;return settled(next);
  }
  function completePoker(state,receipt,expectedRevision){
   const next=copy(state);check(count(expectedRevision)&&expectedRevision===next.revision,'Friendship Poker revision changed.');
@@ -85,7 +88,8 @@
   const p=next.poker||{rounds:0,pointsHalf:0,lastRoundId:null};
   check(p.rounds<MAX_COUNT&&next.revision<MAX_COUNT&&p.pointsHalf<=MAX_COUNT-receipt.fp*2,'Friendship Poker counter or half-point total would overflow.');
   check(receipt.completedRounds===p.rounds+1&&receipt.roundId!==p.lastRoundId,'Only the next completed Poker round can settle friendship.');
-  p.pointsHalf+=receipt.fp*2;p.rounds++;p.lastRoundId=receipt.roundId;next.poker=p;next.revision++;next.version=VERSION;return settled(next);
+  p.pointsHalf+=receipt.fp*2;p.rounds++;p.lastRoundId=receipt.roundId;next.poker=p;next.revision++;next.version=Math.max(VERSION,next.version);return settled(next);
  }
- return Object.freeze({LEGACY_VERSION,VERSION,MAX_LEVEL,STAGE_COSTS,LEVEL_STARTS,create,validate,copy,info,totals,completeRound,completeChill,completePoker});
+ function completeExpansion(state,source,receipt,expectedRevision){const next=copy(state);check(['poker','strict','slots'].includes(source)&&count(expectedRevision)&&expectedRevision===next.revision&&next.revision<MAX_COUNT,'Expansion friendship source or revision changed.');check(fields(receipt,['id','sequence','pointsMilli'])&&roundId(receipt.id)&&pokerCount(receipt.sequence)&&pokerCount(receipt.pointsMilli),'Invalid exact-decimal friendship receipt.');const e=next.expansion||{},previous=e[source]||{sequence:0,pointsMilli:0,lastId:null};check(receipt.sequence===previous.sequence+1&&receipt.id!==previous.lastId&&previous.pointsMilli<=MAX_COUNT-receipt.pointsMilli,'Expansion friendship receipt was replayed or overflowed.');e[source]={sequence:receipt.sequence,pointsMilli:previous.pointsMilli+receipt.pointsMilli,lastId:receipt.id};next.expansion=e;next.version=DECIMAL_VERSION;next.revision++;return settled(next)}
+ return Object.freeze({LEGACY_VERSION,VERSION,DECIMAL_VERSION,MAX_LEVEL,STAGE_COSTS,LEVEL_STARTS,create,validate,copy,info,totals,completeRound,completeChill,completePoker,completeExpansion});
 });

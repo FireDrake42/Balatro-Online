@@ -16,7 +16,7 @@
  function finish(before,next,extra={}){const changed=KEYS.some(k=>k!=='revision'&&before[k]!==next[k]);if(changed){check(before.revision<MAX,'revision cannot advance safely; export your save.');next.revision=before.revision+1}check(validate(next),'transition cannot be represented safely.');return {state:next,changed,...extra}}
  // Explicit verified host context, never PROFILE/RUN reads or optional state.
  function environment(env={}){check(env&&typeof env==='object'&&!Array.isArray(env)&&[Object.prototype,null].includes(Object.getPrototypeOf(env)),'invalid power context.');const out={actualLevel:0,disabledCount:0};for(const key of Reflect.ownKeys(env)){const d=Object.getOwnPropertyDescriptor(env,key);check(['actualLevel','disabledCount'].includes(key)&&d&&own(d,'value')&&d.enumerable===true,'invalid power context field.');out[key]=d.value}check(Number.isSafeInteger(out.actualLevel)&&out.actualLevel>=0&&out.actualLevel<=100,'invalid actual player level.');check(Number.isSafeInteger(out.disabledCount)&&out.disabledCount>=0&&out.disabledCount<=8,'invalid disabled feature count.');return out}
- function drainRate(s,env={}){const e=environment(env),base=s.lowPower?.2:s.mode==='light'?2:s.mode==='dark'?.5:1;return base/(e.actualLevel>=51?1+.03*e.disabledCount:1)}
+ function drainRate(s,env={}){const e=environment(env),base=s.lowPower?.2:s.mode==='light'?2:s.mode==='dark'?.5:1;return base/((e.actualLevel>=28?1.1:1)*(e.actualLevel>=51?1+.03*e.disabledCount:1))}
  function chargeRate(level){check(Number.isSafeInteger(level)&&level>=1,'invalid charger level.');const rate=(80+2*(level-1))/100;check(finite(rate)&&rate>0,'charger rate cannot be represented safely.');return rate}
  function effectiveChargeRate(s,env={}){const e=environment(env);return chargeRate(s.chargerLevel)*(s.lowPower?.5:1)*(e.actualLevel>=55?2:1)}
  // Integrate through all four exact boundary bands. <=80 is normal; <=20 is
@@ -37,5 +37,28 @@
  function configure(s,patch,revision){const before=current(s,revision);check(patch&&typeof patch==='object'&&!Array.isArray(patch),'invalid settings.');const keys=Reflect.ownKeys(patch);check(keys.length>0&&keys.every(k=>['mode','lowPower','adaptive'].includes(k)&&own(Object.getOwnPropertyDescriptor(patch,k)||{},'value')&&Object.getOwnPropertyDescriptor(patch,k).enumerable===true),'unsupported settings.');const next={...before,...patch};check(['normal','light','dark'].includes(next.mode)&&typeof next.lowPower==='boolean'&&typeof next.adaptive==='boolean','invalid settings.');if(next.sessionMs>0&&next.charge>=target(next)){next.sessionMs=0;next.cooldownMs=COOLDOWN_MS}return finish(before,next,{notifications:[],chargedMs:0})}
  function priceHalf(level){check(Number.isSafeInteger(level)&&level>=1&&Number.isSafeInteger(level+1)&&Number.isSafeInteger(20*(level+1)),'next upgrade price exceeds safe integer precision.');return 20*(level+1)}
  function upgrade(s,coinsHalf,revision){const before=current(s,revision),price=priceHalf(before.chargerLevel);check(integer(coinsHalf),'invalid faucet coin balance.');check(coinsHalf>=price,'not enough faucet coins.');const next={...before,chargerLevel:before.chargerLevel+1};chargeRate(next.chargerLevel);return finish(before,next,{coinsHalf:coinsHalf-price,priceHalf:price,chargedMs:0,notifications:[]})}
- return Object.freeze({SESSION_MS,COOLDOWN_MS,validate,normalize,profileState,create,advance,chargeInfo,startCharge,configure,upgrade,chargeRate,effectiveChargeRate,drainRate,timeToEmpty,target,priceHalf});
+ // Read-only game-model contributors, NOT hardware/app/CPU measurements. This
+ // function never observes a real device or invents per-feature usage shares.
+ // ETA assumes the CURRENT mode/rates and observed eligible foreground time.
+ function analysis(s,env={}){
+  const n=normalize(s),e=environment(env);check(n,'battery not activated.');
+  const modeBasePerMinute=n.mode==='light'?2:n.mode==='dark'?.5:1;
+  const policyBasePerMinute=n.lowPower?.2:modeBasePerMinute;
+  const levelLifeMultiplier=e.actualLevel>=28?1.1:1;
+  const featureLifeMultiplier=e.actualLevel>=51?1+.03*e.disabledCount:1;
+  const bandMultiplier=n.charge>80?2:n.charge>20?1:n.charge>5?1/1.5:.5;
+  const currentDrainPerMinute=n.charge>0?drainRate(n,e)*bandMultiplier:0;
+  const charging=n.sessionMs>0,chargePerMinute=effectiveChargeRate(n,e),chargeTarget=target(n);
+  const targetEtaMs=charging?(chargeTarget-n.charge)/chargePerMinute*60000:null;
+  const sessionChargeEtaMs=charging?Math.min(n.sessionMs,targetEtaMs):null;
+  return {realDevice:false,mode:n.mode,lowPower:n.lowPower,modeBasePerMinute,policyBasePerMinute,
+   levelLifeMultiplier,featureLifeMultiplier,lifeMultiplier:levelLifeMultiplier*featureLifeMultiplier,
+   disabledCount:e.actualLevel>=51?e.disabledCount:0,bandMultiplier,currentDrainPerMinute,
+   flow:charging?'charging':n.charge>0?'discharging':'empty',netPerMinute:charging?chargePerMinute:-currentDrainPerMinute,
+   chargePerMinute,chargeTarget,targetEtaMs,sessionChargeEtaMs,
+   targetReachableThisSession:charging&&targetEtaMs<=n.sessionMs,
+   chargeUntilSessionEnd:charging?Math.min(chargeTarget,n.charge+chargePerMinute*n.sessionMs/60000):n.charge,
+   sessionRemainingMs:n.sessionMs,cooldownRemainingMs:n.cooldownMs,timeToEmptyMs:timeToEmpty(n,e)};
+ }
+ return Object.freeze({SESSION_MS,COOLDOWN_MS,validate,normalize,profileState,create,advance,chargeInfo,startCharge,configure,upgrade,chargeRate,effectiveChargeRate,drainRate,timeToEmpty,analysis,target,priceHalf});
 });
