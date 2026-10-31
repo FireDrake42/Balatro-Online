@@ -1,7 +1,7 @@
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./potions'), require('./emerald-poker-events'));
-  else root.BOProgress = factory(root.BOPotions, root.BOEmeraldPokerEvents);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (POT, EVENTS) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./potions'), require('./emerald-poker-events'), require('./late-level-rules'));
+  else root.BOProgress = factory(root.BOPotions, root.BOEmeraldPokerEvents, root.BOLateLevels);
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (POT, EVENTS, LL) {
   'use strict';
 
   // Profile-only arithmetic. Callers provide ordered gameplay receipts and time.
@@ -152,6 +152,10 @@
       if (index >= 39 && index !== 48) required = Math.max(1, Math.floor(required / 10) * 8 + Math.ceil((required % 10) * 8 / 10));
       return index >= 49 ? discountCost(required) : required;
     });
+    // Confirmed FINAL outgoing50..99 prices override old exponential placeholders,
+    // after permanent discounts and before any currently earned Potion saving.
+    if (!LL) throw new Error('Keep late-level-rules.js and late-level-costs.js with progression.js.');
+    for (var late = 50; late < 100; late++) table[late - 1] = LL.normalCost(late);
     var baseCosts = table.slice(), effects = potionContext(config).effects;
     if (effects.xpCostMultiplier === 0.9) table = table.map(discountCost);
     table.baseCosts = baseCosts;
@@ -203,15 +207,15 @@
       jokerBaseSlots: level >= 35 ? 6 : level >= 5 ? 5 : level >= 4 ? 4 : 3,
       selectionLimit: level >= 35 ? 6 : 5, handSizeBonus: level >= 43 ? 1 : 0,
       numberSuffixes: level >= 7, passiveXp: level >= 9, themes: level >= 10, potions: level >= 12, bossDisable: false,
-      xpMultiplier: level >= 15 ? 2 : 1, luckMultiplier: level >= 17 ? 1.25 : 1,
+      xpMultiplier: level >= 15 ? 2 : 1, luckMultiplier: level >= 57 ? 1.375 : level >= 17 ? 1.25 : 1,
       enhancedLevelsUI: level >= 18, bossEffectMoney: 0, packOptionBonus: level >= 19 ? 1 : 0,
-      runStartingMoneyBonus: level >= 6 ? 1 : 0, balatroXpMultiplier: level >= 31 ? 1.1 : 1,
+      runStartingMoneyBonus: level >= 59 ? 6 : level >= 6 ? 1 : 0, balatroXpMultiplier: level >= 31 ? 1.1 : 1,
       potionSlots: level >= 47 ? 4 : level >= 40 ? 3 : 2, stockDurationMs: level >= 40 ? 60000 : 600000,
       richerStats: level >= 34, richerProgress: level >= 40, captchaCharacters: level >= 40 ? 5 : 6,
       bossBonusHands: level >= 20 ? 1 : 0, bossBonusDiscards: level >= 20 ? 1 : 0,
       stockMarket: level >= 21, casinoTrack: level >= 24, moreTracks:level>=27, faucet: level >= 25, faucetNotifications:level>=28,
       animationDurationMultiplier:level>=22?.8:1,manualXpMultiplier:level>=22?1.2:1,roundCashoutBonus:level>=23?1:0,shopDiscount:level>=24?1:0,
-      interestRate:level>=100?0:level>=30?.00025:level>=26?.00015:level>=20?.0001:0,interestCap:level>=100?0:level>=43?10:level>=30?5:level>=26?3:level>=20?2:0,fullscreen:level>=31,baseCritChance:level>=53?.02:level>=32?.01:0,potionMerging:level>=33,
+      interestRate:level>=100?0:level>=30?.00025:level>=26?.00015:level>=20?.0001:0,interestCap:level>=100?0:level>=43?10:level>=30?5:level>=26?3:level>=20?2:0,interestCapPerSecond:LL.capPerSecond(level),criticalInterestChance:LL.criticalChance(level),fullscreen:level>=31,baseCritChance:level>=53?.02:level>=32?.01:0,potionMerging:level>=33,
       enhancedUI: level >= 30, roundBonusMoney: (level >= 23 ? 1 : 0) + (level >= 35 ? 2 : 0)
     };
   }
@@ -826,7 +830,7 @@
       info = faucetView(draft, now, settings);
     } catch (error) { return claimFailure(/overflow/i.test(error.message) ? 'overflow' : 'invalid-profile', error.message); }
     if (!info.unlocked) return claimFailure('locked', 'The virtual coin faucet unlocks at player level 25.');
-    if (!record(options) || options.passedCaptcha !== true || options.passedQuiz !== true) return claimFailure('validation-failed', 'Both the local challenge and the Balatro question must be answered correctly.');
+    if (!record(options) || options.passedCaptcha !== true || draft.level < 56 && options.passedQuiz !== true) return claimFailure('validation-failed', draft.level >= 56 ? 'The local CAPTCHA must be answered correctly.' : 'Both the local challenge and the Balatro question must be answered correctly.');
     if (info.clockRollback) return claimFailure('clock-rollback', 'The daily clock is earlier than the last saved faucet day.');
     if (!info.ready) return Object.assign(claimFailure('cooldown', 'The faucet cooldown has not finished.'), {remainingMs: info.remainingMs, nextClaimAt: info.nextClaimAt});
     var next = now + info.cooldownMs, f = draft.faucet, table = settings.table;

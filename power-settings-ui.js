@@ -12,6 +12,7 @@
   const ID = 'power-settings-controls';
   const EN = Object.freeze({
     title: 'Interest and feature power',
+    interestRulesLate: 'One saved interest stream. Existing XP/Joker/Poker boosts apply before its nominal cap. From Level63 the roadmap cap is XP/sec, converted to each payment interval. From50, one critical roll per real payment doubles that capped payment afterward. At80 earned cadence takes over; the saved choice remains.',
     interestTitle: 'Compound Interest · one saved stream',
     interestRules: 'From actual Level 42, the cap is 10 actual XP per payment, not per second. These rows edit one interest stream, not separate payments. Percentages are base rates before earned-XP bonuses and the cap.',
     fullUnlock: 'Full interval/rate choice unlocks at Level 44. Until then, the native timing and rate stay unchanged.',
@@ -105,7 +106,7 @@
     const count = view.disabledCount, factor = (1 + .03 * count).toFixed(2);
     return message('h3', 'title', undefined, ' id="power-settings-title"') +
       '<fieldset class="power-interest-settings">' + message('legend', 'interestTitle') +
-      message('p', 'interestRules', undefined, ' id="power-interest-rules"') +
+      message('p', view.level>=50?'interestRulesLate':'interestRules', undefined, ' id="power-interest-rules"') +
       (view.level < 44 ? message('p', 'fullUnlock') : '') +
       (view.level === 100 ? message('p', 'zero', undefined, ' class="power-interest-zero"') : '') +
       '<div class="power-interest-rows">' + interestRows(view) + '</div></fieldset>' +
@@ -121,6 +122,7 @@
   }
   function render(profile, prefs) {
     const view = project(profile, prefs);
+    if(view.level>=80)return ''; // retire controls, not saved choices/history/policy.
     return '<section id="' + ID + '" class="power-settings-controls" aria-labelledby="power-settings-title"' +
       ' data-power-ui-signature="' + esc(view.signature) + '">' + contents(view) + '</section>';
   }
@@ -128,6 +130,7 @@
     const view = project(profile, prefs);
     const section = container?.id === ID ? container : container?.querySelector?.('#' + ID);
     // Parent inserts render() into Settings; never replace an unrelated surface.
+    if(section&&view.level>=80){section.remove();return true;}
     if (!section || section.getAttribute('data-power-ui-signature') === view.signature) return false;
     const html = contents(view);
     section.innerHTML = html;
