@@ -1,10 +1,10 @@
 /* Balatro Online rules engine. Original code; no DOM, network or assets. */
 (function (root, factory) {
   'use strict';
-  var BO = factory(typeof module === 'object' && module.exports ? require('./potions.js') : root && root.BOPotions, typeof module === 'object' && module.exports ? require('./run-wallet.js') : root && root.BORunWallet, typeof module === 'object' && module.exports ? require('./frenzy.js') : root && root.BOFrenzy, typeof module === 'object' && module.exports ? require('./passive-money.js') : root && root.BOPassiveMoney, typeof module === 'object' && module.exports ? require('./food-effects.js') : root && root.BOFoods);
+  var BO = factory(typeof module === 'object' && module.exports ? require('./potions.js') : root && root.BOPotions, typeof module === 'object' && module.exports ? require('./run-wallet.js') : root && root.BORunWallet, typeof module === 'object' && module.exports ? require('./frenzy.js') : root && root.BOFrenzy, typeof module === 'object' && module.exports ? require('./passive-money.js') : root && root.BOPassiveMoney, typeof module === 'object' && module.exports ? require('./food-effects.js') : root && root.BOFoods, typeof module === 'object' && module.exports ? require('./tutorial-native-policy.js') : root && root.BOTutorialNativePolicy);
   if (typeof module === 'object' && module.exports) module.exports = BO;
   if (root) root.BO = BO;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Potions, Wallet, Frenzy, PassiveMoney, Foods) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Potions, Wallet, Frenzy, PassiveMoney, Foods, TutorialPolicy) {
   'use strict';
   // The absent-model fallback only keeps historical vanilla UMD consumers valid.
   // Potion actions require BOPotions, loaded before this engine in the browser.
@@ -12,6 +12,21 @@
   // Event authority is transient host context, NEVER a run/Joker field. A copied
   // atomic draft inherits it privately; nested scopes restore their exact parent.
   var pokerContexts=new WeakMap();
+  // A tutorial policy is a synchronous host scope, never a JSON run flag. Only
+  // validated fresh-generation paired tutorial state may request this in app.js.
+  var tutorialContexts=new WeakMap();
+  function withTutorialPolicy(s,kind,fn) {
+    check(TutorialPolicy&&s&&typeof s==='object'&&typeof fn==='function','A native tutorial policy model/run/callback is required.');
+    check(['prepare','small','big','boss','shop1','shop2'].indexOf(kind)!==-1,'Unknown tutorial native context.');
+    var previous=tutorialContexts.get(s);tutorialContexts.set(s,kind);
+    try {var result=fn();check(!(result&&(typeof result==='object'||typeof result==='function')&&'then' in result),'Tutorial policy callbacks must be synchronous.');return result;}
+    finally {if(previous)tutorialContexts.set(s,previous);else tutorialContexts.delete(s);}
+  }
+  function prepareTutorial(s) {
+    check(tutorialContexts.get(s)==='prepare','Native tutorial preparation requires transient host context authority.');
+    check(s.phase==='select'&&s.round===0&&s.ante===1&&s.blindIndex===0&&s.deckId==='red'&&s.stake==='white'&&s.progressionEnabled===true&&s.playerLevel===1,'Only the new fresh Red/White lesson run may be prepared.');
+    TutorialPolicy.order(s.cards,'small');s.bossId='head';
+  }
   function withPokerEvents(s,context,fn) {
     check(s&&typeof s==='object'&&typeof fn==='function','Supply a run and synchronous native Poker-event callback.');
     check(context&&typeof context==='object'&&[Object.prototype,null].includes(Object.getPrototypeOf(context)),'Invalid Poker event context.');
@@ -618,12 +633,12 @@
   function refresh(s) {rebalanceJokers(s);var v=summary(s);s.handSize=v.handSize;s.jokerSlots=v.jokerSlots;s.consumableSlots=v.consumableSlots;}
   function hydrate(s) {validateFoods(s);if(s.level10Deal===undefined)s.level10Deal=false;normalizeProgression(s);if(s.potions){check(Potions,'Load the potion model before the engine.');s.potions=Potions.recover(s.potions,null);}rebalanceJokers(s);if(s.stake===undefined)s.stake='white';if(s.stakeIndex===undefined)s.stakeIndex=runStake(s).index;var map={};s.cards.forEach(function(c){map[c.id]=c;});['hand','drawPile','discardPile'].forEach(function(k){s[k]=(s[k]||[]).map(function(c){check(map[c.id],'Save contains an unknown playing card.');return map[c.id];});});refreshPrices(s);}
   function atomic(fn) {return function(s){
-    check(s&&s.version===1,'This save is not supported.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);validateFoods(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));
+    check(s&&s.version===1,'This save is not supported.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);validateFoods(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));if(tutorialContexts.has(s))tutorialContexts.set(next,tutorialContexts.get(s));
     try{hydrate(next);fn.apply(null,[next].concat(args));refresh(next);
       // Level19 now adds a pack option, replacing the former Boss-special
       // dollar award. Retain native Boss evaluation/receipts without payment.
       sortHand(next,fn===setPotionState||fn===setPlayerLevel||fn===setCoinUnlocks||fn===setLevel10Deal||fn===abandon);
-    }finally{bossEffectActions.delete(next);pokerContexts.delete(next);}
+    }finally{bossEffectActions.delete(next);pokerContexts.delete(next);tutorialContexts.delete(next);}
     Object.keys(s).forEach(function(k){delete s[k];});Object.keys(next).forEach(function(k){s[k]=next[k];});return s;
   };}
   function phase(s,list) {check(list.indexOf(s.phase)!==-1,'This action is not available during '+s.phase+'.');}
@@ -778,11 +793,13 @@
     if(hit){s.target=blindInfo(s).target;refresh(s);note(s,'Boss Disabler Potion: temporarily disabled '+bossById[s.bossId].name+'.');}
   }
   function startBlind(s) {
+    var tutorial=tutorialContexts.get(s);
+    if(tutorial)check(['small','big','boss'][s.blindIndex]===tutorial&&s.ante===1&&s.round===s.blindIndex&&s.deckId==='red'&&s.stake==='white'&&s.playerLevel===1&&s.bossId==='head','Tutorial native stage no longer matches this run.');
     phase(s,['select']);var foodStart=Foods?Foods.beginBlind(s):{hands:0,discards:0};if(s.potionBossDisable)delete s.potionBossDisable;s.phase='play';s.round++;s.roundBlindLevelFactor={round:s.round,ante:s.ante,blindIndex:s.blindIndex,factor:playerBlindFactor(s)};s.score=0;s.bossDisabled=false;s.target=blindInfo(s).target;s.roundHands=0;s.roundDiscards=0;s.roundTypes={};s.firstRoundHand=null;s.roundHandBonus=0;s.oxHand=topHand(s);s.payout={lines:[],total:0};s.forcedCardId=null;
     s.jokers.forEach(function(j){j.disabled=false;if(j.id==='hit_the_road'&&isJokerActive(j))j.counter=1;});
     s.tags=s.tags.filter(function(t){if(t.id==='juggle'){s.roundHandBonus+=3;return false;}return true;});refresh(s);var v=summary(s);v.handsPerRound=Math.max(1,v.handsPerRound+foodStart.hands);v.discardsPerRound=v.discardsPerRound===0?0:Math.max(0,v.discardsPerRound+foodStart.discards);s.hands=v.handsPerRound;s.discards=v.discardsPerRound;
     if(s.blindIndex===2)tryPotionBossDisable(s);
-    s.cards.forEach(function(c){delete c.faceDown;delete c.debuffed;});s.drawPile=shuffle(s,s.cards.slice());s.hand=[];s.handDrawOrder=[];s.discardPile=[];
+    s.cards.forEach(function(c){delete c.faceDown;delete c.debuffed;});s.drawPile=shuffle(s,s.cards.slice());if(tutorial)s.drawPile=TutorialPolicy.order(s.cards,tutorial);s.hand=[];s.handDrawOrder=[];s.discardPile=[];
     if(s.progressionEnabled===true||has(s,'mothim'))s.metaBossStart={round:s.round,handPenalty:activeBoss(s,'needle')?Math.max(0,v.handsPerRound-1):0,discardPenalty:activeBoss(s,'water')?v.discardsPerRound:0};
     if(activeBoss(s,'water')){if(s.discards>0)recordBossEffect(s,'water','discard-limit');s.discards=0;}
     if(activeBoss(s,'needle')){if(s.hands>1)recordBossEffect(s,'needle','hand-limit');s.hands=1;}
@@ -1220,7 +1237,7 @@
     if(kind==='item-use')token=JSON.stringify([token,n.cards,n.levels,n.lastConsumable,n.tarotsUsed,n.planetTypes]);
     return {kind:kind,index:index===undefined?null:index,price:amount,label:label,token:token};
   }
-  function jokerItem(s,rarity,forcedEdition) {var def=randomJoker(s,rarity),ed=forcedEdition===undefined?edition(s):forcedEdition;return rollShopStickers(s,{type:'joker',id:def.id,name:def.name,description:def.description,rarity:def.rarity,edition:ed,price:price(s,def.price+(ed==='foil'?2:ed==='holo'?3:ed==='poly'||ed==='negative'?5:0))});}
+  function jokerItem(s,rarity,forcedEdition,forcedId) {if(forcedId!==undefined)check(tutorialContexts.get(s)==='shop2'&&forcedId==='droll_joker','Only the native second tutorial shop may request Droll.');var def=forcedId===undefined?randomJoker(s,rarity):jokerById[forcedId],ed=forcedEdition===undefined?edition(s):forcedEdition;return rollShopStickers(s,{type:'joker',id:def.id,name:def.name,description:def.description,rarity:def.rarity,edition:ed,price:price(s,def.price+(ed==='foil'?2:ed==='holo'?3:ed==='poly'||ed==='negative'?5:0))});}
   function cardItem(s,standard) {var c=newCard(s,int(s,13)+2,pick(s,SUITS));c.edition=edition(s,standard?'standard':'shop_card');if(!standard&&owned(s,'illusion')&&random(s)<0.4)c.enhancement=pick(s,Object.keys(ENHANCEMENTS));if(!standard&&owned(s,'illusion')&&random(s)<0.2)c.seal=pick(s,Object.keys(SEALS));return {type:'card',id:c.id,name:(RANK_NAMES[c.rank]||c.rank)+' of '+SUIT_NAMES[c.suit],description:describeCard(c),card:c,price:price(s,1)};}
   function shelfWeights(s) {var weights=[{type:'joker',w:20},{type:'tarot',w:owned(s,'tarot_tycoon')?32:owned(s,'tarot_merchant')?9.6:4},{type:'planet',w:owned(s,'planet_tycoon')?32:owned(s,'planet_merchant')?9.6:4}];if(s.deckId==='ghost'&&!enhancedDeck(s))weights.push({type:'spectral',w:2});if(owned(s,'magic_trick'))weights.push({type:'card',w:4});if(s.deckId==='ghost'&&enhancedDeck(s))weights.push({type:'spectral',w:weights.reduce(function(n,x){return n+x.w;},0)/4});return weights;}
   function shelfItem(s) {var weights=shelfWeights(s),roll=random(s)*weights.reduce(function(n,x){return n+x.w;},0),type='joker';for(var i=0;i<weights.length;i++){roll-=weights[i].w;if(roll<0){type=weights[i].type;break;}}
@@ -1238,9 +1255,10 @@
     if(s.phase==='shop')s.shop.rerollCost=s.shop.freeRerolls?0:rerollCost(s,s.shop.rerolls);
   }
   function generateShop(s) {
-    var items=[],num=2+(owned(s,'overstock')?1:0)+(owned(s,'overstock_plus')?1:0);for(var i=0;i<num;i++)items.push(shelfItem(s));var candidates=vouchers.filter(function(v){return !owned(s,v.id)&&(!UPGRADES[v.id]||owned(s,UPGRADES[v.id]));});
+    var tutorial=tutorialContexts.get(s);if(tutorial)check(s.ante===1&&((tutorial==='shop1'&&s.round===1)||(tutorial==='shop2'&&s.round===2))&&s.deckId==='red'&&s.stake==='white'&&s.playerLevel===1,'Tutorial native shop no longer matches this run.');
+    var items=[],num=2+(owned(s,'overstock')?1:0)+(owned(s,'overstock_plus')?1:0);for(var i=0;i<num;i++)items.push(tutorial==='shop2'&&i===0?jokerItem(s,'common',null,'droll_joker'):shelfItem(s));var candidates=vouchers.filter(function(v){return !owned(s,v.id)&&(!UPGRADES[v.id]||owned(s,UPGRADES[v.id]));});
     if(!s.anteVoucher||s.anteVoucher.ante!==s.ante)s.anteVoucher={ante:s.ante,id:candidates.length?pick(s,candidates).id:null,sold:false};
-    var voucher=s.anteVoucher.id&&!s.anteVoucher.sold&&!owned(s,s.anteVoucher.id)?clone(voucherById[s.anteVoucher.id]):null;if(voucher){voucher.price=price(s,10);voucher.baseVoucher=true;}var packs=[clone(packItem(s)),clone(packItem(s))];if(!s.shopsVisited)packs[0]=clone(packById.buffoon);s.shopsVisited=(s.shopsVisited||0)+1;packs.forEach(function(p){p.price=price(s,p.price);});
+    var voucher=s.anteVoucher.id&&!s.anteVoucher.sold&&!owned(s,s.anteVoucher.id)?clone(voucherById[s.anteVoucher.id]):null;if(voucher){voucher.price=price(s,10);voucher.baseVoucher=true;}var packs=[clone(packItem(s)),clone(packItem(s))];if(!s.shopsVisited)packs[0]=clone(packById.buffoon);if(tutorial==='shop1')packs=[clone(packById.buffoon),clone(packById.standard)];s.shopsVisited=(s.shopsVisited||0)+1;packs.forEach(function(p){p.price=price(s,p.price);});
     var coupon=false,d6=0,voucherQueue=[];s.tags=s.tags.filter(function(t){var id=t.id;if(['uncommon','rare','negative','foil','holo','poly'].indexOf(id)>=0){var item=jokerItem(s,id==='uncommon'||id==='rare'?id:undefined,['negative','foil','holo','poly'].indexOf(id)>=0?id:undefined);item.price=0;items.push(item);return false;}
       var packIds={standard:'mega_standard',charm:'mega_arcana',meteor:'mega_celestial',buffoon:'mega_buffoon',ethereal:'spectral'};if(packIds[id]){var p=clone(packById[packIds[id]]);p.price=0;packs.push(p);return false;}if(id==='voucher'){var available=candidates.filter(function(v){return (!voucher||v.id!==voucher.id)&&!voucherQueue.some(function(q){return q.id===v.id;});});if(available.length){var extra=clone(pick(s,available));extra.price=price(s,10);voucherQueue.push(extra);}return false;}if(id==='coupon'){coupon=true;return false;}if(id==='d6'){d6++;return false;}return true;});
     if(!voucher&&voucherQueue.length)voucher=voucherQueue.shift();
@@ -1369,7 +1387,7 @@
   function describeCard(c) {check(c&&SUIT_NAMES[c.suit],'Unknown playing card.');var lines=[(RANK_NAMES[c.rank]||c.rank)+' of '+SUIT_NAMES[c.suit]];if(c.enhancement)lines.push(ENHANCEMENTS[c.enhancement]||'Unknown enhancement.');else lines.push('Base card: +'+rankChips(c)+' Chips when scored.');if(c.edition)lines.push(EDITIONS[c.edition]||'Unknown edition.');if(c.seal)lines.push(SEALS[c.seal]||'Unknown Seal.');if(c.bonusChips)lines.push('Permanent bonus: +'+c.bonusChips+' Chips when scored.');if(c.debuffed)lines.push('Debuffed: no Chips, card effects, edition, Seal or card-triggered Joker effects.');if(c.faceDown)lines.push('Face down for this Blind.');return lines.join('\n');}
   return {version:1,decks:decks,stakes:stakes,jokers:jokers,tags:tags,planets:planets,tarots:tarots,spectrals:spectrals,vouchers:vouchers,bosses:bosses,packs:PACKS,enhancements:clone(ENHANCEMENTS),editions:clone(EDITIONS),seals:clone(SEALS),hands:clone(HANDS),
     achievements:[{id:'first_blind',name:'First Blind',description:'Win a Blind.'},{id:'ante_eight',name:'Eight Antes',description:'Defeat the Ante 8 Boss.'}],
-    validateDeckProfile:validateDeckProfile,deckDescription:deckDescription,withPokerEvents:withPokerEvents,newRun:newRun,evaluate:evaluate,preview:preview,selectionLimit:selectionLimit,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
+    validateDeckProfile:validateDeckProfile,deckDescription:deckDescription,withPokerEvents:withPokerEvents,withTutorialPolicy:withTutorialPolicy,prepareTutorial:atomic(prepareTutorial),newRun:newRun,evaluate:evaluate,preview:preview,selectionLimit:selectionLimit,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
     setHandSort:atomic(setHandSort),setLevel10Deal:atomic(setLevel10Deal),setPotionState:atomic(setPotionState),drinkPotion:atomic(drinkPotion),setCoinUnlocks:atomic(setCoinUnlocks),setPlayerLevel:atomic(setPlayerLevel),disableBossOnce:atomic(disableBossOnce),mothimAttack:atomic(mothimAttack),startBlind:atomic(startBlind),skipBlind:atomic(skipBlind),play:atomic(play),discard:atomic(discard),cashout:atomic(cashout),buyFood:atomic(buyFood),buy:atomic(buy),buyUse:atomic(buyUse),reroll:atomic(reroll),buyVoucher:atomic(buyVoucher),openPack:atomic(openPack),openPendingTagPack:atomic(openPendingTagPack),choosePack:atomic(choosePack),sellJoker:atomic(sellJoker),moveJoker:atomic(moveJoker),useConsumable:atomic(useConsumable),sellConsumable:atomic(sellConsumable),abandon:atomic(abandon),continueRun:atomic(continueRun),leaveShop:atomic(leaveShop),nextRound:atomic(leaveShop),rerollBoss:atomic(rerollBoss),sellValue:sellValue,
     coverage:{decks:decks.length,jokers:jokers.length,tarots:tarots.length,planets:planets.length,spectrals:spectrals.length,vouchers:vouchers.length,tags:tags.length,bosses:bosses.length,stakes:stakes.length,stickers:3},
     _test:{addJoker:function(s,id,edition){return addJoker(s,id,edition);},addConsumable:function(s,id){return addConsumable(s,id);},grantTag:function(s,id){grantTag(s,id);},generateShop:function(s){generateShop(s);},rollShopStickers:rollShopStickers,chance:chance,edition:edition,resolveJokerAbility:resolveJokerAbility,captureJokerBindings:captureJokerBindings,eachAbility:eachAbility}
