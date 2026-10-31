@@ -1,29 +1,34 @@
 /* Exp Interest: actual current-bank income, not a passive session or offline claim.
  * One guarded PROFILE write owns both the exact XP and this compact highwater.
  * No reload timestamp is ever converted into elapsed income. */
-(function(root,factory){'use strict';const api=factory(typeof module==='object'&&module.exports?require('./progression'):root.BOProgress,root,typeof module==='object'&&module.exports?require('./interest-settings'):root.BOInterestSettings);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.BOExpInterest=api;})(typeof window!=='undefined'?window:null,function(PG,root,IS){'use strict';
+(function(root,factory){'use strict';const api=factory(typeof module==='object'&&module.exports?require('./progression'):root.BOProgress,root,typeof module==='object'&&module.exports?require('./interest-settings'):root.BOInterestSettings,typeof module==='object'&&module.exports?require('./late-level-rules'):root.BOLateLevels);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.BOExpInterest=api;})(typeof window!=='undefined'?window:null,function(PG,root,IS,LL){'use strict';
  const PROFILE='danis-table.profile.v1',INTERVAL_MS=1000,MAX_GAP_MS=2500,FENCE=PROFILE+'.exp-interest.committed.',LEASE=PROFILE+'.exp-interest.lease.v1';
  const copy=x=>JSON.parse(JSON.stringify(x)),record=x=>!!x&&typeof x==='object'&&!Array.isArray(x),finite=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0;
  const check=(ok,message)=>{if(!ok)throw new Error('Exp Interest: '+message)};
  function create(){return {version:1,revision:0,totalXp:0,lastTickAt:0}}
  function normalize(value){
   if(value===undefined)return create();
-  const keys=['version','revision','totalXp','lastTickAt'];
+  const extended=record(value)&&Reflect.ownKeys(value).includes('rng'),keys=['version','revision','totalXp','lastTickAt',...(extended?['rng','criticalPayments']:[])];
   check(record(value)&&[Object.prototype,null].includes(Object.getPrototypeOf(value))&&Reflect.ownKeys(value).length===keys.length&&keys.every(k=>{const d=Object.getOwnPropertyDescriptor(value,k);return d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')}),'invalid saved ledger; stored data was not overwritten.');
-  check([1,2,3].includes(value.version)&&Number.isSafeInteger(value.revision)&&value.revision>=0&&finite(value.totalXp)&&Number.isSafeInteger(value.lastTickAt)&&value.lastTickAt>=0,'invalid saved ledger values.');
+  check([1,2,3,4].includes(value.version)&&extended===(value.version===4)&&Number.isSafeInteger(value.revision)&&value.revision>=0&&finite(value.totalXp)&&Number.isSafeInteger(value.lastTickAt)&&value.lastTickAt>=0,'invalid saved ledger values.');
   // V1/V2 remain strict on read. V3 is born only on a paid <500ms
   // tick; its highwater is a logical receipt clock, not offline entitlement.
-  const grid=value.version===1?INTERVAL_MS:100,minInterval=value.version===1?INTERVAL_MS:value.version===2?500:100;
-  check(value.revision===0?value.version===1&&value.totalXp===0&&value.lastTickAt===0:value.totalXp>0&&value.totalXp<=value.revision*10&&value.lastTickAt>0&&value.lastTickAt%grid===0&&value.lastTickAt>=value.revision*minInterval,'saved income does not match its highwater.');
-  return {version:value.version,revision:value.revision,totalXp:value.totalXp,lastTickAt:value.lastTickAt};
+  // V4:1ms logical grid supports987/876ms; real minimum50ms. Legacy strict.
+   const grid=value.version===4?1:value.version===1?INTERVAL_MS:100,minInterval=value.version===4?50:value.version===1?INTERVAL_MS:value.version===2?500:100,maxPayment=value.version===4?1500000:10;
+  check(value.revision===0?value.version===1&&value.totalXp===0&&value.lastTickAt===0:value.totalXp>0&&value.totalXp<=value.revision*maxPayment&&value.lastTickAt>0&&value.lastTickAt%grid===0&&value.lastTickAt>=value.revision*minInterval,'saved income does not match its highwater.');
+  if(extended)check(Number.isInteger(value.rng)&&value.rng>0&&value.rng<=4294967295&&Number.isSafeInteger(value.criticalPayments)&&value.criticalPayments>=0&&value.criticalPayments<=value.revision,'invalid saved critical-payment stream.');
+  return {version:value.version,revision:value.revision,totalXp:value.totalXp,lastTickAt:value.lastTickAt,...(extended?{rng:value.rng,criticalPayments:value.criticalPayments}:{})};
  }
- function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');return p.level>=20&&p.level<100?Math.min(p.level>=43?10:p.level>=30?5:p.level>=26?3:2,p.xp*IS.effective(p.level,config).rateFraction*PG.jokerXpMultiplier(config)*PG.earnedXpMultiplier(p.level)*PG.pokerXpMultiplier(config)):0}
+ function rate(p,config){check(record(p)&&Number.isInteger(p.level)&&p.level>=1&&p.level<=100&&finite(p.xp),'invalid current player level or XP bank.');if(p.level<20||p.level>=100)return 0;const policy=IS.effective(p.level,config),perSecond=LL.capPerSecond(p.level),cap=perSecond===null?(p.level>=43?10:p.level>=30?5:p.level>=26?3:2):perSecond*policy.intervalMs/1000;return Math.min(cap,p.xp*policy.rateFraction*PG.jokerXpMultiplier(config)*PG.earnedXpMultiplier(p.level)*PG.pokerXpMultiplier(config))}
  function intervalMs(level,config){check(Number.isInteger(level)&&level>=1&&level<=100,'invalid actual player level.');return IS.effective(level,config).intervalMs}
  function step(progression,ledger,at,config){
-  const state=normalize(ledger),amount=rate(progression,config),fromLevel=progression.level,interval=intervalMs(fromLevel,config),version=Math.max(state.version,interval<500?3:interval<INTERVAL_MS?2:1),grid=version===1?INTERVAL_MS:100;
+  const state=normalize(ledger),baseAmount=rate(progression,config),fromLevel=progression.level,interval=intervalMs(fromLevel,config),version=Math.max(state.version,fromLevel>=50?4:interval<500?3:interval<INTERVAL_MS?2:1),grid=version===4?1:version===1?INTERVAL_MS:100;
   check(Number.isSafeInteger(at)&&at>=0,'invalid tick time.');const slot=Math.floor(at/grid)*grid;
   const unchanged=()=>({ok:true,unchanged:true,awardedXp:0,fromLevel,toLevel:fromLevel,state,progression:copy(progression)});
-  if(!amount||slot<interval||slot-state.lastTickAt<interval)return unchanged();
+  if(!baseAmount||slot<interval||slot-state.lastTickAt<interval)return unchanged();
+  // Separate replay-stable CI stream: no wall time, Math.random, preview or
+  // gameplay RNG. Same unsaved receipt retries the SAME roll, even after reload.
+  const seed=state.version===4?state.rng:((0x9e3779b9^(state.revision>>>0))>>>0)||1,chance=LL.criticalChance(fromLevel);let rng=seed;if(chance){rng^=rng<<13;rng^=rng>>>17;rng^=rng<<5;rng>>>=0;}const critical=chance>0&&rng/4294967296<chance,amount=baseAmount*(critical?2:1);
   check(state.revision<Number.MAX_SAFE_INTEGER,'receipt counter overflow.');
   check(finite(progression.totalXp)&&progression.xp+amount>progression.xp&&progression.totalXp+amount>progression.totalXp,'XP cannot represent this award safely; no income was changed.');
   const next=copy(progression),result=PG.addAwardedXp(next,amount,undefined,config);
@@ -32,7 +37,7 @@
   // not a lifetime-total subtraction, is the exact income receipt.
   check(!result.duplicate&&result.awardedXp===amount&&next.totalXp>progression.totalXp,'XP award did not match the explicit actual rate.');
   const total=state.totalXp+amount;check(finite(total)&&total>state.totalXp,'income total overflow.');
-  return {...result,ok:true,unchanged:false,progression:next,state:normalize({version,revision:state.revision+1,totalXp:total,lastTickAt:slot})};
+  return {...result,ok:true,unchanged:false,critical,baseAwardedXp:baseAmount,criticalAwardedXp:critical?amount:0,progression:next,state:normalize({version,revision:state.revision+1,totalXp:total,lastTickAt:slot,...(version===4?{rng,criticalPayments:(state.criticalPayments||0)+(critical?1:0)}:{})})};
  }
  // The controller supplies ONLY captured foreground monotonic elapsed time.
  // One durable whole-PROFILE transaction may contain several real payments;
@@ -40,14 +45,14 @@
  // The bounded remainder is presentation-session memory, never wall catch-up.
  function payEligible(progression,ledger,elapsedMs,at,config){
   check(finite(elapsedMs)&&elapsedMs<=MAX_GAP_MS,'invalid eligible interval; never claim an offline gap.');check(Number.isSafeInteger(at)&&at>=0,'invalid captured receipt time.');
-  let next=copy(progression),state=normalize(ledger),consumedMs=0,awardedXp=0,payments=0,lastResult=null;
+  let next=copy(progression),state=normalize(ledger),consumedMs=0,awardedXp=0,baseAwardedXp=0,criticalAwardedXp=0,criticalPayments=0,payments=0,lastResult=null;
   while(true){
    const c=typeof config==='function'?config(next):config,interval=intervalMs(next.level,c);if(elapsedMs-consumedMs<interval||!rate(next,c))break;
-   const grid=state.version>=2||interval<INTERVAL_MS?100:INTERVAL_MS,receiptAt=state.revision?state.lastTickAt+interval:Math.max(interval,Math.floor(at/grid)*grid);
+   const grid=next.level>=50||state.version===4?1:state.version>=2||interval<INTERVAL_MS?100:INTERVAL_MS,receiptAt=state.revision?state.lastTickAt+interval:Math.max(interval,Math.floor(at/grid)*grid);
    check(Number.isSafeInteger(receiptAt),'receipt clock overflow.');const r=step(next,state,receiptAt,c);check(!r.unchanged,'captured payment did not advance its receipt.');
-   next=r.progression;state=r.state;consumedMs+=interval;awardedXp+=r.awardedXp;payments++;lastResult=r;
+   next=r.progression;state=r.state;consumedMs+=interval;awardedXp+=r.awardedXp;baseAwardedXp+=r.baseAwardedXp;criticalAwardedXp+=r.criticalAwardedXp;criticalPayments+=r.critical?1:0;payments++;lastResult=r;
   }
-  return {...(lastResult||{}),ok:true,unchanged:payments===0,fromLevel:progression.level,toLevel:next.level,progression:next,state,awardedXp,payments,consumedMs,remainderMs:elapsedMs-consumedMs};
+  return {...(lastResult||{}),ok:true,unchanged:payments===0,fromLevel:progression.level,toLevel:next.level,progression:next,state,awardedXp,baseAwardedXp,critical:criticalPayments>0,criticalPayments,criticalAwardedXp,payments,consumedMs,remainderMs:elapsedMs-consumedMs};
  }
  // A synchronous gameplay API cannot await a browser-lock-manager query at
  // every write. Keep one live writer permit instead. Losing, already-loaded
@@ -182,7 +187,7 @@
    return {ok:true,paused:policyPaused};
   }
   function stop(){if(timer!==null)env.clearInterval(timer);timer=null;invalidate();releaseFence()}
-  function start(){stop();if(lastPolicyKey!==policyKey())reanchorPolicy(mono());if(destroyed||error||policyPaused||parked||env.document.hidden)return;anchor=mono()-retainedMs;lastLevel=api.getProfile().progression.level;timer=env.setInterval(()=>{void heartbeat()},250)}
+  function start(){stop();if(lastPolicyKey!==policyKey())reanchorPolicy(mono());if(destroyed||error||policyPaused||parked||env.document.hidden)return;anchor=mono()-retainedMs;lastLevel=api.getProfile().progression.level;timer=env.setInterval(()=>{void heartbeat()},50)}
   function visibility(){if(env.document.hidden)stop();else start()}
   function hide(){parked=true;stop()}
   function show(){parked=false;start()}

@@ -33,7 +33,7 @@
     if(proposal.completed){const result=sync(host.creditRewards(next,{receipt:proposal.receipt,totals:P.rewardTotals(proposal.state),beforeTotals}),'Strict Poker reward source pairing must be synchronous.');check(result!==false,'The strictFP receipt could not be paired.');xpResult=result??null;}
     authenticate(next);const expected=json(next);fence(c);attempted=true;check(sync(host.write('profile',next),'Strict Poker whole-profile writer must be synchronous.')!==false,'Strict Poker whole-profile write was not confirmed.');fence(c,true,expected);fence(c,true,expected);
     check(sync(host.applyProfile(next,xpResult),'Strict Poker native mirrors must be synchronous.')!==false,'The saved Strict Poker profile could not be applied to native mirrors.');applied=true;
-    const after=P.publicState(proposal.state),event={before,after,completed:proposal.completed,receipt:proposal.receipt,xpResult};try{host.render(event)}catch(_){announce('Strict Poker is saved. Reopen the table if its display has not refreshed.')}
+    const after=P.publicState(proposal.state),event={game:'strict-poker',action:kind,before,after,completed:proposal.completed,receipt:proposal.receipt,xpResult};try{host.render(event)}catch(_){announce('Strict Poker is saved. Reopen the table if its display has not refreshed.')}
     return {ok:true,completed:proposal.completed,state:after,receipt:proposal.receipt,xpResult};
    }catch(error){if(attempted&&!applied)uncertain(error.message);else announce(error.message);return {ok:false,uncertain:attempted&&!applied,reason:error.message}}
    finally{busy=false}

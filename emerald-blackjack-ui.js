@@ -2,7 +2,7 @@
  * never its private table. No listeners, DOM queries, clocks, RNG or save access.
  * Parent owns the persistent native HUD, settings, slot authority and actions.
  */
-(function(root,factory){'use strict';const api=factory(typeof module==='object'&&module.exports?require('./emerald-progress'):root.BOEmeraldProgress);if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldBlackjackUI=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P){'use strict';
+(function(root,factory){'use strict';const api=factory(typeof module==='object'&&module.exports?require('./emerald-progress'):root.BOEmeraldProgress,typeof module==='object'&&module.exports?require('./emerald-cardgame-dialogue'):root.BOCardgameDialogue);if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldBlackjackUI=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P,D){'use strict';
 // Finite keyed presentation only: lookup at call time; canonical models and receipts stay untouched.
 
 function _aux(key,fallback,params){const rt=globalThis.BOTranslation,values=params||{},plain=()=>fallback.replace(/\{([A-Za-z][A-Za-z0-9_]*)\}/g,(all,name)=>Object.prototype.hasOwnProperty.call(values,name)?String(values[name]):all);if(!rt)return plain();const text=rt.t(key,values);return text===key?plain():text;}
@@ -41,7 +41,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
  function hash(text){let n=2166136261;for(let i=0;i<text.length;i++)n=Math.imul(n^text.charCodeAt(i),16777619)>>>0;return n;}
  function reaction(state,friendship){return String(_auxReaction(state,friendship));}
  function _auxReaction(state,friendship){
-  const fact=!state||state.phase==='ready'?_auxValue("aux.emerald.blackjack.ui.9bf2be15acf2","Ready when you are. Win a round to earn 1 point."):typeof state.message==='string'?state.message:_auxValue("aux.emerald.blackjack.ui.b2916229c20a","Beat Emerald without going over 21 to earn 1 point.");
+  const contextual=D?.line('blackjack',state);const fact=contextual||( !state||state.phase==='ready'?_auxValue("aux.emerald.blackjack.ui.9bf2be15acf2","Ready when you are. Win a round to earn 1 point."):typeof state.message==='string'?state.message:_auxValue("aux.emerald.blackjack.ui.b2916229c20a","Beat Emerald without going over 21 to earn 1 point."));
   if(!state||state.lastAction===null||state.lastAction==='new-match')return fact;
   // 47 FP = 47 of 1,000 stable buckets (4.7%); no rerender roll or speech RNG.
   const fp=bounded(friendship?.fp,0,1000),kind=hash(String(state.roundId||'ready')+':'+state.revision+':'+state.lastAction)%1000<fp;

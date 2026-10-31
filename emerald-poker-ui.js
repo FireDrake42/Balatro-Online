@@ -2,7 +2,7 @@
  * (or null). Never authenticate/replay, inspect private order, seed, award, save,
  * schedule, play audio or query the DOM here. Parent owns all guarded actions.
  */
-(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports,api=factory(node?require('./emerald-poker'):root.BOEmeraldPoker,node?require('./emerald-asset'):root.BOEmeraldPortrait,node?require('./poker-levels'):root.BOPokerLevels);if(node)module.exports=api;else root.BOEmeraldPokerUI=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P,Portrait,Levels){'use strict';
+(function(root,factory){'use strict';const node=typeof module==='object'&&module.exports,api=factory(node?require('./emerald-poker'):root.BOEmeraldPoker,node?require('./emerald-asset'):root.BOEmeraldPortrait,node?require('./poker-levels'):root.BOPokerLevels,node?require('./emerald-cardgame-dialogue'):root.BOCardgameDialogue);if(node)module.exports=api;else root.BOEmeraldPokerUI=api;})(typeof globalThis!=='undefined'?globalThis:this,function(P,Portrait,Levels,D){'use strict';
  const EN=Object.freeze({
   title:'Emerald’s Poker',eyebrow:'Emerald’s table · no wagers',leave:'Leave · your table is saved',
   bank:'Current poker Bank',noRun:'No active poker run',native:'Native player XP bonuses and caps apply once. Compound interest, Passive Money and the fictional battery keep their existing eligibility rules.',
@@ -35,6 +35,7 @@
  const t=(k,p)=>esc(label(k,p));
  function categoryName(c){const id=c?.id||c?.category;return id?label('hand.'+id):c&&typeof c.name==='string'?c.name:label('hand.none')}
  function reaction(s){
+   const contextual=D?.line('poker',s);if(contextual)return contextual;
   if(!s?.target||s.phase==='idle')return label('ready');
   if(s.phase!=='settled'||!s.result)return label('target',{hand:categoryName(s.target)});
   return label('actual',{hand:categoryName(s.result)})+' '+label(s.receipt?.matchedTarget?'matched':'missed',{hand:categoryName(s.target)});

@@ -69,7 +69,7 @@
     const written=host.write('profile',next);check(!thenable(written)&&written!==false,'The whole-profile write was not confirmed.');
     fence(c,true,expectedRaw);fence(c,true,expectedRaw);
     const outcome=host.applyProfile(next,xpResult);check(!thenable(outcome)&&outcome!==false,'The saved hand could not be applied to its live native mirrors.');applied=true;
-    const after=R.publicPoker(next),event={before,after,completed:proposal.completed,receipt:proposal.completed?after.receipt:proposal.receipt,xpResult,checkpointResult};
+    const after=R.publicPoker(next),event={game:'poker',action:kind,before,after,completed:proposal.completed,receipt:proposal.completed?after.receipt:proposal.receipt,xpResult,checkpointResult};
     try{host.render(event)}catch(_){announce('Poker is saved. Reopen the table if its display has not refreshed.');}
     return {ok:true,completed:proposal.completed,state:after,receipt:event.receipt,xpResult};
    }catch(error){if(attempted&&!applied)uncertain(error.message);else announce(error.message);return {ok:false,uncertain:attempted&&!applied,reason:error.message};}

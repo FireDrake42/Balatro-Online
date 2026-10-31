@@ -5,10 +5,10 @@
  */
 (function (root, factory) {
   'use strict';
-  const data = factory();
+  const data = factory(typeof module === 'object' && module.exports ? require('./late-music-data') : root.BOLateMusicData);
   if (typeof module === 'object' && module.exports) module.exports = data;
   else root.BOMusicData = data;
-})(typeof window !== 'undefined' ? window : globalThis, function () {
+})(typeof window !== 'undefined' ? window : globalThis, function (lateMusic) {
   'use strict';
   function freeze(value) {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -29,7 +29,7 @@
   const scores = {};
   // A literal bar is [bass-root MIDI, chord MIDI[]]. Literal hooks are sixteen
   // independently authored bars of [beat, MIDI, optional quarter-note length].
-  function piece(id, name, bpm, genre, description, harmony, hook, palette, groove) {
+  function piece(id, name, bpm, genre, description, harmony, hook, palette, groove, unlockPlayerLevel) {
     const events = [];
     const add = (bar, beat, type, data) => events.push({ beat: bar * 4 + beat, bar, type, ...data });
     for (let bar = 0; bar < 16; bar++) {
@@ -50,6 +50,7 @@
     }
     events.sort((a, b) => a.beat - b.beat);
     tracks.push({ id, name, bpm, bars: 16, genre, original: true, unlockMusicLevel: 2,
+      ...(unlockPlayerLevel ? {unlockPlayerLevel,unlockLevel:unlockPlayerLevel} : {}),
       description, palette: [palette.chord, palette.lead, palette.bass] });
     scores[id] = { bpm, bars: 16, loopBeats: 64, harmony, hook, palette, groove, events };
   }
@@ -374,6 +375,10 @@
       noteLength:.3, drums:[['kick',[0,1,2,3],.33],['clap',[1,3],.25],['openhat',[.5,1.5,2.5,3.5],.15],['tick',[.25,1.25,2.25,3.25],.13]],
       fill:[[3.25,'snare',.22],[3.75,'tom',.24]] });
 
+  if (lateMusic?.version === 1) for (const d of lateMusic.pieces) {
+    piece(d.id,d.name,d.bpm,d.genre,d.description,d.harmony,d.hook,d.palette,d.groove,58);
+  }
+
   // Recording and CC-BY-4.0 verified against the composer's official catalog.
   // The bundled asset digest identifies the actual recording, not a synth cover.
   const licensed = {
@@ -411,9 +416,10 @@
   licensedTracks.filter(track => track.verified).forEach(track => tracks.push({ ...track,
     description: 'Licensed original recording; boss and Last Chance scenes include disclosed game modifications.' }));
   const before36 = freeze(tracks.filter(track => !track.unlockPlayerLevel));
-  const from36 = freeze(tracks.filter(track => !track.retirePlayerLevel));
+  const from36 = freeze(tracks.filter(track => !track.retirePlayerLevel && (track.unlockPlayerLevel || 1) <= 36));
+  const from58 = freeze(tracks.filter(track => !track.retirePlayerLevel));
   const playerLevel = actual => Number.isInteger(actual) && actual >= 1 && actual <= 100 ? actual : 1;
-  function tracksForPlayerLevel(actual) { return playerLevel(actual) >= 36 ? from36 : before36; }
+  function tracksForPlayerLevel(actual) { const level=playerLevel(actual);return level>=58?from58:level>=36?from36:before36; }
   return freeze({ version: 1, scenes: ['table', 'boss', 'final_boss'], tracks, scores, licensed,
     licensedTracks, tracksForPlayerLevel });
 });

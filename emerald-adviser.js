@@ -2,7 +2,7 @@
  * Never reads hidden ranks, the deck, draw order, game seed, RNG or future plays.
  * Quote conditions are checked from current public facts, not queued assertions.
  */
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.BOEmerald=factory()})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./emerald-cardgame-dialogue'));else root.BOEmerald=factory(root.BOCardgameDialogue)})(typeof globalThis!=='undefined'?globalThis:this,function(D){'use strict';
  const DEFAULT_TIPS=Object.freeze({first:true,second:true}),MAX_POOL=12,MAX_SELECTION=6;
  function number(n){return Number.isFinite(n)?String(Math.round(n*100000)/100000):'—'}
  function validLevel(n){return Number.isInteger(n)&&n>=1&&n<=100}
@@ -76,7 +76,7 @@
   const x=s.xp;if(x&&!x.capped&&Number.isFinite(x.required)&&x.required>0&&Number.isFinite(x.remaining)&&x.remaining>0&&x.remaining<=x.required*.1)messages.push('You’re nearly leveling up — '+number(x.remaining)+' XP to go!');
   if(run.phase==='play'){
    const publicR=publicRun(s),cards=selectedCards(s,publicR,selectionLimit(E,s)),hidden=(run.hand||[]).some(c=>c.faceDown);
-   if(cards){try{const p=E.preview(publicR,cards.map(c=>c.id),{actualLevel:s.level});messages.push('Base: '+p.name+' — '+number(p.chips)+' Chips × '+number(p.mult)+' Mult = '+number(p.chips*p.mult)+'. Cards, Jokers and random effects resolve when played.')}catch(_){}}
+   if(cards){try{const p=E.preview(publicR,cards.map(c=>c.id),{actualLevel:s.level});messages.push(D?.line('balatro',{selection:cards,preview:{name:p.name,chips:p.chips,mult:p.mult},hands:run.hands,discards:run.discards})||'Base: '+p.name+' — '+number(p.chips)+' Chips × '+number(p.mult)+' Mult = '+number(p.chips*p.mult)+'. Cards, Jokers and random effects resolve when played.')}catch(_){}}
    if(hidden)messages.push('Some cards are hidden. I won’t peek at them or guess their ranks.');
    out.recommendation=recommendation(E,s);
    if(out.recommendation){const r=out.recommendation;messages.push('Try looking for '+r.name+'! It leads my visible base-hand comparison'+(r.limited?' among the first 12 visible cards':'')+'. This is not a guaranteed best final score; card effects, Jokers and the Boss can change it.')}

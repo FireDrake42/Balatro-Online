@@ -87,7 +87,7 @@
     for(const key of ['coins100','fpMilli','medalsMilli'])check(afterRewards[key]===sum(oldRewards[key],delta[key]),'Native Slots '+key+' credit does not match its single receipt.');
     const raw=json(next);fence(c);attempted=true;const written=host.write('profile',next);check(written===true&&!thenable(written),'The complete Slots profile write was not confirmed.');fence(c,raw);fence(c,raw);
     const appliedResult=host.applyProfile(next,xpResult);check(appliedResult!==false&&!thenable(appliedResult),'The saved Slots reward could not be applied through native mirrors.');check(json(host.get().profile)===raw,'The saved whole Slots profile was not applied live.');applied=true;
-    const after=G.publicState(proposal.state,c.nowMs),event={before:before?G.publicState(before,c.nowMs):null,after,completed:proposal.completed,receipt,xpResult};
+    const after=G.publicState(proposal.state,c.nowMs),event={game:'slots',action:request.action,resumed:resumeOnly,before:before?G.publicState(before,c.nowMs):null,after,completed:proposal.completed,receipt,xpResult};
     try{host.render(event)}catch(_){notify('Slots is saved. Reopen the table if its display has not refreshed.')}
     return {ok:true,changed:true,completed:proposal.completed,state:after,receipt,xpResult};
    }catch(error){return failure(error,attempted,applied,resumeOnly)}finally{busy=false}

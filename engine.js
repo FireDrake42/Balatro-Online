@@ -1,10 +1,10 @@
 /* Balatro Online rules engine. Original code; no DOM, network or assets. */
 (function (root, factory) {
   'use strict';
-  var BO = factory(typeof module === 'object' && module.exports ? require('./potions.js') : root && root.BOPotions, typeof module === 'object' && module.exports ? require('./run-wallet.js') : root && root.BORunWallet, typeof module === 'object' && module.exports ? require('./frenzy.js') : root && root.BOFrenzy, typeof module === 'object' && module.exports ? require('./passive-money.js') : root && root.BOPassiveMoney);
+  var BO = factory(typeof module === 'object' && module.exports ? require('./potions.js') : root && root.BOPotions, typeof module === 'object' && module.exports ? require('./run-wallet.js') : root && root.BORunWallet, typeof module === 'object' && module.exports ? require('./frenzy.js') : root && root.BOFrenzy, typeof module === 'object' && module.exports ? require('./passive-money.js') : root && root.BOPassiveMoney, typeof module === 'object' && module.exports ? require('./food-effects.js') : root && root.BOFoods);
   if (typeof module === 'object' && module.exports) module.exports = BO;
   if (root) root.BO = BO;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Potions, Wallet, Frenzy, PassiveMoney) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Potions, Wallet, Frenzy, PassiveMoney, Foods) {
   'use strict';
   // The absent-model fallback only keeps historical vanilla UMD consumers valid.
   // Potion actions require BOPotions, loaded before this engine in the browser.
@@ -36,6 +36,7 @@
     var d=Object.getOwnPropertyDescriptor(s,'passiveMoney');
     check(d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')&&d.value!==undefined&&PassiveMoney&&PassiveMoney.validate(d.value)===true,'Passive Money save needs attention. No balance was changed.');
   }
+  function validateFoods(s) {if(!s||!Object.prototype.hasOwnProperty.call(s,'foods'))return;var d=Object.getOwnPropertyDescriptor(s,'foods');check(d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')&&Foods&&Foods.validate(d.value),'Foods save needs attention. No ticket was spent.');}
   // Retired Wallet metadata is validation-only: never grant, spend or rewrite it.
   // Validate its wrapper before JSON cloning can execute a getter or drop a field.
   function validateLegacyWallet(s) {
@@ -460,7 +461,7 @@
     if(!s||s.version!==1||!Array.isArray(s.jokers)||!Number.isInteger(index))return false;
     var j=s.jokers[index];return !!(j&&j.id==='mothim'&&!j.eternal&&isJokerActive(j)&&mothimHP(j)>0&&Object.prototype.hasOwnProperty.call(bossById,s.bossId)&&activeBoss(s,s.bossId));
   }
-  function playerLuckMultiplier(s) {return s&&s.progressionEnabled===true&&Number.isInteger(s.playerLevel)&&s.playerLevel>=17&&s.playerLevel<=100?1.25:1;}
+  function playerLuckMultiplier(s) {return s&&s.progressionEnabled===true&&Number.isInteger(s.playerLevel)&&s.playerLevel>=17&&s.playerLevel<=100?(s.playerLevel>=57?1.375:1.25):1;}
   function listedLuckMultiplier(s) {return playerLuckMultiplier(s)*Math.pow(2,count(s,'oops_all_sixes'))*potionEffects(s).luckMultiplier;}
   function listedProbability(s,denominator) {check(Number.isFinite(denominator)&&denominator>0,'Choose a positive probability denominator.');return Math.min(1,listedLuckMultiplier(s)/denominator);}
   function chance(s,denominator) {return random(s)<listedProbability(s,denominator);}
@@ -476,7 +477,7 @@
       shopCardEditions:editionWeights(s,'shop_card'),wheelEditions:{foil:0.5,holo:0.35,poly:0.15},rarity:{common:0.7,uncommon:0.25,rare:0.05},
       shelf:weights.map(function(w){return {type:w.type,weight:w.w,probability:w.w/shelfTotal};}),packs:PACKS.map(function(p){return {id:p.id,weight:p.weight,probability:p.weight/packTotal};}),
       stickers:{eternal:stake.eternal?0.3:0,perishable:stake.perishable?0.3:0,rental:stake.rental?0.3:0,eternalPerishableDisjoint:true,rentalIndependent:true},
-      notes:'Per eligible trigger; inventory capacity, rank/suit, debuffs and effect timing still apply. Each active physical Oops doubles listed odds; Level 17+ player luck multiplies them by 1.25 (+25%) in progression-enabled runs. Combined proc odds cap at 100%, including harmful listed effects such as Glass breaks and extinction; shop rarity, editions and fixed rates are unchanged. Sticker rates require a compatible non-Legendary. Wheel edition rates are conditional on success. Pack weights exclude the guaranteed first Buffoon; rarity is the unforced shop baseline. Illusion has 20% total editions but its conditional edition split is unverified; see PROBABILITY-REPORT.md.'};
+      notes:'Per eligible trigger; inventory capacity, rank/suit, debuffs and effect timing still apply. Each active physical Oops doubles listed odds; Level 17+ player luck multiplies them by 1.25 (+25%); Level 57+ applies a further relative +10%, for 1.375 (+37.5%) total in progression-enabled runs. Combined proc odds cap at 100%, including harmful listed effects such as Glass breaks and extinction; shop rarity, editions and fixed rates are unchanged. Sticker rates require a compatible non-Legendary. Wheel edition rates are conditional on success. Pack weights exclude the guaranteed first Buffoon; rarity is the unforced shop baseline. Illusion has 20% total editions but its conditional edition split is unverified; see PROBABILITY-REPORT.md.'};
   }
   function note(s,text) {s.log.push(text);if(s.log.length>30)s.log.shift();}
   function addMoney(s,n) {n=Math.floor(n);s.money+=n;if(n>0)s.stats.moneyEarned+=n;}
@@ -615,9 +616,9 @@
       sellValues:s.jokers.map(sellValue),consumableSellValues:s.consumables.map(sellValue),endless:!!s.endless};
   }
   function refresh(s) {rebalanceJokers(s);var v=summary(s);s.handSize=v.handSize;s.jokerSlots=v.jokerSlots;s.consumableSlots=v.consumableSlots;}
-  function hydrate(s) {if(s.level10Deal===undefined)s.level10Deal=false;normalizeProgression(s);if(s.potions){check(Potions,'Load the potion model before the engine.');s.potions=Potions.recover(s.potions,null);}rebalanceJokers(s);if(s.stake===undefined)s.stake='white';if(s.stakeIndex===undefined)s.stakeIndex=runStake(s).index;var map={};s.cards.forEach(function(c){map[c.id]=c;});['hand','drawPile','discardPile'].forEach(function(k){s[k]=(s[k]||[]).map(function(c){check(map[c.id],'Save contains an unknown playing card.');return map[c.id];});});refreshPrices(s);}
+  function hydrate(s) {validateFoods(s);if(s.level10Deal===undefined)s.level10Deal=false;normalizeProgression(s);if(s.potions){check(Potions,'Load the potion model before the engine.');s.potions=Potions.recover(s.potions,null);}rebalanceJokers(s);if(s.stake===undefined)s.stake='white';if(s.stakeIndex===undefined)s.stakeIndex=runStake(s).index;var map={};s.cards.forEach(function(c){map[c.id]=c;});['hand','drawPile','discardPile'].forEach(function(k){s[k]=(s[k]||[]).map(function(c){check(map[c.id],'Save contains an unknown playing card.');return map[c.id];});});refreshPrices(s);}
   function atomic(fn) {return function(s){
-    check(s&&s.version===1,'This save is not supported.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));
+    check(s&&s.version===1,'This save is not supported.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);validateFoods(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));
     try{hydrate(next);fn.apply(null,[next].concat(args));refresh(next);
       // Level19 now adds a pack option, replacing the former Boss-special
       // dollar award. Retain native Boss evaluation/receipts without payment.
@@ -725,7 +726,7 @@
   function evaluateRun(s,cards) {var r=evaluate(cards,{fourFingers:has(s,'four_fingers'),shortcut:has(s,'shortcut'),state:s});r.royalFlush=containsRoyalFlush(s,cards);return r;}
   function preview(s,ids,options) {var cards=selected(s,ids,s.hand,selectionLimit(s,selectionActualLevel(options)),1),r=evaluateRun(s,cards),h=HANDS[r.key],l=handLevel(s,r.key)-1;return {name:r.name,key:r.key,chips:h[1]+h[3]*l,mult:h[2]+h[4]*l,indices:r.indices,royalFlush:r.royalFlush,baseOnly:true,description:'Base hand value only. Card effects, held cards, Jokers and random effects are resolved when played.'};}
   function pickBoss(s) {var finals=s.ante>0&&s.ante%8===0,pool=bosses.filter(function(b){return b.minAnte<=Math.max(1,s.ante)&&(finals?b.minAnte===8:b.minAnte!==8);});return pick(s,pool).id;}
-  function blindInfo(s) {var stake=runStake(s),base=s.ante===0?100:stake.anteTargets[Math.min(s.ante,8)-1];if(s.ante>8)base=Math.floor(stake.anteTargets[7]*Math.pow(1.6+(s.ante-8)*0.5,s.ante-8));base=finite(base);var boss=bossById[s.bossId]||bosses[0],factor=s.blindIndex===0?1:s.blindIndex===1?1.5:boss.factor;if(s.blindIndex===2&&(boss.id==='wall'||boss.id==='violet_vessel')&&(has(s,'chicot')||s.phase==='play'&&(s.bossDisabled||potionBossSuppressed(s))))factor=2;return {name:s.blindIndex===0?'Small Blind':s.blindIndex===1?'Big Blind':boss.name,description:s.blindIndex===2?boss.description:'Score enough Chips before your hands run out.',target:finite(roundBlindFactor(s)===1?Math.floor(base*factor*(s.deckId==='plasma'&&!enhancedDeck(s)?2:1)):Math.ceil(base*factor*(s.deckId==='plasma'&&!enhancedDeck(s)?2:1)*roundBlindFactor(s))),reward:s.blindIndex===0?stake.smallBlindReward:s.blindIndex===1?4:5,canSkip:s.phase==='select'&&s.blindIndex<2,tag:clone(tagById[s.blindTags[s.blindIndex]||'handy'])};}
+  function blindInfo(s) {var stake=runStake(s),base=s.ante===0?100:stake.anteTargets[Math.min(s.ante,8)-1];if(s.ante>8)base=Math.floor(stake.anteTargets[7]*Math.pow(1.6+(s.ante-8)*0.5,s.ante-8));base=finite(base);var boss=bossById[s.bossId]||bosses[0],factor=s.blindIndex===0?1:s.blindIndex===1?1.5:boss.factor;if(s.blindIndex===2&&(boss.id==='wall'||boss.id==='violet_vessel')&&(has(s,'chicot')||s.phase==='play'&&(s.bossDisabled||potionBossSuppressed(s))))factor=2;var foodFactor=Foods?Foods.targetFactor(s,activeBoss(s,s.bossId),['select','shop','pack','won'].indexOf(s.phase)>=0):1;return {name:s.blindIndex===0?'Small Blind':s.blindIndex===1?'Big Blind':boss.name,description:s.blindIndex===2?boss.description:'Score enough Chips before your hands run out.',target:finite(Math.ceil((roundBlindFactor(s)===1?Math.floor(base*factor*(s.deckId==='plasma'&&!enhancedDeck(s)?2:1)):Math.ceil(base*factor*(s.deckId==='plasma'&&!enhancedDeck(s)?2:1)*roundBlindFactor(s)))*foodFactor)),reward:s.blindIndex===0?stake.smallBlindReward:s.blindIndex===1?4:5,canSkip:s.phase==='select'&&s.blindIndex<2,tag:clone(tagById[s.blindTags[s.blindIndex]||'handy'])};}
   function nextBlind(s) {if(s.blindIndex===2){s.ante++;s.blindIndex=0;s.bossId=pickBoss(s);s.blindTags=[pick(s,tags).id,pick(s,tags).id];s.antePlayed=[];s.bossRerolled=false;}else s.blindIndex++;s.stats.highestAnte=Math.max(s.stats.highestAnte,s.ante);}
   function newRun(deckId,seed,options) {
     check(decks.some(function(d){return d.id===deckId;}),'Choose a valid deck.');
@@ -739,8 +740,9 @@
     var levels={};Object.keys(HANDS).forEach(function(k){levels[k]=deckId==='scholar'?(enhanced?3:2):1;});
     var s={version:1,seed:seed,rng:hash(seed),nextId:1,deckId:deckId,stake:stakeId,stakeIndex:stakeById[stakeId].index,phase:'select',ante:1,blindIndex:0,round:0,money:deckId==='yellow'?14:4,hands:0,discards:0,handSize:8,jokerSlots:5,consumableSlots:2,target:0,score:0,hand:[],drawPile:[],discardPile:[],cards:[],jokers:[],consumables:[],levels:levels,vouchers:{},tags:[],doubleTags:0,skips:0,unusedDiscards:0,handSizeBonus:0,handsBonus:0,discardsBonus:0,tarotsUsed:0,planetTypes:{},ectoplasms:0,antePlayed:[],roundHandBonus:0,endless:false,shop:{items:[],rerollCost:5,voucher:null,packs:[]},pack:null,payout:{lines:[],total:0},lastResult:{name:'',chips:0,mult:0,total:0,glassBroken:0,lines:[]},log:[],stats:{handsPlayed:0,discardsUsed:0,cardsPlayed:0,cardsDiscarded:0,blindsWon:0,moneyEarned:0,bestHand:0,highestAnte:1,handCounts:{}}};
     if(meta&&options.playerLevel>=6)s.money+=1;
+    if(meta&&options.playerLevel>=59)s.money=10; // normal start; special45+ deck overrides below remain authoritative.
     if(enhanced){s.deckProfile={version:1,startingLevel:options.playerLevel,deckId:deckId};if(deckId==='yellow')s.money=25;if(deckId==='erratic'){var statsDice={rng:hash(seed+'|deck45:erratic')},stats={};ERRATIC_KEYS.forEach(function(k){stats[k]=int(statsDice,10)+1;});s.deckProfile.stats=stats;s.money=stats.money;}}
-    if(meta)enableProgression(s,options.playerLevel);
+    if(meta)enableProgression(s,options.playerLevel);if(Foods)Foods.ensure(s);
     setHandSort(s,Object.prototype.hasOwnProperty.call(options,'handSortMode')?options.handSortMode:'rank');
     setLevel10Deal(s,Object.prototype.hasOwnProperty.call(options,'level10Deal')?options.level10Deal:false);s.handDrawOrder=[];
     if(coinUnlocks!==null)s.coinUnlocks=coinUnlocks;
@@ -776,9 +778,9 @@
     if(hit){s.target=blindInfo(s).target;refresh(s);note(s,'Boss Disabler Potion: temporarily disabled '+bossById[s.bossId].name+'.');}
   }
   function startBlind(s) {
-    phase(s,['select']);if(s.potionBossDisable)delete s.potionBossDisable;s.phase='play';s.round++;s.roundBlindLevelFactor={round:s.round,ante:s.ante,blindIndex:s.blindIndex,factor:playerBlindFactor(s)};s.score=0;s.bossDisabled=false;s.target=blindInfo(s).target;s.roundHands=0;s.roundDiscards=0;s.roundTypes={};s.firstRoundHand=null;s.roundHandBonus=0;s.oxHand=topHand(s);s.payout={lines:[],total:0};s.forcedCardId=null;
+    phase(s,['select']);var foodStart=Foods?Foods.beginBlind(s):{hands:0,discards:0};if(s.potionBossDisable)delete s.potionBossDisable;s.phase='play';s.round++;s.roundBlindLevelFactor={round:s.round,ante:s.ante,blindIndex:s.blindIndex,factor:playerBlindFactor(s)};s.score=0;s.bossDisabled=false;s.target=blindInfo(s).target;s.roundHands=0;s.roundDiscards=0;s.roundTypes={};s.firstRoundHand=null;s.roundHandBonus=0;s.oxHand=topHand(s);s.payout={lines:[],total:0};s.forcedCardId=null;
     s.jokers.forEach(function(j){j.disabled=false;if(j.id==='hit_the_road'&&isJokerActive(j))j.counter=1;});
-    s.tags=s.tags.filter(function(t){if(t.id==='juggle'){s.roundHandBonus+=3;return false;}return true;});refresh(s);var v=summary(s);s.hands=v.handsPerRound;s.discards=v.discardsPerRound;
+    s.tags=s.tags.filter(function(t){if(t.id==='juggle'){s.roundHandBonus+=3;return false;}return true;});refresh(s);var v=summary(s);v.handsPerRound=Math.max(1,v.handsPerRound+foodStart.hands);v.discardsPerRound=v.discardsPerRound===0?0:Math.max(0,v.discardsPerRound+foodStart.discards);s.hands=v.handsPerRound;s.discards=v.discardsPerRound;
     if(s.blindIndex===2)tryPotionBossDisable(s);
     s.cards.forEach(function(c){delete c.faceDown;delete c.debuffed;});s.drawPile=shuffle(s,s.cards.slice());s.hand=[];s.handDrawOrder=[];s.discardPile=[];
     if(s.progressionEnabled===true||has(s,'mothim'))s.metaBossStart={round:s.round,handPenalty:activeBoss(s,'needle')?Math.max(0,v.handsPerRound-1):0,discardPenalty:activeBoss(s,'water')?v.discardsPerRound:0};
@@ -813,7 +815,7 @@
   function setPlayerLevel(s,n) {
     validPlayerLevel(n);
     if(s.progressionEnabled!==true)enableProgression(s,n);
-    rememberLegacyBossStart(s);s.playerLevel=n;refresh(s);applyMetaBossBonus(s);refreshPendingInterest(s);refreshPendingRoundBonus(s);
+    rememberLegacyBossStart(s);s.playerLevel=n;if(Foods){Foods.ensure(s);if(s.phase==='shop')Foods.enterShop(s);}refresh(s);applyMetaBossBonus(s);refreshPendingInterest(s);refreshPendingRoundBonus(s);
     if(s.phase==='play'){
       if(s.blindIndex===2&&(s.bossId==='wall'||s.bossId==='violet_vessel'))s.target=blindInfo(s).target;
       if(!activeBoss(s,'cerulean_bell'))s.forcedCardId=null;
@@ -898,6 +900,8 @@
   // Blocked hands bypass normal scoring and use the same idempotent hook.
   // Vanilla excludes The Hook/The Tooth and debuffed non-scoring kickers.
   function payMatador(s,r,b,lines) {if(!r.bossTriggered||r.matadorPaid[b.source.uid])return;r.matadorPaid[b.source.uid]=true;addMoney(s,8);lines.push(abilityLabel(b)+': +$8');}
+  function foodView(s,cards,scored,held,r,legal) {var limits=summary(s);return {cards:cards,scored:scored,held:held,type:r.key,k:s.roundHands,h:s.hands,d:s.discards,v:s.roundDiscards,bank:s.money,score:s.score,target:s.target,handCount:cards.length+held.length,handSize:s.handSize,activeJokers:s.jokers.filter(isJokerActive).length,freeJokers:Math.max(0,limits.jokerSlots-s.jokers.length),consumables:s.consumables.length,freeConsumables:Math.max(0,limits.consumableSlots-s.consumables.length),activeBoss:activeBoss(s,s.bossId),legal:legal};}
+  function foodRefund(s,r) {var applied={hands:0,discards:0};if(r.hands&&!activeBoss(s,'needle')){s.hands+=r.hands;applied.hands=r.hands;}if(r.discards&&!activeBoss(s,'water')&&!has(s,'burglar')&&summary(s).discardsPerRound>0){s.discards+=r.discards;applied.discards=r.discards;}return applied;}
   function scoreHand(s,cards,r,bindings,frenzyContext,batteryChips) {
     var scoringTriggers=0,scoringCards=[],actualLevel=frenzyContext?frenzyContext.actualLevel:undefined,permanent=permanentCrit(s,actualLevel);
     var lines=[],critEvents=[],critTotals=null,chips,mult,potion=potionEffects(s),scored=r.indices.map(function(i){return cards[i];}),held=s.hand.filter(function(c){return cards.indexOf(c)<0;}),firstFace;
@@ -1025,6 +1029,9 @@
     if(potion.daylightMult)M(potion.daylightMult,'Daylight Potion');
     var deal=level10DealActive(s);
     if(deal){chips=finite(chips*1.05);lines.push('Level 10 deal X1.05 Chips');X(1.01,'Level 10 deal');}
+    // Foods resolve once after native Joker/Plasma/Potion/deal effects: flats,
+    // then factors; before Frenzy, battery and final-score boosts. No RNG/draws.
+    if(Foods){var foodReceipt=Foods.score(s,foodView(s,cards,scored,held,r,true),chips,mult);chips=foodReceipt.chips;mult=foodReceipt.mult;lines=lines.concat(foodReceipt.lines);var appliedFood=foodRefund(s,foodReceipt);if(appliedFood.discards)lines.push('Food: restore '+appliedFood.discards+' discard(s); no extra draw.');}
     // Threshold crossing is an atomic hand event at the supplied start-of-play
     // clock. The triggering hand receives the final boost; excess scores are
     // ignored, not banked, and cannot restart its anchored ten-second window.
@@ -1049,7 +1056,7 @@
   // (e.g. fifth-round Popcorn destruction) still resolve on the final live round.
   function activeAtCashout(j) {return isJokerActive(j)&&!(j.perishable&&j.perishTally<=1);}
   function cashoutCount(s,id) {return s.jokers.filter(function(j){return j.id===id&&activeAtCashout(j);}).length;}
-  function normalInterest(s,moons) {if(s.deckId==='green')return 0;var cap=owned(s,'money_tree')?20:owned(s,'seed_money')?10:5;return Math.min(cap,Math.floor(Math.max(0,s.money)/potionEffects(s).interestDivisor))*(1+moons);}
+  function normalInterest(s,moons) {if(s.deckId==='green')return 0;var cap=owned(s,'money_tree')?20:owned(s,'seed_money')?10:5;return (Foods?Foods.interest(s,{cap:cap,divisor:potionEffects(s).interestDivisor,money:s.money,enabled:true}):Math.min(cap,Math.floor(Math.max(0,s.money)/potionEffects(s).interestDivisor)))*(1+moons);}
   function refreshPendingInterest(s) {
     if(s.progressionEnabled!==true&&!s.potions||s.phase!=='cashout')return;
     // Preserve the original Moon eligibility before Perishable expiry. Never
@@ -1090,7 +1097,7 @@
   }
   function finishRound(s) {
     var dealTax=snapshotRoundDeal(s,'win'),potion=potionEffects(s),drop=Potions&&potionEligible(s)&&s.blindIndex===2&&(!s.potions||!s.potions.blockedReason&&s.potions.inventory.length<potionCapacity(s))?Math.min(.5,listedLuckMultiplier(s)/10):0;
-    s.phase='cashout';s.stats.blindsWon++;s.unusedDiscards=(s.unusedDiscards||0)+s.discards;var lines=[{label:'Blind reward',amount:blindInfo(s).reward}],boss=s.blindIndex===2,rentalCost=0;
+    s.phase='cashout';if(Foods&&Foods.recordBlind(s).ticket)note(s,'Two complete Antes: +1 Food ticket.');s.stats.blindsWon++;s.unusedDiscards=(s.unusedDiscards||0)+s.discards;var lines=[{label:'Blind reward',amount:blindInfo(s).reward}],boss=s.blindIndex===2,rentalCost=0;
     if(s.progressionEnabled===true){progressEvent(s,'blind-win',[3,5,10][s.blindIndex]*s.ante,{ante:s.ante,blindIndex:s.blindIndex});if(boss){s.stats.bossesWon++;s.stats.highestAnteDefeated=Math.max(s.stats.highestAnteDefeated,s.ante);}}
     // Rental charges are unconditional, before interest/payout, and can go into
     // debt. Charge before removing any end-round self-destructing rental Joker.
@@ -1109,7 +1116,7 @@
     s.jokers=s.jokers.filter(function(j){return j.eternal||!j.remove&&!((j.id==='popcorn'||j.id==='turtle_bean')&&j.counter<=0);});
     if(boss){s.tags=s.tags.filter(function(t){if(t.id==='investment'){pay('Investment Tag',25);return false;}return true;});if(s.deckId==='anaglyph'){grantTag(s,'double',true);if(enhanced)grantTag(s,'double',true);}}
     if(dealTax)lines.push({label:'Level 10 deal',amount:-dealTax});
-    s.payout={lines:lines,total:lines.reduce(function(n,l){return n+l.amount;},0)};if(rentalCost)s.payout.rentalCost=rentalCost;note(s,'Blind defeated. Cashout: $'+s.payout.total+'.');
+    if(Foods)lines=Foods.payout(s,lines);s.payout={lines:lines,total:lines.reduce(function(n,l){return n+l.amount;},0)};if(rentalCost)s.payout.rentalCost=rentalCost;note(s,'Blind defeated. Cashout: $'+s.payout.total+'.');
     if(s.potionBossDisable)delete s.potionBossDisable;
     receiveBossPotionDrop(s,drop);
   }
@@ -1146,6 +1153,7 @@
     progressEvent(s,'hand-play',cards.length,{cards:cards.length});
     if(activeBoss(s,'ox')&&r.key===s.oxHand){if(s.money>0)r.bossTriggered=true;if(s.money!==0)recordBossEffect(s,'ox','bank-reset');s.money=0;}if(activeBoss(s,'tooth')){s.money-=cards.length;recordBossEffect(s,'tooth','played-card-loss');}
     s.lastResult=forbidden?{name:r.name,key:r.key,handLevel:s.levels[r.key],chips:0,mult:0,total:0,lines:[forbidden,'Hand consumed: scores 0.']}:scoreHand(s,cards,r,handBindings,context,finalBatteryChips(battery,actualLevel));
+    if(forbidden&&Foods)Foods.score(s,foodView(s,cards,r.indices.map(function(i){return cards[i];}),s.hand.filter(function(c){return cards.indexOf(c)<0;}),r,false),0,0);
     if(forbidden&&context){s.lastResult.scoringTriggers=0;s.lastResult.scoringCards=[];s.lastResult.frenzy=commitFrenzy(s,context,0,[]);}
     s.score=finite(s.score+s.lastResult.total);s.stats.bestHand=Math.max(s.stats.bestHand,s.lastResult.total);
     cards.forEach(function(c){if(s.antePlayed.indexOf(c.id)<0)s.antePlayed.push(c.id);c.faceDown=false;});
@@ -1158,6 +1166,7 @@
     // Forbidden hands emit only Matador cash, never independent scoring or editions.
     if(forbidden)eachAbility(s,handBindings,'independent',function(j,b){if(j.id==='matador')payMatador(s,r,b,s.lastResult.lines);});
     if(gamingDead){s.potions=Potions.endActive(s.potions,s.potionNow,'gaming-death');s.phase='lost';snapshotRoundDeal(s,'loss');if(s.potionBossDisable)delete s.potionBossDisable;note(s,'Gaming Potion: 0 HP. Run lost before Boss rewards.');return;}
+    if(Foods)foodRefund(s,Foods.afterScore(s,{total:s.lastResult.total,target:s.target,score:s.score,legal:!forbidden}));
     if(s.score>=s.target){finishRound(s);return;}
     if(activeBoss(s,'hook')){var victims=shuffle(s,handInDrawOrder(s)).slice(0,2);discardCards(s,victims,false);if(victims.length)recordBossEffect(s,'hook','forced-discard');}
     refill(s,true);maybeLose(s);
@@ -1167,7 +1176,7 @@
       cards.forEach(function(c){if(c.seal==='purple'&&!c.debuffed)addConsumable(s,randomConsumable(s,'tarot').id);});s.jokers=s.jokers.filter(function(j){return j.eternal||!(j.id==='ramen'&&j.counter<=1);});}
     var ids=cards.map(function(c){return c.id;});s.hand=s.hand.filter(function(c){return ids.indexOf(c.id)<0;});cards.forEach(function(c){c.faceDown=false;if(s.cards.some(function(x){return x.id===c.id;}))s.discardPile.push(c);});
   }
-  function discard(s,ids,options) {phase(s,['play']);check(s.discards>0,'No discards remain.');var cards=selected(s,ids,s.hand,selectionLimit(s,selectionActualLevel(options)),1);s.discards--;s.roundDiscards++;s.stats.discardsUsed++;s.stats.cardsDiscarded=(s.stats.cardsDiscarded||0)+cards.length;discardCards(s,cards,true);refill(s,false);maybeLose(s);note(s,'Discarded '+cards.length+' card(s).');}
+  function discard(s,ids,options) {phase(s,['play']);check(s.discards>0,'No discards remain.');var cards=selected(s,ids,s.hand,selectionLimit(s,selectionActualLevel(options)),1);s.discards--;s.roundDiscards++;s.stats.discardsUsed++;s.stats.cardsDiscarded=(s.stats.cardsDiscarded||0)+cards.length;discardCards(s,cards,true);if(Foods)foodRefund(s,Foods.discard(s,cards.length));refill(s,false);maybeLose(s);note(s,'Discarded '+cards.length+' card(s).');}
   // https://balatrowiki.org/w/Card_modifiers#Appearance_rates
   // Natural Negative stays 0.3%; Hone/Glow replace, rather than multiply each other.
   function editionWeights(s,kind) {
@@ -1217,11 +1226,15 @@
   function shelfItem(s) {var weights=shelfWeights(s),roll=random(s)*weights.reduce(function(n,x){return n+x.w;},0),type='joker';for(var i=0;i<weights.length;i++){roll-=weights[i].w;if(roll<0){type=weights[i].type;break;}}
     if(type==='joker'){var r=random(s);return jokerItem(s,r<0.7?'common':r<0.95?'uncommon':'rare');}if(type==='card')return cardItem(s);var c=clone(randomConsumable(s,type));c.price=price(s,c.price);return c;
   }
-  function rerollCost(s,n) {var base=s.shop&&s.shop.baseRerollCost!==undefined?s.shop.baseRerollCost:5;return Math.max(0,Math.max(0,base-(owned(s,'reroll_surplus')?2:0)-(owned(s,'reroll_glut')?2:0))+(n||0)-(s.progressionEnabled===true&&s.playerLevel>=24?1:0));}
+  function nativeRerollCost(s,n) {var base=s.shop&&s.shop.baseRerollCost!==undefined?s.shop.baseRerollCost:5;return Math.max(0,Math.max(0,base-(owned(s,'reroll_surplus')?2:0)-(owned(s,'reroll_glut')?2:0))+(n||0)-(s.progressionEnabled===true&&s.playerLevel>=24?1:0));}
+  function rerollCost(s,n) {var amount=nativeRerollCost(s,n);return Foods?Foods.quote(s,{kind:'reroll',price:amount}):amount;}
+  function shopKind(i) {return packById[i.id]?'pack':voucherById[i.id]?'voucher':'shelf';}
+  function nativeShopPrice(s,i) {return has(s,'astronomer')&&(i.type==='planet'||packById[i.id]&&packById[i.id].type==='planet')?0:shopDollarPrice(s,i.basePrice===undefined?i.price:i.basePrice);}
+  function spendFoodCoupon(s,i) {if(Foods)Foods.spent(s,{kind:shopKind(i),type:i.type,price:nativeShopPrice(s,i)});}
   function refreshPrices(s) {
     if(!s.shop)return;
     (s.shop.packs||[]).forEach(function(p){check(!!packById[p.id],'Unknown booster pack: '+p.id);});
-    (s.shop.items||[]).concat(s.shop.packs||[],s.shop.voucher?[s.shop.voucher]:[],s.shop.voucherQueue||[]).forEach(function(i){if(i.basePrice===undefined)i.basePrice=i.price;var free=has(s,'astronomer')&&(i.type==='planet'||packById[i.id]&&packById[i.id].type==='planet');i.price=free?0:shopDollarPrice(s,i.basePrice);});
+    (s.shop.items||[]).concat(s.shop.packs||[],s.shop.voucher?[s.shop.voucher]:[],s.shop.voucherQueue||[]).forEach(function(i){if(i.basePrice===undefined)i.basePrice=i.price;var nativePrice=nativeShopPrice(s,i);i.price=Foods?Foods.quote(s,{kind:shopKind(i),type:i.type,price:nativePrice}):nativePrice;});
     if(s.phase==='shop')s.shop.rerollCost=s.shop.freeRerolls?0:rerollCost(s,s.shop.rerolls);
   }
   function generateShop(s) {
@@ -1232,13 +1245,14 @@
       var packIds={standard:'mega_standard',charm:'mega_arcana',meteor:'mega_celestial',buffoon:'mega_buffoon',ethereal:'spectral'};if(packIds[id]){var p=clone(packById[packIds[id]]);p.price=0;packs.push(p);return false;}if(id==='voucher'){var available=candidates.filter(function(v){return (!voucher||v.id!==voucher.id)&&!voucherQueue.some(function(q){return q.id===v.id;});});if(available.length){var extra=clone(pick(s,available));extra.price=price(s,10);voucherQueue.push(extra);}return false;}if(id==='coupon'){coupon=true;return false;}if(id==='d6'){d6++;return false;}return true;});
     if(!voucher&&voucherQueue.length)voucher=voucherQueue.shift();
     if(coupon){items.forEach(function(i){i.price=0;});packs.forEach(function(p){p.price=0;});}
-    s.shop={items:items,packs:packs,voucher:voucher,voucherQueue:voucherQueue,rerolls:0,baseRerollCost:d6?0:5,freeRerolls:count(s,'chaos_the_clown'),rerollCost:0};s.shop.rerollCost=s.shop.freeRerolls?0:rerollCost(s,0);refreshPrices(s);
+    s.shop={items:items,packs:packs,voucher:voucher,voucherQueue:voucherQueue,rerolls:0,baseRerollCost:d6?0:5,freeRerolls:count(s,'chaos_the_clown'),rerollCost:0};if(Foods)Foods.enterShop(s);s.shop.rerollCost=s.shop.freeRerolls?0:rerollCost(s,0);refreshPrices(s);
   }
   function cashout(s) {phase(s,['cashout']);addMoney(s,s.payout.total);s.jokers.forEach(function(j){j.disabled=false;});s.roundHandBonus=0;s.firstRoundHand=null;if(s.ante===8&&s.blindIndex===2&&!s.endless){s.phase='won';note(s,'Eight Antes complete! Continue explicitly for endless mode.');return;}nextBlind(s);s.phase='shop';generateShop(s);}
   function continueRun(s) {phase(s,['won']);s.endless=true;nextBlind(s);s.phase='shop';generateShop(s);note(s,'Endless mode: Ante '+s.ante+'.');}
   function leaveShop(s) {phase(s,['shop']);var exitBindings=captureJokerBindings(s);eachAbility(s,exitBindings,'shopExit',function(j){if(j.id==='perkeo'&&s.consumables.length){var original=pick(s,s.consumables),c=clone(original);c.uid=uid(s,'u');c.edition='negative';s.consumables.push(c);}});s.phase='select';s.hand=[];s.drawPile=[];s.discardPile=[];s.firstRoundHand=null;}
+  function buyFood(s,id,actualLevel) {phase(s,['shop']);check(Foods,'Keep food-effects.js and food-catalog.js with the game.');var food=Foods.buy(s,id,actualLevel);note(s,'Food ticket: '+food.name+' queued for the next Blind.');}
   function acquire(s,item) {if(item.type==='joker'){check(jokerById[item.id]&&coinJokerEligible(s,jokerById[item.id]),'This Joker has not been coin-unlocked.');acquireStickers(addJoker(s,item.id,item.edition),item);return;}if(item.type==='card'){check(item.card,'Playing card data is missing.');var c=clone(item.card);if(s.cards.some(function(x){return x.id===c.id;}))c.id=uid(s,'c');addCard(s,c,s.phase==='play'?'hand':undefined);return;}check(consumableById[item.id],'Unknown shop item.');check(addConsumable(s,item.id,item.edition==='negative'),'No free consumable slots.');}
-  function buy(s,index,payment) {bankPayment(payment);phase(s,['shop']);check(Number.isInteger(index)&&s.shop.items[index],'Choose an available shop item.');var item=s.shop.items[index];check(!item.sold,'This item has already been bought.');var cost=itemPrice(s,item);acquire(s,item);payFor(s,cost,payment);if(item.type==='joker')progressEvent(s,'joker-buy',3,{jokerId:item.id});item.sold=true;refreshPrices(s);note(s,'Bought '+item.name+' for $'+cost+'.');}
+  function buy(s,index,payment) {bankPayment(payment);phase(s,['shop']);check(Number.isInteger(index)&&s.shop.items[index],'Choose an available shop item.');var item=s.shop.items[index];check(!item.sold,'This item has already been bought.');var cost=itemPrice(s,item);acquire(s,item);payFor(s,cost,payment);spendFoodCoupon(s,item);if(item.type==='joker')progressEvent(s,'joker-buy',3,{jokerId:item.id});item.sold=true;refreshPrices(s);note(s,'Bought '+item.name+' for $'+cost+'.');}
   // One atomic action: native debit first, then the SAME consumable effect.
   // A transient owned card never requires or steals a held inventory slot;
   // generated cards still obey the real post-consumption capacity checks.
@@ -1246,10 +1260,10 @@
     bankPayment(payment);phase(s,['shop']);check(Number.isInteger(index)&&s.shop.items[index]&&!s.shop.items[index].sold,'Choose an available shop item.');
     var item=s.shop.items[index],def=consumableById[item.id];check(def&&['tarot','planet'].indexOf(item.type)>=0&&def.type===item.type,'Only shop Tarot and Planet cards can be used immediately.');
     var cost=itemPrice(s,item);payFor(s,cost,payment);var c=consumable(s,item.id);if(item.edition==='negative')c.edition='negative';var at=s.consumables.length;s.consumables.push(c);
-    item.sold=true;refreshPrices(s);note(s,'Bought '+item.name+' for $'+cost+'.');useConsumable(s,at,ids);
+    item.sold=true;spendFoodCoupon(s,item);refreshPrices(s);note(s,'Bought '+item.name+' for $'+cost+'.');useConsumable(s,at,ids);
   }
-  function reroll(s,payment) {phase(s,['shop']);payFor(s,s.shop.rerollCost,payment);if(s.shop.freeRerolls>0)s.shop.freeRerolls--;else s.shop.rerolls++;var n=2+(owned(s,'overstock')?1:0)+(owned(s,'overstock_plus')?1:0);s.shop.items=[];for(var i=0;i<n;i++)s.shop.items.push(shelfItem(s));s.shop.rerollCost=s.shop.freeRerolls>0?0:rerollCost(s,s.shop.rerolls);s.jokers.forEach(function(j){if(j.id==='flash_card'&&isJokerActive(j))j.counter+=2;});refreshPrices(s);}
-  function buyVoucher(s,payment) {phase(s,['shop']);var v=s.shop.voucher;check(v&&!v.sold,'No voucher is available.');check(voucherById[v.id]&&!owned(s,v.id),'This voucher is already owned.');check(!UPGRADES[v.id]||owned(s,UPGRADES[v.id]),'Buy the first-tier voucher first.');payFor(s,v.price,payment);s.vouchers[v.id]=true;v.sold=true;if(s.anteVoucher&&s.anteVoucher.id===v.id)s.anteVoucher.sold=true;
+  function reroll(s,payment) {phase(s,['shop']);var nativeCost=s.shop.freeRerolls>0?0:nativeRerollCost(s,s.shop.rerolls);payFor(s,s.shop.rerollCost,payment);if(Foods)Foods.spent(s,{kind:'reroll',price:nativeCost});if(s.shop.freeRerolls>0)s.shop.freeRerolls--;else s.shop.rerolls++;var n=2+(owned(s,'overstock')?1:0)+(owned(s,'overstock_plus')?1:0);s.shop.items=[];for(var i=0;i<n;i++)s.shop.items.push(shelfItem(s));s.shop.rerollCost=s.shop.freeRerolls>0?0:rerollCost(s,s.shop.rerolls);s.jokers.forEach(function(j){if(j.id==='flash_card'&&isJokerActive(j))j.counter+=2;});refreshPrices(s);}
+  function buyVoucher(s,payment) {phase(s,['shop']);var v=s.shop.voucher;check(v&&!v.sold,'No voucher is available.');check(voucherById[v.id]&&!owned(s,v.id),'This voucher is already owned.');check(!UPGRADES[v.id]||owned(s,UPGRADES[v.id]),'Buy the first-tier voucher first.');payFor(s,v.price,payment);spendFoodCoupon(s,v);s.vouchers[v.id]=true;v.sold=true;if(s.anteVoucher&&s.anteVoucher.id===v.id)s.anteVoucher.sold=true;
     if(v.id==='hieroglyph'){s.ante=Math.max(0,s.ante-1);s.handsBonus--;s.bossId=pickBoss(s);}if(v.id==='petroglyph'){s.ante=Math.max(0,s.ante-1);s.discardsBonus--;s.bossId=pickBoss(s);}if(v.id==='overstock'||v.id==='overstock_plus')s.shop.items.push(shelfItem(s));
     if(['clearance_sale','liquidation'].indexOf(v.id)>=0){var ratio=v.id==='liquidation'&&owned(s,'clearance_sale')?2/3:0.75;s.shop.items.concat(s.shop.packs,s.shop.voucher?[s.shop.voucher]:[],s.shop.voucherQueue||[]).forEach(function(i){if(!i.sold&&(i.basePrice===undefined?i.price:i.basePrice)>0)i.price=i.basePrice=Math.max(1,Math.floor((i.basePrice===undefined?i.price:i.basePrice)*ratio));});}
     s.shop.rerollCost=s.shop.freeRerolls?0:rerollCost(s,s.shop.rerolls);refreshPrices(s);note(s,'Redeemed '+v.name+'.');if(s.shop.voucherQueue&&s.shop.voucherQueue.length)s.shop.voucher=s.shop.voucherQueue.shift();}
@@ -1269,7 +1283,7 @@
     }
     s.pack=Object.assign({name:def.name,id:def.id,choices:choices,remaining:def.choose},context);s.phase='pack';eachAbility(s,captureJokerBindings(s),'packOpen',function(j){if(j.id==='hallucination'&&chance(s,2))addConsumable(s,randomConsumable(s,'tarot').id);});
   }
-  function openPack(s,index,payment) {phase(s,['shop']);check(Number.isInteger(index)&&s.shop.packs[index],'Choose an available pack.');var p=s.shop.packs[index];check(!p.sold,'This pack is already open.');var def=packById[p.id];check(def,'Unknown Booster Pack.');payFor(s,itemPrice(s,{type:'pack',id:p.id,price:p.price}),payment);p.sold=true;beginPack(s,def);}
+  function openPack(s,index,payment) {phase(s,['shop']);check(Number.isInteger(index)&&s.shop.packs[index],'Choose an available pack.');var p=s.shop.packs[index];check(!p.sold,'This pack is already open.');var def=packById[p.id];check(def,'Unknown Booster Pack.');payFor(s,itemPrice(s,{type:'pack',id:p.id,price:p.price}),payment);spendFoodCoupon(s,p);p.sold=true;beginPack(s,def);}
   function openNextTagPack(s,returnPhase) {
     check(returnPhase==='select'||returnPhase==='shop','Invalid Tag pack return phase.');
     check(Array.isArray(s.tagPackQueue)&&s.tagPackQueue.length,'No pending Tag pack is available.');
@@ -1356,7 +1370,7 @@
   return {version:1,decks:decks,stakes:stakes,jokers:jokers,tags:tags,planets:planets,tarots:tarots,spectrals:spectrals,vouchers:vouchers,bosses:bosses,packs:PACKS,enhancements:clone(ENHANCEMENTS),editions:clone(EDITIONS),seals:clone(SEALS),hands:clone(HANDS),
     achievements:[{id:'first_blind',name:'First Blind',description:'Win a Blind.'},{id:'ante_eight',name:'Eight Antes',description:'Defeat the Ante 8 Boss.'}],
     validateDeckProfile:validateDeckProfile,deckDescription:deckDescription,withPokerEvents:withPokerEvents,newRun:newRun,evaluate:evaluate,preview:preview,selectionLimit:selectionLimit,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
-    setHandSort:atomic(setHandSort),setLevel10Deal:atomic(setLevel10Deal),setPotionState:atomic(setPotionState),drinkPotion:atomic(drinkPotion),setCoinUnlocks:atomic(setCoinUnlocks),setPlayerLevel:atomic(setPlayerLevel),disableBossOnce:atomic(disableBossOnce),mothimAttack:atomic(mothimAttack),startBlind:atomic(startBlind),skipBlind:atomic(skipBlind),play:atomic(play),discard:atomic(discard),cashout:atomic(cashout),buy:atomic(buy),buyUse:atomic(buyUse),reroll:atomic(reroll),buyVoucher:atomic(buyVoucher),openPack:atomic(openPack),openPendingTagPack:atomic(openPendingTagPack),choosePack:atomic(choosePack),sellJoker:atomic(sellJoker),moveJoker:atomic(moveJoker),useConsumable:atomic(useConsumable),sellConsumable:atomic(sellConsumable),abandon:atomic(abandon),continueRun:atomic(continueRun),leaveShop:atomic(leaveShop),nextRound:atomic(leaveShop),rerollBoss:atomic(rerollBoss),sellValue:sellValue,
+    setHandSort:atomic(setHandSort),setLevel10Deal:atomic(setLevel10Deal),setPotionState:atomic(setPotionState),drinkPotion:atomic(drinkPotion),setCoinUnlocks:atomic(setCoinUnlocks),setPlayerLevel:atomic(setPlayerLevel),disableBossOnce:atomic(disableBossOnce),mothimAttack:atomic(mothimAttack),startBlind:atomic(startBlind),skipBlind:atomic(skipBlind),play:atomic(play),discard:atomic(discard),cashout:atomic(cashout),buyFood:atomic(buyFood),buy:atomic(buy),buyUse:atomic(buyUse),reroll:atomic(reroll),buyVoucher:atomic(buyVoucher),openPack:atomic(openPack),openPendingTagPack:atomic(openPendingTagPack),choosePack:atomic(choosePack),sellJoker:atomic(sellJoker),moveJoker:atomic(moveJoker),useConsumable:atomic(useConsumable),sellConsumable:atomic(sellConsumable),abandon:atomic(abandon),continueRun:atomic(continueRun),leaveShop:atomic(leaveShop),nextRound:atomic(leaveShop),rerollBoss:atomic(rerollBoss),sellValue:sellValue,
     coverage:{decks:decks.length,jokers:jokers.length,tarots:tarots.length,planets:planets.length,spectrals:spectrals.length,vouchers:vouchers.length,tags:tags.length,bosses:bosses.length,stakes:stakes.length,stickers:3},
     _test:{addJoker:function(s,id,edition){return addJoker(s,id,edition);},addConsumable:function(s,id){return addConsumable(s,id);},grantTag:function(s,id){grantTag(s,id);},generateShop:function(s){generateShop(s);},rollShopStickers:rollShopStickers,chance:chance,edition:edition,resolveJokerAbility:resolveJokerAbility,captureJokerBindings:captureJokerBindings,eachAbility:eachAbility}
   };
