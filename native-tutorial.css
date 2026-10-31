@@ -1,0 +1,23 @@
+/* Guide deliberately leaves the real table and recovery controls available. */
+.native-tutorial{position:fixed;z-index:1500;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));width:min(372px,calc(100vw - 24px));padding:19px 21px;border:1px solid #ddbe7a;border-radius:16px;background:#112c2e;color:#f5efd9;box-shadow:0 12px 48px #0009;overflow:auto;font-size:14px;line-height:1.5;isolation:isolate}
+.native-tutorial[data-side="top"]{top:max(16px,env(safe-area-inset-top));bottom:auto}
+.native-tutorial h2{font-size:21px;line-height:1.18;margin:12px 0 9px;color:#fff7e6;font-family:inherit}
+.native-tutorial p{margin:9px 0;max-width:100%;font-size:14px;line-height:1.5;color:#ebeee4}
+.native-tutorial-kicker{display:flex;justify-content:space-between;gap:12px;font-size:10px;letter-spacing:1.25px;font-weight:800;color:#dfc17f}
+.native-tutorial-kicker span{white-space:nowrap}
+.native-tutorial .native-tutorial-ledger{padding:9px 0;border-block:1px solid #fff2;font-variant-numeric:tabular-nums;color:#f5da99;font-size:12px;font-weight:700}
+.native-tutorial .native-tutorial-result{font-size:14px;font-weight:700;color:#b9eadb}
+.native-tutorial-controls,.native-tutorial-recovery{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.native-tutorial .btn{min-height:36px;padding:8px 11px;font-size:12px;white-space:normal;line-height:1.2}
+.native-tutorial .btn.primary{background:#e9c77d;color:#14292b;border-color:#e9c77d;font-weight:800}
+.native-tutorial .btn.ghost{color:#f1ead8;border:1px solid #ffffff45;background:#ffffff06}
+.native-tutorial-use-control{width:100%;font-size:12px;color:#efcd83;font-weight:700}
+.native-tutorial-recovery{padding-top:9px;border-top:1px solid #ffffff1d}
+.native-tutorial-recovery .btn{min-height:32px;color:#bed7d0}
+.native-tutorial-exit{margin-top:12px;padding:10px;border:1px solid #e6a77a;border-radius:8px;background:#452e29}
+.native-tutorial .native-tutorial-refusal{color:#ffd2a7;font-size:12px}
+.native-tutorial-focus{outline:3px solid #edc878!important;outline-offset:5px;box-shadow:0 0 0 8px #edc87820!important;scroll-margin-block:90px}
+.native-tutorial-muted{opacity:.38!important}
+.native-tutorial-open .playing-card{transition:transform .12s ease,opacity .12s ease}
+@media(max-width:600px){.native-tutorial{right:12px;bottom:12px;padding:14px 16px;width:min(340px,calc(100vw - 24px));font-size:13px}.native-tutorial h2{font-size:19px}.native-tutorial p{font-size:13px;line-height:1.4}.native-tutorial-kicker{font-size:9px;letter-spacing:1px}.native-tutorial-controls,.native-tutorial-recovery{gap:6px}.native-tutorial .btn{padding:7px 9px;min-height:34px}.native-tutorial[data-side="top"]{top:12px}}
+@media(prefers-reduced-motion:reduce){.native-tutorial-open .playing-card{transition:none}}
