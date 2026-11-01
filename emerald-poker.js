@@ -5,6 +5,8 @@
  * Full validate/copy/move replay the seed, target, held positions and receipt.
  */
 (function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldPoker=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+ const MR=typeof module==='object'&&module.exports?require('./manual-restoration-model'):globalThis.BOManualRestoration;
+ function declared(s){return own(s,'manualRestoration')?(check(MR&&typeof MR.amount==='function','Declared Poker baseline validator unavailable.'),MR.amount(s,'pokerPxp')):0}
  const VERSION=1,MAX=Number.MAX_SAFE_INTEGER,UINT=4294967296;
  const SUITS=Object.freeze(['S','H','D','C']),SYMBOLS=Object.freeze(['♠','♥','♦','♣']);
  const STATE_FIELDS=['version','revision','roundCounter','completedRounds','totalPXP','results','matchedTargets','rng','phase','round'];
@@ -95,7 +97,7 @@
  function chosen(n){const roll=choose(n,10);return {target:CATEGORIES[roll.index].id,rng:roll.rng}}
  function receiptFor(s,r,result){const p=payout(result.category,r.target);return {version:VERSION,roundId:r.id,serial:s.roundCounter,revision:s.revision,completedRounds:s.completedRounds,hand:r.hand.slice(),category:result.category,target:r.target,matchedTarget:p.matchedTarget,baseRewards:p.baseRewards,targetBonus:p.targetBonus,rewards:p.rewards,events:p.events}}
  function visibleHeader(s){
-  check(s.version===VERSION&&[s.revision,s.roundCounter,s.completedRounds,s.totalPXP,s.matchedTargets].every(count)&&['idle','holding','settled'].includes(s.phase),'Invalid Poker table fields.');
+  check(s.version===(own(s,'manualRestoration')?2:VERSION)&&count(safeAdd(s.totalPXP,declared(s)))&&[s.revision,s.roundCounter,s.completedRounds,s.totalPXP,s.matchedTargets].every(count)&&['idle','holding','settled'].includes(s.phase),'Invalid Poker table fields.');
   const l=ledger(s.results,s.matchedTargets);check(l.rounds===s.completedRounds&&l.totals.pxp===s.totalPXP&&s.completedRounds<=Math.floor(s.revision/2),'Poker ledger and round counters disagree.');
   if(s.phase==='idle')check(s.round===null&&s.revision===0&&s.roundCounter===0&&s.completedRounds===0,'Invalid idle Poker table.');
   else check(s.roundCounter>0&&(s.phase==='holding'?s.completedRounds<MAX&&s.roundCounter===s.completedRounds+1:s.roundCounter===s.completedRounds),'Poker phase and completed rounds disagree.');
@@ -103,7 +105,7 @@
  }
  function precedingLedger(s,result,matched){const results={...s.results};check(results[result.category]>0&&s.matchedTargets>=Number(matched),'Poker current receipt is missing from its ledger.');results[result.category]--;const l=ledger(results,s.matchedTargets-Number(matched));check(l.rounds===s.completedRounds-1,'Poker preceding ledger disagrees.');return l}
  function validate(s){try{
-  if(!fields(s,STATE_FIELDS)||!fields(s.rng,['deck','target'])||!seed(s.rng.deck)||!seed(s.rng.target))return false;
+  if(!fields(s,STATE_FIELDS.concat(own(s,'manualRestoration')?['manualRestoration']:[]))||!fields(s.rng,['deck','target'])||!seed(s.rng.deck)||!seed(s.rng.target))return false;
   visibleHeader(s);if(s.phase==='idle')return s.rng.target===targetSeedFor(s.rng.deck);
   const r=s.round,settled=s.phase==='settled';
   if(!fields(r,ROUND_FIELDS)||r.id!=='poker:'+s.roundCounter||!seed(r.deckSeed)||!seed(r.targetSeed)||!count(r.startRevision)||r.startRevision<1||r.startRevision>s.revision||!count(r.pxpBefore))return false;
@@ -148,7 +150,7 @@
  // Do not add full validation here; projection cannot inspect hidden future data.
  function projection(value,allKeys,visibleKeys){check(shape(value,allKeys),'Invalid Poker projection shape.');const result={};for(const key of visibleKeys)result[key]=data(value,key);return result}
  function publicState(state){
-  const s=projection(state,STATE_FIELDS,STATE_FIELDS.filter(k=>k!=='rng')),l=visibleHeader(s);let roundId=null,targetInfo=null,hand=[],held=[],remaining=52,result=null,receipt=null;
+  const keys=STATE_FIELDS.concat(own(state,'manualRestoration')?['manualRestoration']:[]),s=projection(state,keys,keys.filter(k=>k!=='rng')),l=visibleHeader(s);let roundId=null,targetInfo=null,hand=[],held=[],remaining=52,result=null,receipt=null;
   if(s.phase!=='idle'){
    const r=projection(s.round,ROUND_FIELDS,['id','cursor','target','hand','held','result','receipt']);
    check(r.id==='poker:'+s.roundCounter&&target(r.target)&&cardIds(r.hand,5)&&array(r.held,5)&&r.held.length===5&&r.held.every(v=>typeof v==='boolean')&&count(r.cursor),'Invalid visible Poker round.');
@@ -157,7 +159,7 @@
    else{result=evaluation(r.hand);receipt=receiptFor(s,r,result);check(sameData(result,r.result)&&sameData(receipt,r.receipt),'Invalid visible Poker receipt.');precedingLedger(s,result,receipt.matchedTarget)}
    roundId=r.id;targetInfo=CATEGORY_MAP[r.target];hand=r.hand.map(card);held=r.held.slice();remaining=52-r.cursor;
   }
-  return freeze({version:VERSION,revision:s.revision,roundCounter:s.roundCounter,completedRounds:s.completedRounds,totalPXP:s.totalPXP,results:{...s.results},matchedTargets:s.matchedTargets,totals:l.totals,level:levelInfo(s.totalPXP),phase:s.phase,roundId,target:targetInfo,hand,held,deckRemaining:remaining,result,receipt,can:{draw:s.phase==='idle'||s.phase==='settled',toggleHold:s.phase==='holding',redraw:s.phase==='holding'}});
+  return freeze({version:VERSION,revision:s.revision,roundCounter:s.roundCounter,completedRounds:s.completedRounds,totalPXP:s.totalPXP,results:{...s.results},matchedTargets:s.matchedTargets,totals:l.totals,level:levelInfo(safeAdd(s.totalPXP,declared(s))),...(own(s,'manualRestoration')?{declaredPXP:declared(s)}:{}),phase:s.phase,roundId,target:targetInfo,hand,held,deckRemaining:remaining,result,receipt,can:{draw:s.phase==='idle'||s.phase==='settled',toggleHold:s.phase==='holding',redraw:s.phase==='holding'}});
  }
  return Object.freeze({VERSION,SUITS,CATEGORIES,PAYOUTS,LEVEL_THRESHOLDS,available,create,validate,copy,move,publicState,card,evaluate,payoutFor,levelInfo,rewardTotals});
 });

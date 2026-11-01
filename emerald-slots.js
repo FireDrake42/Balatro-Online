@@ -4,6 +4,8 @@
  * commits the whole profile and paired native reward sources. All persisted
  * amounts are safe integer tenths, coin hundredths, or milliseconds. */
 (function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldSlots=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+ const MR=typeof module==='object'&&module.exports?require('./manual-restoration-model'):globalThis.BOManualRestoration;
+ function declared(s){return own(s,'manualRestoration')?(check(MR&&typeof MR.amount==='function','Declared Slots baseline validator unavailable.'),MR.amount(s,'slotsSxp10')):0}
  const MAX=Number.MAX_SAFE_INTEGER,MAX_TIME=8640000000000000,DAY_MS=86400000,TOKEN_MS=100000,TOKEN_CAP_MS=100000000;
  const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
  const count=n=>Number.isSafeInteger(n)&&n>=0&&!Object.is(n,-0);
@@ -79,7 +81,7 @@
  const STATE_FIELDS=['version','revision','rng','createdAtMs','clockAtMs','creditedDay','freeSpins','tokenMs','spinsStarted','spinsSettled','freeSpent','tokensSpent','counts','xpBoosted','coinsBoosted','emeraldMaxSpins','totals','effects','pending','last'];
  function validSpin(r,keys){return fields(r,keys)&&count(r.serial)&&r.serial>0&&time(r.startedAtMs)&&array(r.stops,3)&&r.stops.every(x=>Number.isInteger(x)&&x>=0&&x<36&&!Object.is(x,-0))&&levelNumber(r.level)&&typeof r.ownEmeraldMax==='boolean'&&time(lockAt(r,3))}
  function validate(s){try{
-  if(!fields(s,STATE_FIELDS)||s.version!==1||!seed(s.rng)||!time(s.createdAtMs)||!time(s.clockAtMs)||s.clockAtMs<s.createdAtMs)return false;
+  if(!fields(s,STATE_FIELDS.concat(own(s,'manualRestoration')?['manualRestoration']:[]))||s.version!==(own(s,'manualRestoration')?2:1)||!count(add(s.totals.sxp10,declared(s)))||!seed(s.rng)||!time(s.createdAtMs)||!time(s.clockAtMs)||s.clockAtMs<s.createdAtMs)return false;
   if(!['revision','creditedDay','freeSpins','tokenMs','spinsStarted','spinsSettled','freeSpent','tokensSpent','emeraldMaxSpins'].every(k=>count(s[k]))||s.tokenMs>TOKEN_CAP_MS||s.creditedDay!==Math.floor(s.clockAtMs/DAY_MS))return false;
   if(!validCounts(s.counts)||!validCounts(s.xpBoosted)||!validCounts(s.coinsBoosted)||!validCredits(s.totals))return false;
   if(BigInt(s.freeSpins)!==100n*BigInt(s.creditedDay-Math.floor(s.createdAtMs/DAY_MS)+1)-BigInt(s.freeSpent)||BigInt(s.freeSpent)+BigInt(s.tokensSpent)!==BigInt(s.spinsStarted))return false;
@@ -92,12 +94,12 @@
   if(s.spinsSettled===0){if(s.last!==null||s.emeraldMaxSpins!==0)return false}else{
    const r=s.last;if(!validSpin(r,RECEIPT_FIELDS)||r.serial!==s.spinsSettled||r.id!=='slots:'+r.serial||r.startedAtMs<s.createdAtMs||r.atMs!==lockAt(r,3)||r.atMs>s.clockAtMs||!own(PAYOUTS,r.payout)||r.payout!==payoutFor(r.stops.map((n,i)=>REELS[i][n]))||r.source!=='slots:'+r.payout||typeof r.xpBoosted!=='boolean'||typeof r.coinsBoosted!=='boolean'||!validCredits(r.credits))return false;
    if(!CREDIT_KEYS.every(k=>r.credits[k]===credits(r.payout,r.xpBoosted,r.coinsBoosted)[k])||s.counts[r.payout]===0||r.xpBoosted&&s.xpBoosted[r.payout]===0||r.coinsBoosted&&s.coinsBoosted[r.payout]===0||!r.xpBoosted&&s.xpBoosted[r.payout]===s.counts[r.payout]||!r.coinsBoosted&&s.coinsBoosted[r.payout]===s.counts[r.payout])return false;
-   if(r.level!==progress(s.totals.sxp10-r.credits.sxp10).level)return false;
+   if(r.level!==progress(add(s.totals.sxp10-r.credits.sxp10,declared(s))).level)return false;
    if(r.payout==='triple-emerald'){const key=r.ownEmeraldMax?'six-xp':'double-emerald-wins';if(s.effects[key].count===0||s.effects[key].expiresAtMs<r.atMs+36363000)return false}
    if(['triple-seven','double-seven'].includes(r.payout)&&s.effects['coins-17'].expiresAtMs<r.atMs+(r.payout==='triple-seven'?7777000:777700))return false;
   }
   if(s.pending===null){if(s.spinsStarted!==s.spinsSettled)return false}else{
-   const p=s.pending;if(!validSpin(p,PENDING_FIELDS)||p.serial!==s.spinsSettled+1||s.spinsStarted!==p.serial||p.startedAtMs<s.createdAtMs||p.startedAtMs>s.clockAtMs||s.last&&p.startedAtMs<s.last.atMs||p.level!==progress(s.totals.sxp10).level)return false;
+   const p=s.pending;if(!validSpin(p,PENDING_FIELDS)||p.serial!==s.spinsSettled+1||s.spinsStarted!==p.serial||p.startedAtMs<s.createdAtMs||p.startedAtMs>s.clockAtMs||s.last&&p.startedAtMs<s.last.atMs||p.level!==progress(add(s.totals.sxp10,declared(s))).level)return false;
   }
   return true;
  }catch(_){return false}}
@@ -133,7 +135,7 @@
   elapse(next,now);let receipt=null;
   if(type==='spin'){
    check(!next.pending,'Finish the saved pending spin before starting another.');check(next.freeSpins>0||next.tokenMs>=TOKEN_MS,'No free spin or complete SpinToken is available.');
-   const level=progress(next.totals.sxp10).level,drawn=draw(next.rng),serial=add(next.spinsStarted,1),p={serial,startedAtMs:next.clockAtMs,stops:drawn.stops,level,ownEmeraldMax:options.ownEmeraldMax};check(time(lockAt(p,3)),'This spin cannot finish within the safe clock range.');
+   const level=progress(add(next.totals.sxp10,declared(next))).level,drawn=draw(next.rng),serial=add(next.spinsStarted,1),p={serial,startedAtMs:next.clockAtMs,stops:drawn.stops,level,ownEmeraldMax:options.ownEmeraldMax};check(time(lockAt(p,3)),'This spin cannot finish within the safe clock range.');
    if(next.freeSpins>0){next.freeSpins--;next.freeSpent=add(next.freeSpent,1)}else{next.tokenMs-=TOKEN_MS;next.tokensSpent=add(next.tokensSpent,1)}
    next.spinsStarted=serial;next.rng=drawn.rng;next.pending=p;
   }else if(type==='settle'){
@@ -156,7 +158,7 @@
  function publicState(s,now){
   check(validate(s),'Slots save needs attention.');check(time(now),'Invalid absolute Slots display time.');const at=Math.max(now,s.clockAtMs),r=s.pending||s.last,pendingReady=!!s.pending&&at>=lockAt(s.pending,3);
   const reels=[0,1,2].map(i=>{const locked=!!r&&(!s.pending||at>=lockAt(r,i+1));return {locked,lockAtMs:s.pending?lockAt(r,i+1):null,symbols:locked?[REELS[i][(r.stops[i]+35)%36],REELS[i][r.stops[i]],REELS[i][(r.stops[i]+1)%36]]:null}});
-  return {version:1,revision:s.revision,phase:s.pending?(pendingReady?'ready':'spinning'):s.last?'result':'empty',pendingReady,reels,freeSpins:s.freeSpins,tokens:s.tokenMs/TOKEN_MS,tokenMs:s.tokenMs,tokenCap:1000,canSpin:!s.pending&&(s.freeSpins>0||s.tokenMs>=TOKEN_MS),nextDailyAtMs:(s.creditedDay+1)*DAY_MS,regenerating:s.freeSpins===0,spinsStarted:s.spinsStarted,spinsSettled:s.spinsSettled,progress:progress(s.totals.sxp10),totals:{...s.totals},counts:{...s.counts},effects:effectsUnchecked(s,now,'other'),last:s.last?{id:s.last.id,serial:s.last.serial,atMs:s.last.atMs,payout:s.last.payout,source:s.last.source,xpBoosted:s.last.xpBoosted,coinsBoosted:s.last.coinsBoosted,credits:{...s.last.credits}}:null};
+  return {version:1,revision:s.revision,phase:s.pending?(pendingReady?'ready':'spinning'):s.last?'result':'empty',pendingReady,reels,freeSpins:s.freeSpins,tokens:s.tokenMs/TOKEN_MS,tokenMs:s.tokenMs,tokenCap:1000,canSpin:!s.pending&&(s.freeSpins>0||s.tokenMs>=TOKEN_MS),nextDailyAtMs:(s.creditedDay+1)*DAY_MS,regenerating:s.freeSpins===0,spinsStarted:s.spinsStarted,spinsSettled:s.spinsSettled,progress:progress(add(s.totals.sxp10,declared(s))),totals:{...s.totals},counts:{...s.counts},effects:effectsUnchecked(s,now,'other'),last:s.last?{id:s.last.id,serial:s.last.serial,atMs:s.last.atMs,payout:s.last.payout,source:s.last.source,xpBoosted:s.last.xpBoosted,coinsBoosted:s.last.coinsBoosted,credits:{...s.last.credits}}:null};
  }
  return Object.freeze({VERSION:1,DAY_MS,TOKEN_MS,TOKEN_CAP_MS,EFFECT_IDS,SYMBOLS,REELS,PAYOUTS,LEVEL_THRESHOLDS,SYMBOL_COUNTS,OUTCOME_COUNTS,create,validate,validateProfile,copy,move,publicState,progress,payoutFor,rewardTotals,effectsAt,scaleCoinsHundredths});
 });

@@ -3,6 +3,9 @@
  * Host must pair all receipt streams with their native game in the same commit;
  * this pure proposal model has no storage, clock, RNG, UI or migration effects. */
 (function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldFriendship=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+ const MR=typeof module==='object'&&module.exports?require('./manual-restoration-model'):globalThis.BOManualRestoration;
+ function declared(s){return own(s,'manualRestoration')?(check(MR&&typeof MR.amount==='function','Declared Friendship baseline validator unavailable.'),MR.amount(s,'friendshipFp')):0}
+ function effectiveFP(s){return numericMilli(milliOfNumber(rawTotals(s).totalFP)+BigInt(declared(s))*1000n)}
  const LEGACY_VERSION=1,VERSION=2,DECIMAL_VERSION=3,MAX_LEVEL=15,MAX_COUNT=Number.MAX_SAFE_INTEGER;
  const THRESHOLDS=Object.freeze([100,150,200,250,300,350,400,500,750,1000]);
  // Stage-local costs to ENTER levels2..15. The final100000 is the disclosed
@@ -50,26 +53,28 @@
  }
  function derivedExpanded(totalFP){let level=1,fp=milliOfNumber(totalFP);while(level<MAX_LEVEL&&fp>=BigInt(STAGE_COSTS[level-1])*1000n){fp-=BigInt(STAGE_COSTS[level-1])*1000n;level++}return {level,fp:numericMilli(fp)};}
  function validateExpanded(s){
-  if(!fields(s,['version','revision','rounds','level','fp','lastRoundId'].concat(own(s,'chill')?['chill']:[],own(s,'poker')?['poker']:[],s.version===DECIMAL_VERSION?['expansion']:[]))||![VERSION,DECIMAL_VERSION].includes(s.version)||!count(s.rounds)||!count(s.revision))return false;
-  if(own(s,'chill')&&!validChill(s.chill)||own(s,'poker')&&!validPoker(s.poker)||s.version===DECIMAL_VERSION&&!validExpansion(s.expansion))return false;
+  const manual=s.version===4,expanded=s.version===DECIMAL_VERSION||manual&&own(s,'expansion');
+  if(!fields(s,['version','revision','rounds','level','fp','lastRoundId'].concat(own(s,'chill')?['chill']:[],own(s,'poker')?['poker']:[],expanded?['expansion']:[],manual?['manualRestoration']:[]))||![VERSION,DECIMAL_VERSION,4].includes(s.version)||!count(s.rounds)||!count(s.revision))return false;
+  if(own(s,'chill')&&!validChill(s.chill)||own(s,'poker')&&!validPoker(s.poker)||expanded&&!validExpansion(s.expansion))return false;
+  if(manual)declared(s);
   const t=rawTotals(s);if(BigInt(s.revision)!==BigInt(t.totalLegacyRoundFP)+BigInt(t.pokerRounds)+BigInt(t.expansionSequencesText||'0'))return false;
-  const d=derivedExpanded(t.totalFP);return s.level===d.level&&s.fp===d.fp&&(s.rounds===0?s.lastRoundId===null:roundId(s.lastRoundId));
+  const d=derivedExpanded(effectiveFP(s));return s.level===d.level&&s.fp===d.fp&&(s.rounds===0?s.lastRoundId===null:roundId(s.lastRoundId));
  }
  function validate(state){try{
   // Inspect the descriptor before reading version: a poisoned discriminator
   // must not execute an accessor merely to choose a schema branch.
   const d=state&&typeof state==='object'?Object.getOwnPropertyDescriptor(state,'version'):null;
-  if(!d||!own(d,'value'))return false;return d.value===LEGACY_VERSION?validateLegacy(state):[VERSION,DECIMAL_VERSION].includes(d.value)&&validateExpanded(state);
+  if(!d||!own(d,'value'))return false;return d.value===LEGACY_VERSION?validateLegacy(state):[VERSION,DECIMAL_VERSION,4].includes(d.value)&&validateExpanded(state);
  }catch(_){return false}}
- function copy(state){check(validate(state),'Emerald friendship save needs attention. No round was credited.');return {version:state.version,revision:state.revision,rounds:state.rounds,level:state.level,fp:state.fp,lastRoundId:state.lastRoundId,...(own(state,'chill')?{chill:{...state.chill}}:{}),...(own(state,'poker')?{poker:{...state.poker}}:{}),...(own(state,'expansion')?{expansion:JSON.parse(JSON.stringify(state.expansion))}:{})}}
+ function copy(state){check(validate(state),'Emerald friendship save needs attention. No round was credited.');return {version:state.version,revision:state.revision,rounds:state.rounds,level:state.level,fp:state.fp,lastRoundId:state.lastRoundId,...(own(state,'chill')?{chill:{...state.chill}}:{}),...(own(state,'poker')?{poker:{...state.poker}}:{}),...(own(state,'expansion')?{expansion:JSON.parse(JSON.stringify(state.expansion))}:{}),...(own(state,'manualRestoration')?{manualRestoration:{...state.manualRestoration}}:{})}}
  function totals(state=undefined){return rawTotals(state===undefined?create():copy(state))}
  function info(state=undefined){
   const s=state===undefined?create():copy(state);
   if(s.version===LEGACY_VERSION){const required=THRESHOLDS[s.level-1];return {level:s.level,fp:s.fp,required,remaining:required-s.fp,percent:100*s.fp/required,nicenessPercent:100+Math.min(s.revision/10,100),nicenessBonus:Math.min(s.revision/10,100),nicenessMode:'total-credit-v1',totalCredits:s.revision,revision:s.revision,workMs:120000-6000*(s.level-1),capped:s.level===10&&s.fp===1000}}
-  const total=rawTotals(s),required=s.level===MAX_LEVEL?0:STAGE_COSTS[s.level-1],bonus=Math.min(total.totalFP/10,100);
-  return {level:s.level,fp:s.fp,required,remaining:s.level===MAX_LEVEL?0:required-s.fp,percent:s.level===MAX_LEVEL?100:100*s.fp/required,nicenessPercent:100+bonus,nicenessBonus:bonus,nicenessMode:'total-fp-v2',totalCredits:total.totalCredits,totalFP:total.totalFP,totalFPHalfText:total.totalFPHalfText,revision:s.revision,workMs:120000-6000*(Math.min(s.level,10)-1),capped:s.level===MAX_LEVEL};
+  const total=rawTotals(s),effectiveTotal=effectiveFP(s),required=s.level===MAX_LEVEL?0:STAGE_COSTS[s.level-1],bonus=Math.min(effectiveTotal/10,100);
+  return {level:s.level,fp:s.fp,required,remaining:s.level===MAX_LEVEL?0:required-s.fp,percent:s.level===MAX_LEVEL?100:100*s.fp/required,nicenessPercent:100+bonus,nicenessBonus:bonus,nicenessMode:'total-fp-v2',totalCredits:effectiveTotal,totalFP:effectiveTotal,totalFPHalfText:own(s,'manualRestoration')?String(effectiveTotal*2):total.totalFPHalfText,...(own(s,'manualRestoration')?{earnedFP:total.totalFP,declaredFP:declared(s)}:{}),revision:s.revision,workMs:120000-6000*(Math.min(s.level,10)-1),capped:s.level===MAX_LEVEL};
  }
- function settled(next){const d=derivedExpanded(rawTotals(next).totalFP);next.level=d.level;next.fp=d.fp;check(validate(next),'Invalid completed-round friendship transition.');return {state:next,changed:true}}
+ function settled(next){const d=derivedExpanded(effectiveFP(next));next.level=d.level;next.fp=d.fp;check(validate(next),'Invalid completed-round friendship transition.');return {state:next,changed:true}}
  function completeRound(state,receipt,expectedRevision){
   const next=copy(state);check(count(expectedRevision)&&expectedRevision===next.revision,'Emerald friendship revision changed. Read the current save before crediting a round.');
   check(fields(receipt,['roundId','completedRounds'])&&roundId(receipt.roundId)&&count(receipt.completedRounds),'Invalid native Blackjack round receipt.');
@@ -90,6 +95,6 @@
   check(receipt.completedRounds===p.rounds+1&&receipt.roundId!==p.lastRoundId,'Only the next completed Poker round can settle friendship.');
   p.pointsHalf+=receipt.fp*2;p.rounds++;p.lastRoundId=receipt.roundId;next.poker=p;next.revision++;next.version=Math.max(VERSION,next.version);return settled(next);
  }
- function completeExpansion(state,source,receipt,expectedRevision){const next=copy(state);check(['poker','strict','slots'].includes(source)&&count(expectedRevision)&&expectedRevision===next.revision&&next.revision<MAX_COUNT,'Expansion friendship source or revision changed.');check(fields(receipt,['id','sequence','pointsMilli'])&&roundId(receipt.id)&&pokerCount(receipt.sequence)&&pokerCount(receipt.pointsMilli),'Invalid exact-decimal friendship receipt.');const e=next.expansion||{},previous=e[source]||{sequence:0,pointsMilli:0,lastId:null};check(receipt.sequence===previous.sequence+1&&receipt.id!==previous.lastId&&previous.pointsMilli<=MAX_COUNT-receipt.pointsMilli,'Expansion friendship receipt was replayed or overflowed.');e[source]={sequence:receipt.sequence,pointsMilli:previous.pointsMilli+receipt.pointsMilli,lastId:receipt.id};next.expansion=e;next.version=DECIMAL_VERSION;next.revision++;return settled(next)}
+ function completeExpansion(state,source,receipt,expectedRevision){const next=copy(state);check(['poker','strict','slots'].includes(source)&&count(expectedRevision)&&expectedRevision===next.revision&&next.revision<MAX_COUNT,'Expansion friendship source or revision changed.');check(fields(receipt,['id','sequence','pointsMilli'])&&roundId(receipt.id)&&pokerCount(receipt.sequence)&&pokerCount(receipt.pointsMilli),'Invalid exact-decimal friendship receipt.');const e=next.expansion||{},previous=e[source]||{sequence:0,pointsMilli:0,lastId:null};check(receipt.sequence===previous.sequence+1&&receipt.id!==previous.lastId&&previous.pointsMilli<=MAX_COUNT-receipt.pointsMilli,'Expansion friendship receipt was replayed or overflowed.');e[source]={sequence:receipt.sequence,pointsMilli:previous.pointsMilli+receipt.pointsMilli,lastId:receipt.id};next.expansion=e;next.version=Math.max(next.version,DECIMAL_VERSION);next.revision++;return settled(next)}
  return Object.freeze({LEGACY_VERSION,VERSION,DECIMAL_VERSION,MAX_LEVEL,STAGE_COSTS,LEVEL_STARTS,create,validate,copy,info,totals,completeRound,completeChill,completePoker,completeExpansion});
 });
