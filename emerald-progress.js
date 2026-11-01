@@ -7,6 +7,8 @@
  */
 (function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldProgress=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
  // Keep the v1 historical receipt capacity; the final milestone is only 100.
+ const MR=typeof module==='object'&&module.exports?require('./manual-restoration-model'):globalThis.BOManualRestoration;
+ function declared(s){return own(s,'manualRestoration')?(check(MR&&typeof MR.amount==='function','Declared Emerald baseline validator unavailable.'),MR.amount(s,'emeraldWins')):0}
  const VERSION=1,UNLOCK_LEVEL=10,MAX_WINS=415,SPEECH_COOLDOWN_MS=10000,MAX_TIME=8640000000000000;
  const NEXT_WINS=Object.freeze([10,15,25,30,40,50,65,80,100]);
  const CUMULATIVE_WINS=NEXT_WINS;
@@ -30,22 +32,24 @@
  function seed(n){return Number.isInteger(n)&&n>0&&n<=4294967295}
  function validRunId(id){return typeof id==='string'&&/^[a-zA-Z0-9:_-]{1,160}$/.test(id)&&!['__proto__','constructor','prototype'].includes(id)}
  function unlocked(actualLevel){return Number.isInteger(actualLevel)&&actualLevel>=UNLOCK_LEVEL&&actualLevel<=100}
- function totalWins(state){return state.winRunIds.length+(state.version===2?state.bonusWinRunIds.length:0)}
+ function totalWins(state){return declared(state)+state.winRunIds.length+(own(state,'bonusWinRunIds')?state.bonusWinRunIds.length:0)}
  function validate(state){try{
-  // Inspect every descriptor before reading a version or any receipt data.
-  const legacy=fields(state,['version','revision','winRunIds','speech']);
-  if(!(legacy||fields(state,['version','revision','winRunIds','speech','bonusWinRunIds']))||state.version!==(legacy?VERSION:2)||!count(state.revision)||!array(state.winRunIds,MAX_WINS)||!state.winRunIds.every(validRunId)||new Set(state.winRunIds).size!==state.winRunIds.length)return false;
+  // Inspect every descriptor before choosing a version; v3 is explicitly
+  // declared history, never extra run IDs or a changed native revision.
+  const base=['version','revision','winRunIds','speech'],legacy=fields(state,base),weighted=fields(state,base.concat('bonusWinRunIds')),manual=fields(state,base.concat('bonusWinRunIds','manualRestoration'));
+  const kind=legacy?1:weighted?2:manual?3:0;
+  if(!kind||state.version!==kind||!count(state.revision)||!array(state.winRunIds,MAX_WINS)||!state.winRunIds.every(validRunId)||new Set(state.winRunIds).size!==state.winRunIds.length)return false;
+  if(manual)declared(state);
   if(!legacy){
-   const bonus=state.bonusWinRunIds;if(!array(bonus,MAX_WINS)||bonus.length===0||!bonus.every(validRunId)||new Set(bonus).size!==bonus.length)return false;
-   // Bonus IDs are an ordered subset, never extra native receipts. Replay the
-   // per-ID weights: even the last 99→101 receipt must begin below own max.
-   let total=0,index=0;for(const id of state.winRunIds){if(total>=CUMULATIVE_WINS[CUMULATIVE_WINS.length-1])return false;total++;if(index<bonus.length&&bonus[index]===id){total++;index++}}
+   const bonus=state.bonusWinRunIds;if(!array(bonus,MAX_WINS)||!manual&&bonus.length===0||!bonus.every(validRunId)||new Set(bonus).size!==bonus.length)return false;
+   // Replay only new actual per-ID weights, starting at the explicit baseline.
+   let total=manual?declared(state):0,index=0;for(const id of state.winRunIds){if(total>=CUMULATIVE_WINS[CUMULATIVE_WINS.length-1])return false;total++;if(index<bonus.length&&bonus[index]===id){total++;index++}}
    if(index!==bonus.length)return false;
   }
   const s=state.speech;
   return fields(s,['sequence','lastAt','rng'])&&count(s.sequence)&&s.sequence<=Number.MAX_SAFE_INTEGER-MAX_WINS&&timestamp(s.lastAt)&&(s.sequence!==0||s.lastAt===0)&&s.lastAt>=Math.max(0,s.sequence-1)*SPEECH_COOLDOWN_MS&&seed(s.rng)&&state.revision===state.winRunIds.length+s.sequence;
  }catch(_){return false}}
- function copy(state){check(validate(state),'Emerald progress save needs attention. Nothing was credited.');const next={version:state.version,revision:state.revision,winRunIds:state.winRunIds.slice(),speech:{sequence:state.speech.sequence,lastAt:state.speech.lastAt,rng:state.speech.rng}};if(state.version===2)next.bonusWinRunIds=state.bonusWinRunIds.slice();return next}
+ function copy(state){check(validate(state),'Emerald progress save needs attention. Nothing was credited.');const next={version:state.version,revision:state.revision,winRunIds:state.winRunIds.slice(),speech:{sequence:state.speech.sequence,lastAt:state.speech.lastAt,rng:state.speech.rng}};if(own(state,'bonusWinRunIds'))next.bonusWinRunIds=state.bonusWinRunIds.slice();if(own(state,'manualRestoration'))next.manualRestoration={...state.manualRestoration};return next}
  function create(rng=1831565813){check(seed(rng),'Choose a separate nonzero uint32 Emerald speech seed.');return {version:VERSION,revision:0,winRunIds:[],speech:{sequence:0,lastAt:0,rng}}}
  function cas(state,revision){const s=copy(state);check(count(revision)&&revision===s.revision,'Emerald revision changed. Read the current save before retrying.');return s}
  function progress(state,actualLevel){
@@ -92,8 +96,9 @@
   check(low.winRunIds.length<=high.winRunIds.length&&low.winRunIds.every((id,i)=>high.winRunIds[i]===id)&&low.speech.sequence<=high.speech.sequence,'Divergent Emerald receipt history. No replay was attempted.');
   // A newer mirror may append receipts, but never reweight a known old receipt
   // or downgrade a weighted history to legacy v1 (even across speech revisions).
-  const lowBonus=new Set(low.version===2?low.bonusWinRunIds:[]),highBonus=new Set(high.version===2?high.bonusWinRunIds:[]);
-  check((low.version!==2||high.version===2)&&low.winRunIds.every(id=>lowBonus.has(id)===highBonus.has(id)),'Divergent Emerald receipt weights. No replay was attempted.');
+  const lowBonus=new Set(low.bonusWinRunIds||[]),highBonus=new Set(high.bonusWinRunIds||[]);
+  check((!own(low,'bonusWinRunIds')||own(high,'bonusWinRunIds'))&&low.winRunIds.every(id=>lowBonus.has(id)===highBonus.has(id)),'Divergent Emerald receipt weights. No replay was attempted.');
+  check(own(low,'manualRestoration')===own(high,'manualRestoration')&&(!own(low,'manualRestoration')||Object.keys(low.manualRestoration).every(k=>low.manualRestoration[k]===high.manualRestoration[k])),'Divergent declared Emerald baselines. No replay was attempted.');
   const delta=high.speech.sequence-low.speech.sequence;
   check(high.speech.rng===advanceRng(low.speech.rng,delta)&&(delta===0?high.speech.lastAt===low.speech.lastAt:high.speech.lastAt-low.speech.lastAt>=Math.max(0,delta-(low.speech.sequence===0?1:0))*SPEECH_COOLDOWN_MS),'Divergent Emerald speech history. No replay was attempted.');
   return high;

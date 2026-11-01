@@ -1,0 +1,30 @@
+/* Explicit user declarations, NOT earned receipts. Pure: no storage/clock/RNG/DOM.
+ * This release implements ONE approved numeric reconstruction, not a save editor.
+ * Native earned ledgers remain independent; all four scoped baselines must bind
+ * to the same lasting profile audit. Unknown history is never inferred. */
+(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOManualRestoration=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+ const RELEASE='manual-recovery-55-v1',KIND='user-declared-not-earned',REQUEST_KIND='danis-table-explicit-manual-recovery',BACKUP_PREFIX='danis-table.manual-recovery.backup.v1.',JOURNAL_KEY='danis-table.manual-recovery.journal.v1',USED_PREFIX='danis-table.manual-recovery.used.v1.';
+ const DECLARATION=Object.freeze({playerLevel:55,playerXp:0,faucetLevel:9,faucetClaims:400,emeraldWins:31,friendshipFp:3000,pokerPxp:3000,slotsSxp10:30000,coinsHalf:200,medalsMilli:3000000});
+ const UNKNOWN=Object.freeze(['pre-restoration-history','lifetime-player-xp','original-identity','previous-rng-and-rounds','unlisted-progress-and-unlocks','prior-income-spending-ci','photos-or-settings-not-present-on-device']);
+ const MODELS=Object.freeze({emerald:'emeraldWins',emeraldFriendship:'friendshipFp',emeraldPoker:'pokerPxp',emeraldSlots:'slotsSxp10'}),own=(o,k)=>!!o&&Object.prototype.hasOwnProperty.call(o,k),clone=v=>JSON.parse(JSON.stringify(v));
+ function check(ok,text){if(!ok)throw Error('Manual recovery: '+text)}
+ function record(o){return !!o&&typeof o==='object'&&!Array.isArray(o)&&[Object.prototype,null].includes(Object.getPrototypeOf(o))}
+ function fields(o,list){if(!record(o)||Reflect.ownKeys(o).length!==list.length)return false;return list.every(k=>{const d=Object.getOwnPropertyDescriptor(o,k);return d&&own(d,'value')&&d.enumerable})}
+ function count(n){return Number.isSafeInteger(n)&&n>=0&&!Object.is(n,-0)}
+ function time(n){return count(n)&&n<=8640000000000000}
+ function id(s){return typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(s)}
+ function declaration(d){return fields(d,Object.keys(DECLARATION))&&Object.keys(DECLARATION).every(k=>d[k]===DECLARATION[k])}
+ function unknowns(a){return Array.isArray(a)&&a.length===UNKNOWN.length&&Reflect.ownKeys(a).length===a.length+1&&UNKNOWN.every((s,i)=>a[i]===s)}
+ function validateRequest(r){try{return fields(r,['kind','version','release','id','issuedAt','declaration','unknowns'])&&r.kind===REQUEST_KIND&&r.version===1&&r.release===RELEASE&&id(r.id)&&time(r.issuedAt)&&declaration(r.declaration)&&unknowns(r.unknowns)}catch(_){return false}}
+ function createRequest(requestId,issuedAt){const r={kind:REQUEST_KIND,version:1,release:RELEASE,id:requestId,issuedAt,declaration:{...DECLARATION},unknowns:[...UNKNOWN]};check(validateRequest(r),'unsupported declaration.');return r}
+ function validateBaseline(b,field){try{return own(DECLARATION,field)&&fields(b,['version','kind','id','field','value'])&&b.version===1&&b.kind===KIND&&id(b.id)&&b.field===field&&b.value===DECLARATION[field]}catch(_){return false}}
+ function baseline(r,field){check(validateRequest(r)&&own(DECLARATION,field),'invalid baseline declaration.');return {version:1,kind:KIND,id:r.id,field,value:r.declaration[field]}}
+ function amount(state,field){if(!own(state,'manualRestoration'))return 0;const d=Object.getOwnPropertyDescriptor(state,'manualRestoration');check(d&&own(d,'value')&&d.enumerable&&validateBaseline(d.value,field),'invalid scoped declaration.');return d.value.value}
+ function protectedIdentity(name){return typeof name==='string'&&/^luckymoth/i.test(name.trim())}
+ function validateTarget(t){return fields(t,['slot','generation','identity'])&&[1,2,3].includes(t.slot)&&typeof t.generation==='string'&&/^[A-Za-z0-9_-]{1,160}$/.test(t.generation)&&typeof t.identity==='string'&&/^[A-Za-z0-9_-]{3,24}$/.test(t.identity)&&!protectedIdentity(t.identity)}
+ function audit(r,c){check(validateRequest(r)&&time(c.now)&&/^[0-9a-f]{64}$/.test(c.sourceSha256),'invalid declaration witness.');const target={slot:c.slot,generation:c.generation,identity:c.identity};check(validateTarget(target),'protected LuckyMoth or invalid target identity.');return {version:1,kind:KIND,id:r.id,declaredAt:r.issuedAt,appliedAt:c.now,release:RELEASE,target,declaration:clone(r.declaration),sourceSha256:c.sourceSha256,backupKey:BACKUP_PREFIX+r.id,unknowns:[...UNKNOWN]}}
+ function validateAudit(a){try{return fields(a,['version','kind','id','declaredAt','appliedAt','release','target','declaration','sourceSha256','backupKey','unknowns'])&&a.version===1&&a.kind===KIND&&id(a.id)&&time(a.declaredAt)&&time(a.appliedAt)&&a.release===RELEASE&&validateTarget(a.target)&&declaration(a.declaration)&&typeof a.sourceSha256==='string'&&/^[0-9a-f]{64}$/.test(a.sourceSha256)&&a.backupKey===BACKUP_PREFIX+a.id&&unknowns(a.unknowns)}catch(_){return false}}
+ function assertProfile(p){check(record(p),'profile must be plain data.');const hasAudit=own(p,'manualRestoration'),scoped=Object.keys(MODELS).some(k=>own(p[k],'manualRestoration'));if(!hasAudit){check(!scoped,'scoped declaration has no profile audit.');return true}const a=p.manualRestoration;check(validateAudit(a),'invalid lasting declaration audit.');for(const [key,field]of Object.entries(MODELS))check(validateBaseline(p[key]?.manualRestoration,field)&&p[key].manualRestoration.id===a.id,'model declaration differs from its profile audit.');check(p.progression&&Number.isInteger(p.progression.level)&&p.progression.level>=a.declaration.playerLevel,'declared player level is missing or moved backwards.');return true}
+ function medalsMilli(p){assertProfile(p);return own(p,'manualRestoration')?p.manualRestoration.declaration.medalsMilli:0}
+ return Object.freeze({RELEASE,KIND,REQUEST_KIND,BACKUP_PREFIX,JOURNAL_KEY,USED_PREFIX,DECLARATION,UNKNOWN,MODELS,fields,record,count,time,id,validateRequest,createRequest,validateBaseline,baseline,amount,protectedIdentity,validateTarget,audit,validateAudit,assertProfile,medalsMilli});
+});
