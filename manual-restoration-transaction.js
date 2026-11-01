@@ -25,6 +25,9 @@
   const d=request.declaration,g=PG.normalize(p.progression,CONFIG),f=g.faucet;
   // These are declared counters, NOT invented historical claim payouts/times.
   g.level=d.playerLevel;g.xp=d.playerXp;g.cap=100;g.coinsHalf=d.coinsHalf;
+  // Rebind only the validated empty target's existing ZERO-credit marker.
+  // Keep legacy absence byte-exact for old journals; never invent Ante proof.
+  if(own(g,'capProgress')){check(g.capProgress.version===1&&g.capProgress.cap===10&&g.capProgress.clears===0&&Object.keys(g.capProgress.runs).length===0,'empty target whole-Ante ledger must have zero earned credit.');g.capProgress.cap=g.cap;}
   f.level=d.faucetLevel;f.claims=d.faucetClaims;f.totalClaims=d.faucetClaims;
   delete f.earnedLifetimeHundredths;delete f.lifetimeEarningsKnown;
   p.progression=PG.normalize(g,CONFIG);
@@ -35,5 +38,5 @@
   p.emeraldSlots=p.emeraldSlots?clone(p.emeraldSlots):SL.create(seed('slots'),context.now);p.emeraldSlots.version=2;p.emeraldSlots.manualRestoration=M.baseline(request,'slotsSxp10');
   p.manualRestoration=M.audit(request,context);M.assertProfile(p);CS.validateBank(CS.KEYS[0],JSON.stringify(p));return p;
  }
- return Object.freeze({CONFIG,COUNTERS,freshProfile,assertEmptyProfile,prepareProfile});
+ return Object.freeze({CAP_LEDGER_REVISION:'empty-cap-ledger-r1',CONFIG,COUNTERS,freshProfile,assertEmptyProfile,prepareProfile});
 });
