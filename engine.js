@@ -702,6 +702,11 @@
       if(rank>bestRank||rank===bestRank&&higher){best=r;bestRank=rank;bestRanks=ranks;best.indices=r.indices.map(function(i){return mapping[i];});}
     }
     if(key){var h=HANDS[key];best={name:h[0],key:key,chips:h[1],mult:h[2],indices:ranked.slice()};}
+    // Only an ordinary six-card Flush extends the five-card scoring set.
+    // Keep stronger hands, Stone extras and the shared Flush level/XP key intact.
+    if(best.key==='flush'&&ranked.length===6&&SUITS.some(function(whichSuit){return ranked.every(function(i){return suit(cards[i],whichSuit,opts.state);});})){
+      best.name='Flush+1';best.indices=ranked.slice();
+    }
     best.contains=contains;
     // Stone extras always score, even if omitted from the winning five.
     cards.forEach(function(c,i){if(c.enhancement==='stone'&&best.indices.indexOf(i)<0)best.indices.push(i);});best.indices.sort(function(a,b){return a-b;});
