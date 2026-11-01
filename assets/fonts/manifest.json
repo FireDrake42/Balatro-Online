@@ -1,0 +1,41 @@
+{
+  "description": "Unmodified local font binaries, bundled with upstream redistribution notices. No browser downloads.",
+  "files": [
+    {
+      "file": "DejaVuSans.ttf",
+      "bytes": 759720,
+      "sha256": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+      "modified": false
+    },
+    {
+      "file": "DejaVuSerif.ttf",
+      "bytes": 380660,
+      "sha256": "8f2c103bfa3fd5de71f1b92b18f21906b5a26871fb7e19a9a4c9af539c3cc7ab",
+      "modified": false
+    },
+    {
+      "file": "DejaVuSansMono.ttf",
+      "bytes": 343140,
+      "sha256": "c805f9436dbc268644c1d9584f01a601a653e028e08fd74b9b949f6cf8304d88",
+      "modified": false
+    },
+    {
+      "file": "LiberationSans-Regular.ttf",
+      "bytes": 410820,
+      "sha256": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144",
+      "modified": false
+    },
+    {
+      "file": "LiberationSerif-Regular.ttf",
+      "bytes": 393692,
+      "sha256": "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65",
+      "modified": false
+    },
+    {
+      "file": "LiberationMono-Regular.ttf",
+      "bytes": 319624,
+      "sha256": "395fa5ab8d40c8eba390ced528744ea75a7f69aabf3e68b6f925ca0e39a27370",
+      "modified": false
+    }
+  ]
+}
