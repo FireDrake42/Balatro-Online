@@ -21,7 +21,10 @@
   return revision===s.revision&&last===s.lastSerial&&s.lastSerial>=revision;
  }catch(_){return false}}
  function copy(s){check(validate(s),'invalid strict v1 ledger.');const effects={};IDS.forEach(id=>effects[id]={...s.effects[id]});return freeze({version:VERSION,revision:s.revision,lastSerial:s.lastSerial,effects})}
- function effectsAt(s,now){check(time(now),'supply an absolute safe timestamp.');if(s!==undefined)check(validate(s),'invalid strict v1 ledger.');const active=id=>!!s&&s.effects[id].count>0&&now>=s.effects[id].startedAt&&now<s.effects[id].expiresAt,r=s?.effects['double-xp'];return Object.freeze({zeroCooldowns:active('zero-cooldowns'),faucetMultiplier:active('double-faucet')?2:1,scoreMultiplier:active('double-score')?2:1,xpMultiplier:active('double-xp')?2:1,xpWindow:r&&r.count?Object.freeze({startedAt:r.startedAt,expiresAt:r.expiresAt}):null})}
+ function effectsAt(s,now){check(time(now),'supply an absolute safe timestamp.');if(s!==undefined)check(validate(s),'invalid strict v1 ledger.');const active=id=>!!s&&s.effects[id].count>0&&now>=s.effects[id].startedAt&&now<s.effects[id].expiresAt,r=s?.effects['double-xp'];return Object.freeze({zeroCooldowns:false,cooldownMultiplier:active('zero-cooldowns')?.5:1,faucetMultiplier:active('double-faucet')?2:1,scoreMultiplier:active('double-score')?2:1,xpMultiplier:active('double-xp')?2:1,xpWindow:r&&r.count?Object.freeze({startedAt:r.startedAt,expiresAt:r.expiresAt}):null})}
+ // Resolve each domain's original native/Potion budget FIRST. This read never
+ // changes a persisted budget, scales elapsed time, or renews an event window.
+ function cooldownDuration(duration,s,now){const factor=effectsAt(s,now).cooldownMultiplier;check(Number.isFinite(duration)&&duration>=0&&duration<=MAX,'supply a finite safe cooldown duration.');return factor===1||duration===0?duration:Math.max(1,Math.ceil(duration*factor))}
  function credit(s,receipt,now,expectedRevision){
   check(s===undefined||validate(s),'invalid strict v1 ledger.');check(time(now),'supply an absolute safe timestamp.');check(count(expectedRevision)&&expectedRevision===(s?.revision||0),'stale event revision.');
   check(fields(receipt,['roundId','serial','category'])&&count(receipt.serial)&&receipt.serial>0&&receipt.roundId==='poker:'+receipt.serial&&ALL.includes(receipt.category),'invalid source receipt.');
@@ -40,5 +43,5 @@
   if(poker.phase==='settled'&&own(CATEGORIES,poker.round.receipt.category)&&s?.effects[CATEGORIES[poker.round.receipt.category]].lastSerial!==poker.round.receipt.serial)return false;
   return true;
  }catch(_){return false}}
- return Object.freeze({VERSION,DURATIONS,IDS,CATEGORIES,create,validate,copy,credit,effectsAt,validateAgainstPoker});
+ return Object.freeze({VERSION,DURATIONS,IDS,CATEGORIES,create,validate,copy,credit,effectsAt,cooldownDuration,validateAgainstPoker});
 });

@@ -67,8 +67,10 @@
   const before=cardData(j.input),after=cardData(j.result),expected=transform(before,j.level,j.rolls);check(same(after,expected),'Stored workshop result does not match its one-time dice.');return true;
  }catch(_){return false}}
  function copy(state){check(validate(state),'Emerald workshop save needs attention. No card was moved.');return jsonCopy(state)}
+ // Resolve the current engine only at invocation: Engine/Cloud import this model.
+ function modeGate(run){check(run&&typeof run==='object','Invalid workshop origin run.');const v=Object.getOwnPropertyDescriptor(run,'version'),p=Object.getOwnPropertyDescriptor(run,'phase');if(v&&own(v,'value')&&v.enumerable&&v.value===1&&!('runMode' in run)&&p&&own(p,'value')&&p.enumerable&&p.value!=='boss-rush-won')return;const engine=typeof module==='object'&&module.exports?require('./engine'):globalThis.BO;check(engine&&typeof engine.validateRunVersion==='function'&&engine.validateRunVersion(run),'Workshop run version/mode needs attention. No card was moved.')}
  function inspectedRun(run){
-  const r=jsonCopy(run);dataKeys(r);check(r.version===1&&runId(r._uiId)&&['select','play','cashout','shop','pack','won','lost'].includes(r.phase),'Invalid workshop origin run.');
+  modeGate(run);const r=jsonCopy(run);dataKeys(r);check(runId(r._uiId)&&['select','play','cashout','shop','pack','won','lost','boss-rush-won'].includes(r.phase),'Invalid workshop origin run.');
   const map=new Map(),used=new Set();
   for(const key of ['cards','hand','drawPile','discardPile'])dataArray(r[key],MAX_CARDS);
   for(const c of r.cards){cardData(c);const id=String(c.id);check(!map.has(id),'Duplicate canonical playing-card id.');map.set(id,c)}
@@ -82,16 +84,17 @@
   for(const key of ['hand','drawPile','discardPile'])r[key]=r[key].map(c=>map.get(String(c.id)));return r;
  }
  function validateRun(run){try{inspectedRun(run);return true}catch(_){return false}}
- function royal(context,now){
-  const keys=context&&own(context,'pokerEvents')?['pokerEvents']:[];check(fields(context,keys),'Invalid workshop event context.');if(!keys.length)return false;
-  check(context.pokerEvents!==undefined&&E&&typeof E.effectsAt==='function','Supply the saved Poker event ledger, or omit it.');return E.effectsAt(context.pokerEvents,now).zeroCooldowns;
+ function cooldownDuration(context,now){
+  const keys=context&&own(context,'pokerEvents')?['pokerEvents']:[];check(fields(context,keys),'Invalid workshop event context.');if(!keys.length)return COOLDOWN_MS;
+  check(context.pokerEvents!==undefined&&E&&typeof E.cooldownDuration==='function','Supply the saved Poker event ledger, or omit it.');return E.cooldownDuration(COOLDOWN_MS,context.pokerEvents,now);
  }
- // Never forgive time before the last frozen completion, even on clock rollback.
- // The saved deadline stays native; expiry restores it without any cleanup write.
- function cooldownBypassed(s,now,zero){return zero&&now>=s.availableAt-COOLDOWN_MS}
+ // Only the original AFTER-work budget changes in the read projection. The
+ // frozen completion, work duration, saved deadline and card stay untouched.
+ // Lightweight render callers need only this public workshop ledger, not piles.
+ function cooldownDeadline(state,now,context={}){check(timestamp(now),'Invalid absolute workshop timestamp.');const s=copy(state),duration=cooldownDuration(context,now);return s.availableAt===0?0:s.availableAt-COOLDOWN_MS+duration}
  function info(run,now,context={}){
-  check(timestamp(now),'Invalid absolute workshop timestamp.');const r=inspectedRun(run),s=own(r,'emeraldWorkshop')?r.emeraldWorkshop:create(r._uiId),j=s.job,bypass=cooldownBypassed(s,now,royal(context,now));
-  return {busy:!!j,silent:!!j&&now<j.completedAt,ready:!!j&&now>=j.completedAt,jobId:j?j.id:null,workRemainingMs:j?Math.max(0,j.completedAt-now):0,cooldownRemainingMs:bypass?0:Math.max(0,s.availableAt-now),nextGiveAt:bypass?Math.min(now,s.availableAt):s.availableAt};
+  check(timestamp(now),'Invalid absolute workshop timestamp.');const r=inspectedRun(run),s=own(r,'emeraldWorkshop')?r.emeraldWorkshop:create(r._uiId),j=s.job,nextGiveAt=cooldownDeadline(s,now,context);
+  return {busy:!!j,silent:!!j&&now<j.completedAt,ready:!!j&&now>=j.completedAt,jobId:j?j.id:null,workRemainingMs:j?Math.max(0,j.completedAt-now):0,cooldownRemainingMs:Math.max(0,nextGiveAt-now),nextGiveAt};
  }
  function authorize(run,options,keys){
   check(fields(options,keys),'Invalid workshop command fields.');check(timestamp(options.now),'Invalid absolute workshop timestamp.');
@@ -105,8 +108,8 @@
   // Friendship11..15 adds progress, not more speed. Snapshot only the old
   // benefit (at most10/66s); existing jobs and their version1 schema stay frozen.
   check(Number.isInteger(friendshipLevel)&&friendshipLevel>=1&&friendshipLevel<=15,'Invalid workshop friendship level.');const workMs=WORK_MS-6000*(Math.min(friendshipLevel,10)-1);
-  const zero=royal(own(options,'pokerEvents')?{pokerEvents:options.pokerEvents}:{},options.now);
-  check(!s.job,'Claim the existing workshop job before giving another card.');check(options.now>=s.availableAt||cooldownBypassed(s,options.now,zero),'Emerald workshop is cooling down after completion.');check(options.now<=MAX_TIME-workMs-COOLDOWN_MS,'Workshop completion timestamp would overflow.');
+  const nextGiveAt=cooldownDeadline(s,options.now,own(options,'pokerEvents')?{pokerEvents:options.pokerEvents}:{});
+  check(!s.job,'Claim the existing workshop job before giving another card.');check(options.now>=nextGiveAt,'Emerald workshop is cooling down after completion.');check(options.now<=MAX_TIME-workMs-COOLDOWN_MS,'Workshop completion timestamp would overflow.');
   check(cardId(options.cardId),'Choose an owned playing-card id.');const card=r.cards.find(c=>String(c.id)===String(options.cardId));check(card,'That playing card is not owned or is unavailable.');check(s.sequence<Math.floor(Number.MAX_SAFE_INTEGER/2),'Workshop sequence overflow.');
   const rolls=dice(options.rolls),level=P.progress(options.progress,options.actualLevel).level>=10?10:9,input=cardData(card),result=transform(input,level,rolls),id=String(card.id);
   for(const key of ['cards','hand','drawPile','discardPile'])r[key]=r[key].filter(c=>String(c.id)!==id);
@@ -122,5 +125,5 @@
   const card=cardData(s.job.result);check(!r.cards.some(c=>String(c.id)===String(card.id)),'The workshop card is already present.');r.cards.push(card);r.drawPile.push(card);s.job=null;s.revision++;r.emeraldWorkshop=s;
   check(validateRun(r),'Workshop claim proposal violates card ownership.');return {run:r,changed:true,card};
  }
- return Object.freeze({VERSION,WORK_MS,COOLDOWN_MS,MAX_TIME,MAX_CARDS,EDITIONS,ENHANCEMENTS,SEALS,MODIFIERS,create,validate,copy,validateCard,validateRun,info,give,claim});
+ return Object.freeze({VERSION,WORK_MS,COOLDOWN_MS,MAX_TIME,MAX_CARDS,EDITIONS,ENHANCEMENTS,SEALS,MODIFIERS,create,validate,copy,validateCard,validateRun,cooldownDeadline,info,give,claim});
 });

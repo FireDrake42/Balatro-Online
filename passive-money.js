@@ -8,7 +8,7 @@
  * setPaused(run, level, now, paused, observedMs, context?), status(run, level, now, context?)
  * -> {run, result:{ok,changed,awardedCents,earnedMs,code,status,...}}.
  * Optional pure context is ONLY {pokerEvents}, evaluated at the supplied absolute
- * now. Royal virtually bypasses EXPIRED-session manual restart cooldown only;
+ * now. Royal derives half the original EXPIRED-session manual restart wait only;
  * no active/paused restart, saved deadline rewrite, rate change or auto start.
  * status is read-only. normalize(undefined) is null; invalid state throws;
  * validate accepts the optional undefined case and otherwise returns boolean.
@@ -122,14 +122,17 @@
   }
   function usable(run) { return PHASES.includes(run.phase) && run.abandoned !== true; }
   function effectsAt(context, now) {
-    if (context === undefined) return {zeroCooldowns:false};
+    if (context === undefined) return {zeroCooldowns:false,cooldownMultiplier:1};
     const keys = dataKeys(context);
     check(keys.every(key => key === 'pokerEvents'), 'invalid-context', 'Supply only an optional Poker event ledger.');
-    if (!own(context, 'pokerEvents')) return {zeroCooldowns:false};
+    if (!own(context, 'pokerEvents')) return {zeroCooldowns:false,cooldownMultiplier:1};
     check(E && typeof E.effectsAt === 'function', 'missing-events', 'The Poker events model is required for event authority.');
     return E.effectsAt(Object.getOwnPropertyDescriptor(context, 'pokerEvents').value, now);
   }
-  function view(run, s, actualLevel, now, tier, effects) {
+  function cooldownDuration(duration,context,now) {
+    return context&&own(context,'pokerEvents')?E.cooldownDuration(duration,Object.getOwnPropertyDescriptor(context,'pokerEvents').value,now):duration;
+  }
+  function view(run, s, actualLevel, now, tier, effects, context) {
     const unlocked = actualLevel >= UNLOCK_LEVEL, eligibleRun = usable(run), rollback = !!s && now < s.lastAt;
     const paused = !!s && s.version === PAUSE_VERSION && s.pausedAt !== null;
     const at = s ? paused ? s.pausedAt : rollback ? s.lastAt : now : now;
@@ -137,22 +140,23 @@
     const active = unlocked && eligibleRun && !!s && !paused && !s.settled && !rollback && at < s.endsAt;
     // Saved native cooldown/deadlines remain authoritative after event expiry.
     // The event changes only present manual readiness AFTER the original end.
-    const zeroCooldowns = effects.zeroCooldowns && !paused && !rollback && (!s || now >= s.endsAt);
-    const coolingDown = !!s && !zeroCooldowns && at >= s.endsAt && at < s.cooldownEndsAt;
+    const zeroCooldowns=false,cooldownMs=cooldownDuration(s?s.cooldownMs:tier.cooldownMs,context,now);
+    const cooldownEndsAt=s?(effects.cooldownMultiplier===0.5?s.endsAt+cooldownMs:s.cooldownEndsAt):0;
+    const coolingDown = !!s && at >= s.endsAt && at < cooldownEndsAt;
     return {ok:true, unlocked, eligibleRun, active, paused, hasSession:!!s, legacyClock:!!s && s.version === VERSION,
-      sessionRemainingMs, ready:unlocked && eligibleRun && !paused && !rollback && (!s || at >= s.cooldownEndsAt || zeroCooldowns),
-      coolingDown, zeroCooldowns, clockRollback:rollback, expired:!!s && at >= s.endsAt, settled:!!s && s.settled,
+      sessionRemainingMs, ready:unlocked && eligibleRun && !paused && !rollback && (!s || at >= cooldownEndsAt),
+      coolingDown, zeroCooldowns, pokerCooldownMultiplier:effects.cooldownMultiplier, clockRollback:rollback, expired:!!s && at >= s.endsAt, settled:!!s && s.settled,
       sequence:s ? s.sequence : 0, startedAt:s ? s.startedAt : 0, endsAt:s ? s.endsAt : 0,
-      cooldownEndsAt:s ? s.cooldownEndsAt : 0, durationMs:s ? s.durationMs : tier.durationMs,
-      cooldownMs:zeroCooldowns ? 0 : s ? s.cooldownMs : tier.cooldownMs, nextDurationMs:tier.durationMs, nextCooldownMs:zeroCooldowns ? 0 : tier.cooldownMs,
-      remainingMs:active || paused ? sessionRemainingMs : 0, cooldownRemainingMs:coolingDown ? s.cooldownEndsAt - at : 0,
+      cooldownEndsAt, nativeCooldownEndsAt:s?s.cooldownEndsAt:0, durationMs:s ? s.durationMs : tier.durationMs,
+      cooldownMs, nativeCooldownMs:s?s.cooldownMs:tier.cooldownMs, nextDurationMs:tier.durationMs, nextCooldownMs:cooldownDuration(tier.cooldownMs,context,now),
+      remainingMs:active || paused ? sessionRemainingMs : 0, cooldownRemainingMs:coolingDown ? cooldownEndsAt - at : 0,
       visibleMs:s ? s.visibleMs : 0, creditedCents:s ? s.creditedCents : 0,
       maxCents:(s ? s.durationMs : tier.durationMs) / TICK_MS, centsPerSecond:1};
   }
   function failure(error) { return {ok:false,changed:false,awardedCents:0,earnedMs:0,code:error.code || 'invalid-input',reason:error.message || String(error)}; }
   function status(run, actualLevel, now, context) {
     try { const tier = tierForLevel(actualLevel); check(clock(now), 'invalid-time', 'Supply a nonnegative safe-integer absolute timestamp.');
-      const effects = effectsAt(context, now), a = inspectedRun(run); return view(a.run, a.state, actualLevel, now, tier, effects);
+      const effects = effectsAt(context, now), a = inspectedRun(run); return view(a.run, a.state, actualLevel, now, tier, effects, context);
     } catch (error) { return failure(error); }
   }
   function command(run, actualLevel, now, operation, context) {
@@ -163,14 +167,14 @@
       check(usable(a.run), 'ineligible-run', 'Passive Money needs the active, non-abandoned origin run.');
       check(!a.state || now >= a.state.lastAt, 'clock-rollback', 'The absolute clock moved backwards. No time was forced forward.');
       const result = operation(a.run, a.state, tier, effects);
-      result.status = view(a.run, own(a.run, 'passiveMoney') ? a.run.passiveMoney : null, actualLevel, now, tier, effects);
+      result.status = view(a.run, own(a.run, 'passiveMoney') ? a.run.passiveMoney : null, actualLevel, now, tier, effects, context);
       return {run:a.run, result};
     } catch (error) { return {run, result:failure(error)}; }
   }
   function start(run, actualLevel, now, options, context) {
     return command(run, actualLevel, now, (r, s, tier, effects) => {
       check(options === undefined || (dataKeys(options).length === 1 && own(options, 'pauseClock') && typeof options.pauseClock === 'boolean'), 'invalid-options', 'Supply only an explicit boolean pauseClock option.');
-      check(!s || ((s.version !== PAUSE_VERSION || s.pausedAt === null) && now >= s.endsAt && (now >= s.cooldownEndsAt || effects.zeroCooldowns)), s && s.version === PAUSE_VERSION && s.pausedAt !== null ? 'paused' : s && now < s.endsAt ? 'active' : 'cooldown', 'This session is active, paused or still cooling down.');
+      check(!s || ((s.version !== PAUSE_VERSION || s.pausedAt === null) && now >= s.endsAt && now >= s.endsAt+cooldownDuration(s.cooldownMs,context,now)), s && s.version === PAUSE_VERSION && s.pausedAt !== null ? 'paused' : s && now < s.endsAt ? 'active' : 'cooldown', 'This session is active, paused or still cooling down.');
       check(!s || s.sequence < MAX_TIME, 'sequence-overflow', 'Passive Money sequence cannot safely advance.');
       check(now <= MAX_TIME - tier.durationMs - tier.cooldownMs, 'clock-overflow', 'The captured session deadlines would overflow.');
       r.passiveMoney = {version:VERSION, sequence:s ? s.sequence + 1 : 1, startedAt:now, endsAt:now + tier.durationMs,

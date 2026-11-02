@@ -47,10 +47,15 @@
     return d.value;
   }
   function pokerEffects(config, at) {
-    if (!record(config) || !own(config, 'pokerEvents')) return {zeroCooldowns:false,faucetMultiplier:1,scoreMultiplier:1,xpMultiplier:1,xpWindow:null};
+    if (!record(config) || !own(config, 'pokerEvents')) return {zeroCooldowns:false,cooldownMultiplier:1,faucetMultiplier:1,scoreMultiplier:1,xpMultiplier:1,xpWindow:null};
     var state=optionalData(config,'pokerEvents'),now=at===undefined?optionalData(config,'now'):at;
     if (!EVENTS || !EVENTS.validate(state)) throw new TypeError('Poker event configuration needs its strict ledger.');
     return EVENTS.effectsAt(state,now);
+  }
+  function pokerCooldownDuration(duration, config, at) {
+    if (!record(config) || !own(config, 'pokerEvents')) return duration;
+    if (!EVENTS || typeof EVENTS.cooldownDuration !== 'function') throw new TypeError('The strict Poker cooldown model is required.');
+    return EVENTS.cooldownDuration(duration,optionalData(config,'pokerEvents'),at===undefined?optionalData(config,'now'):at);
   }
   function pokerXpMultiplier(config, at) {
     var effects=pokerEffects(config,at);
@@ -742,7 +747,7 @@
     if (!integer(pokerLevel,1,40)) throw new RangeError('Poker faucet level must be an integer from 1 to 40.');
     if(record(config)&&own(config,'pokerEvents')||record(playerConfig)&&own(playerConfig,'pokerEvents')) {var ledger=record(config)&&own(config,'pokerEvents')?optionalData(config,'pokerEvents'):optionalData(playerConfig,'pokerEvents');playerConfig=Object.assign({},playerConfig);playerConfig.pokerEvents=ledger;playerConfig.now=now;}
     if(record(config)&&own(config,'pokerXpMultiplier')){playerConfig=Object.assign({},playerConfig);playerConfig.pokerXpMultiplier=optionalData(config,'pokerXpMultiplier');}
-    return {table: table, incompleteRate: rate, potion: potionContext(playerConfig), poker:pokerEffects(config,now), pokerLevel:pokerLevel, pokerXp:pokerXpMultiplier(playerConfig,now), extraXp:extraRewardMultiplier(Object.assign({},record(config)&&own(config,'extraRewardMultiplier')?config:playerConfig,{sourceKind:'faucet'})), coinSource:coinSourceMultiplier(record(config)&&own(config,'coinSourceMultiplier')?config:playerConfig), playerConfig:playerConfig, playerTable: playerCosts(playerConfig)};
+    return {table: table, incompleteRate: rate, potion: potionContext(playerConfig), poker:pokerEffects(playerConfig,now), pokerLevel:pokerLevel, pokerXp:pokerXpMultiplier(playerConfig,now), extraXp:extraRewardMultiplier(Object.assign({},record(config)&&own(config,'extraRewardMultiplier')?config:playerConfig,{sourceKind:'faucet'})), coinSource:coinSourceMultiplier(record(config)&&own(config,'coinSourceMultiplier')?config:playerConfig), playerConfig:playerConfig, playerTable: playerCosts(playerConfig)};
   }
   function claimTier(claims) {
     var limits = [80, 100, 120, 150], rates = [100, 80, 60, 40];
@@ -752,7 +757,12 @@
   function coinCarry(f) { return f.coinRemainderHundredths || 0; }
   function coinBalance(p) { return p.coinsHalf / 2 + coinCarry(p.faucet) / 100; }
   function faucetView(p, now, settings) {
-    var f = p.faucet, table = settings.table, required = table[f.level - 1], zeroCooldowns=settings.poker.zeroCooldowns&&now>=f.lastClaimAt, remaining = zeroCooldowns?0:Math.max(0, f.nextClaimAt - now);
+    var f = p.faucet, table = settings.table, required = table[f.level - 1], zeroCooldowns=false;
+    // Persist only the native/Potion budget. Royal is a read-time reduction from
+    // that same original claim anchor, so expiry restores the original wait.
+    var committedCooldownMs=Math.max(0,f.nextClaimAt-f.lastClaimAt),effectiveNextClaimAt=f.nextClaimAt;
+    if(settings.poker.cooldownMultiplier===0.5)effectiveNextClaimAt=f.nextClaimAt-committedCooldownMs+pokerCooldownDuration(committedCooldownMs,settings.playerConfig,now);
+    var remaining=Math.max(0,effectiveNextClaimAt-now);
     var maxLevel = f.level === MAX_FAUCET_LEVEL, configurationMissing = !maxLevel && required === null;
     // Legacy saves retain their per-tier counter for raw cloud compatibility.
     // Their truthful lifetime total is the progress numerator; queries never migrate it.
@@ -772,7 +782,7 @@
     var reward = Math.floor((coinNumerator+100000)/200000), carry = coinCarry(f);
     var trackedEarned = f.earnedLifetimeHundredths || 0;
     var baseCooldownMs = (600 - 10 * (f.level - 1)) * 1000, effects = settings.potion.effects;
-    var cooldownMs=zeroCooldowns?0:baseCooldownMs*effects.cooldownMultiplier;
+    var nativeCooldownMs=baseCooldownMs*effects.cooldownMultiplier,cooldownMs=pokerCooldownDuration(nativeCooldownMs,settings.playerConfig,now);
     var awardedXp = 10 * effects.xpMultiplier * jokerXpMultiplier(settings.playerConfig) * manualXpMultiplier(p.level) * earnedXpMultiplier(p.level) * settings.pokerXp * settings.extraXp;
     var lifetimeKnown = own(f, 'earnedLifetimeHundredths') && f.lifetimeEarningsKnown === true;
     return {
@@ -784,13 +794,13 @@
       // rewardHalf is an accrued-amount compatibility alias, NOT wallet credit.
       rewardHalf: reward / 50, rewardCoins: reward / 100, rewardHundredths: reward,
       coinsAwardedHalf: Math.floor((carry + reward) / 50),
-      cooldownMs: cooldownMs, baseCooldownMs: baseCooldownMs,
-      cooldownMultiplier: effects.cooldownMultiplier, committedCooldownMs: Math.max(0, f.nextClaimAt - f.lastClaimAt),
+      cooldownMs: cooldownMs, nativeCooldownMs:nativeCooldownMs, baseCooldownMs: baseCooldownMs,
+      cooldownMultiplier: effects.cooldownMultiplier, pokerCooldownMultiplier:settings.poker.cooldownMultiplier, committedCooldownMs:committedCooldownMs, effectiveNextClaimAt:effectiveNextClaimAt,
       cooldownPotionApplied: f.cooldownPotionApplied === true,
       awardedXp: awardedXp, awardXp: awardedXp, baseXp: 10, potionXpMultiplier: effects.xpMultiplier,
       nextClaimAt: f.nextClaimAt, lastClaimAt: f.lastClaimAt, remainingMs: remaining,
       ready: p.level >= 25 && remaining === 0 && !active.clockRollback,
-      claimable: p.level>=25 && remaining===0 && !active.clockRollback && claimHasCapacity(p,now,reward,awardedXp,cooldownMs,daily,zeroCooldowns), configurationMissing: configurationMissing,
+      claimable: p.level>=25 && remaining===0 && !active.clockRollback && claimHasCapacity(p,now,reward,awardedXp,nativeCooldownMs,daily), configurationMissing: configurationMissing,
       missingClaimLevels: table.reduce(function (out, requirement, index) { if (requirement === null && index + 1 < MAX_FAUCET_LEVEL) out.push(index + 1); return out; }, []),
       maxLevel: maxLevel, terminal: maxLevel, claimsArePerLevel: false,
       claimsToday: daily.claims, earnedTodayHundredths: daily.earnedHundredths, earnedTodayCoins: daily.earnedHundredths / 100,
@@ -816,9 +826,9 @@
     var tolerance = Math.min(1e-8, Number.EPSILON * Math.max(awardedXp, value, next) * 2);
     return Number.isFinite(next) && next > value && Math.abs((next - value) - awardedXp) <= tolerance;
   }
-  function claimHasCapacity(p,now,reward,xp,cooldown,daily,zeroCooldowns) {
+  function claimHasCapacity(p,now,reward,xp,cooldown,daily) {
     var f=p.faucet,next=now+cooldown,carry=coinCarry(f)+reward;
-    return integer(p.coinsHalf+Math.ceil(carry/50),0,MAX_SAFE)&&integer(f.claims+1,0,MAX_SAFE)&&integer(f.totalClaims+1,0,MAX_SAFE)&&integer(daily.claims+1,0,MAX_SAFE)&&integer(daily.earnedHundredths+reward,0,MAX_SAFE)&&integer((f.earnedLifetimeHundredths||0)+reward,0,MAX_SAFE)&&Number.isFinite(next)&&next<=MAX_SAFE&&(next>now||zeroCooldowns===true&&next===now)&&integer(combinedClaims(f)+1,0,MAX_SAFE)&&canAddClaimXp(p.xp,xp)&&canAddClaimXp(p.totalXp,xp);
+    return integer(p.coinsHalf+Math.ceil(carry/50),0,MAX_SAFE)&&integer(f.claims+1,0,MAX_SAFE)&&integer(f.totalClaims+1,0,MAX_SAFE)&&integer(daily.claims+1,0,MAX_SAFE)&&integer(daily.earnedHundredths+reward,0,MAX_SAFE)&&integer((f.earnedLifetimeHundredths||0)+reward,0,MAX_SAFE)&&Number.isFinite(next)&&next<=MAX_SAFE&&next>now&&integer(combinedClaims(f)+1,0,MAX_SAFE)&&canAddClaimXp(p.xp,xp)&&canAddClaimXp(p.totalXp,xp);
   }
   function claimFaucet(p, now, options) {
     if (!record(p)) return claimFailure('invalid-profile', 'A progression profile is required.');
@@ -833,7 +843,7 @@
     if (!record(options) || options.passedCaptcha !== true || draft.level < 56 && options.passedQuiz !== true) return claimFailure('validation-failed', draft.level >= 56 ? 'The local CAPTCHA must be answered correctly.' : 'Both the local challenge and the Balatro question must be answered correctly.');
     if (info.clockRollback) return claimFailure('clock-rollback', 'The daily clock is earlier than the last saved faucet day.');
     if (!info.ready) return Object.assign(claimFailure('cooldown', 'The faucet cooldown has not finished.'), {remainingMs: info.remainingMs, nextClaimAt: info.nextClaimAt});
-    var next = now + info.cooldownMs, f = draft.faucet, table = settings.table;
+    var next = now + info.nativeCooldownMs, f = draft.faucet, table = settings.table;
     var reward = info.rewardHundredths, carryTotal = coinCarry(f) + reward, creditedHalf = Math.floor(carryTotal / 50);
     var earnedLifetime = (f.earnedLifetimeHundredths || 0) + reward;
     // Reserve safe half-coin capacity for pending carry too; never strand
@@ -841,7 +851,7 @@
     if (!integer(draft.coinsHalf + Math.ceil(carryTotal / 50), 0, MAX_SAFE) || !integer(f.claims + 1, 0, MAX_SAFE) ||
         !integer(f.totalClaims + 1, 0, MAX_SAFE) || !integer(info.claimsToday + 1, 0, MAX_SAFE) ||
         !integer(info.earnedTodayHundredths + reward, 0, MAX_SAFE) || !integer(earnedLifetime, 0, MAX_SAFE) ||
-        !Number.isFinite(next) || next > MAX_SAFE || next < now || next === now && !info.zeroCooldowns || !integer(combinedClaims(f)+1,0,MAX_SAFE) ||
+        !Number.isFinite(next) || next > MAX_SAFE || next <= now || !integer(combinedClaims(f)+1,0,MAX_SAFE) ||
         !canAddClaimXp(draft.xp, info.awardedXp) || !canAddClaimXp(draft.totalXp, info.awardedXp)) {
       return claimFailure('overflow', 'The coin ledger, XP, earnings, claim counter or timestamp would overflow.');
     }
@@ -871,7 +881,7 @@
       taskRatePercent: info.taskRatePercent, claimTierPercent: info.claimTierPercent, effectiveRatePercent: info.effectiveRatePercent,
       claimedLevel: info.level, level: f.level, claims: f.claims, totalClaims: f.totalClaims,
       cooldownMs: info.cooldownMs, baseCooldownMs: info.baseCooldownMs, cooldownMultiplier: info.cooldownMultiplier,
-      committedCooldownMs: info.cooldownMs, potionXpMultiplier: info.potionXpMultiplier, nextClaimAt: next, lastClaimAt: now,
+      committedCooldownMs: info.nativeCooldownMs, nativeCooldownMs:info.nativeCooldownMs, pokerCooldownMultiplier:info.pokerCooldownMultiplier, effectiveNextClaimAt:now+info.cooldownMs, potionXpMultiplier: info.potionXpMultiplier, nextClaimAt: next, lastClaimAt: now,
       configurationMissing: f.level < MAX_FAUCET_LEVEL && table[f.level - 1] === null,
       faucet: faucetView(draft, now, settings)
     });
@@ -961,5 +971,5 @@
   return {MAX_PLAYER_LEVEL: MAX_PLAYER_LEVEL, MAX_FAUCET_LEVEL: MAX_FAUCET_LEVEL, CAP_THRESHOLDS: CAP_THRESHOLDS,
     create: create, normalize: normalize, buffs: buffs, extraRewardMultiplier:extraRewardMultiplier, coinSourceMultiplier:coinSourceMultiplier, jokerXpMultiplier:jokerXpMultiplier, interestCostMultiplier: interestCostMultiplier, cost: cost, addXp: addXp, addAwardedXp: addAwardedXp, addEarnedXp: addEarnedXp, earnedXpMultiplier: earnedXpMultiplier,
     applyEvents: applyEvents, setGateMode: setGateMode, progress: progress, format: format, applyCooldownPotion: applyCooldownPotion,
-    faucetCosts: faucetCosts, faucetDay: faucetDay, faucetInfo: faucetInfo, claimFaucet: claimFaucet, creditPokerClaims:creditPokerClaims, pokerEffects:pokerEffects, pokerXpMultiplier:pokerXpMultiplier, unlockJoker: unlockJoker};
+    faucetCosts: faucetCosts, faucetDay: faucetDay, faucetInfo: faucetInfo, claimFaucet: claimFaucet, creditPokerClaims:creditPokerClaims, pokerEffects:pokerEffects, pokerCooldownDuration:pokerCooldownDuration, pokerXpMultiplier:pokerXpMultiplier, unlockJoker: unlockJoker};
 }));
