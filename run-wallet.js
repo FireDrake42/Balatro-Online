@@ -4,7 +4,7 @@
  * save cash + inventory + this field in the SAME RUN write before applying it.
  */
 (function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BORunWallet=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
- const MAX_BALANCE=100,UNLOCK_LEVEL=33,ACTIVE=Object.freeze(['select','play','cashout','shop','pack']),ENDED=Object.freeze(['won','lost']);
+ const MAX_BALANCE=100,UNLOCK_LEVEL=33,ACTIVE=Object.freeze(['select','play','cashout','shop','pack']),ENDED=Object.freeze(['won','lost','boss-rush-won']);
  const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
  function check(ok,message){if(!ok)throw new Error(message)}
  function fields(value,keys){
@@ -20,7 +20,9 @@
  function copy(wallet){check(validate(wallet),'Wallet save needs attention. No balance was changed.');return {version:1,balance:wallet.balance,revision:wallet.revision}}
  function create(){return {version:1,balance:MAX_BALANCE,revision:0}}
  function closed(){return {version:1,balance:0,revision:0}}
- function validRun(run){check(run&&run.version===1&&[...ACTIVE,...ENDED].includes(run.phase),'Invalid Wallet origin run.');if(own(run,'wallet'))copy(run.wallet);return run}
+ // Lazy lookup avoids the engine -> Wallet import cycle. Classic v1 stays native.
+ function modeGate(run){check(run&&typeof run==='object','Invalid Wallet origin run.');const v=Object.getOwnPropertyDescriptor(run,'version'),p=Object.getOwnPropertyDescriptor(run,'phase');if(v&&own(v,'value')&&v.enumerable&&v.value===1&&!('runMode' in run)&&p&&own(p,'value')&&p.enumerable&&p.value!=='boss-rush-won')return;const engine=typeof module==='object'&&module.exports?require('./engine'):globalThis.BO;check(engine&&typeof engine.validateRunVersion==='function'&&engine.validateRunVersion(run),'Wallet run version/mode needs attention. No balance was changed.')}
+ function validRun(run){modeGate(run);check([...ACTIVE,...ENDED].includes(run.phase),'Invalid Wallet origin run.');if(own(run,'wallet'))copy(run.wallet);return run}
  function initialize(run,actualLevel){
   validRun(run);check(level(actualLevel),'Invalid actual player level.');
   if(own(run,'wallet'))return copy(run.wallet);

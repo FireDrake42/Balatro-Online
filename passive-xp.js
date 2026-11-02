@@ -245,17 +245,20 @@
     // Anchor to the historical end, not this poll. Potion deadlines only shrink;
     // expiry/replacement cannot lengthen a wait that was already committed.
     var effects = effectsAt(state, now), cooldown = cooldownView(p, s, end, state);
-    var zeroCooldowns=PG.pokerEffects(xpConfig,Math.floor(now)).zeroCooldowns&&(!session||now>=end),cooldownMs = zeroCooldowns?0:cooldown.cooldownMs, cooldownUntil = cooldown.cooldownUntil;
-    var coolingDown = unlocked && session && !active && !zeroCooldowns && now < cooldownUntil;
+    var poker=PG.pokerEffects(xpConfig,Math.floor(now)),zeroCooldowns=false,cooldownMs=PG.pokerCooldownDuration(cooldown.cooldownMs,xpConfig,Math.floor(now));
+    // Native/Potion anchoring above remains the only persisted wait. Applying
+    // Royal here cannot shorten the active session or contaminate Potion commits.
+    var cooldownUntil=session&&poker.cooldownMultiplier===0.5?end+cooldownMs:cooldown.cooldownUntil;
+    var coolingDown = unlocked && session && !active && now < cooldownUntil;
     var elapsed = session ? Math.min(duration, Math.max(0, now - s.startedAt)) : 0;
     // This read-only estimate uses the current rate. Settlement re-evaluates it
     // after every own level-up, so a catch-up batch can cross rate/duration tiers.
     var pending = unlocked && session && !s.completionCounted ? Math.floor(Math.max(0, elapsed - s.creditedMs) / rate.intervalMs) : 0;
     var maxTicks = session ? s.creditedTicks + (s.completionCounted ? 0 : Math.floor((duration - s.creditedMs) / rate.intervalMs)) : Math.floor(duration / rate.intervalMs);
     var result = {unlocked: unlocked, active: active, ready: unlocked && !active && !coolingDown,
-      coolingDown: coolingDown, cooldownMs: cooldownMs, cooldownUntil: cooldownUntil, zeroCooldowns:zeroCooldowns,
+      coolingDown: coolingDown, cooldownMs: cooldownMs, cooldownUntil: cooldownUntil, nativeCooldownUntil:cooldown.cooldownUntil, zeroCooldowns:zeroCooldowns, pokerCooldownMultiplier:poker.cooldownMultiplier,
       baseCooldownMs: cooldown.baseCooldownMs, committedCooldownMs: cooldown.committedCooldownMs, cooldownPotionApplied: cooldown.cooldownPotionApplied,
-      cooldownMultiplier: effects.cooldownMultiplier, nextCooldownMs: zeroCooldowns?0:cooldown.baseCooldownMs * effects.cooldownMultiplier,
+      cooldownMultiplier: effects.cooldownMultiplier, nextCooldownMs:PG.pokerCooldownDuration(cooldown.baseCooldownMs*effects.cooldownMultiplier,xpConfig,Math.floor(now)),
       cooldownRemainingMs: coolingDown ? Math.max(0, cooldownUntil - now) : 0,
       remainingMs: active ? Math.min(duration, Math.max(0, end - now)) : 0,
       nextTickMs: active && s.creditedMs + rate.intervalMs <= duration ? Math.max(0, s.startedAt + s.creditedMs + rate.intervalMs - now) : 0,

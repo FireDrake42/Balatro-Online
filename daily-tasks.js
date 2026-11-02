@@ -233,7 +233,7 @@
     return result(copied, true, 'observed', completed);
   }
   function capture(run) {
-    if (run === undefined || run === null) return null;
+    if (run === undefined || run === null || typeof run === 'object' && 'runMode' in run) return null;
     object(run, 'run');
     const runId = identifier(field(run, '_uiId', 'run'));
     const stats = object(optional(run, 'stats', {}, 'run'), 'run.stats');

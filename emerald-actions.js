@@ -22,7 +22,7 @@
    else check(stable(E.copy(liveEvents))===stable(savedEvents)&&saved.progression?.level===c.level&&c.profile.progression?.level===c.level,'The saved Poker event projection changed.');
    // Status projects ONLY saved/public event data, never private Poker replay.
    // Offers/commands authenticate all paired sources before using this context.
-   return effects.zeroCooldowns?{pokerEvents:savedEvents}:{};
+   return effects.cooldownMultiplier===0.5?{pokerEvents:savedEvents}:{};
   }
   function fence(c,dialog=false){writable(dialog);const live=get();eligible(live);check(live.run===c.run&&live.profile===c.profile&&live.level===c.level&&host.stamp()===c.stamp,'The slot, run or player level changed. Reopen Emerald’s current action.');if(own(c,'runSource'))check(stable(live.run)===c.runSource&&stable(live.profile)===c.profileSource,'Live progress changed during this action. Reopen the workshop.');return live}
   function capture(dialog=false){writable(dialog);const c=get();eligible(c);const out={...c,stamp:host.stamp(),profileRaw:read('profile'),runRaw:read('run'),now:clock()};out.eventContext=workshopEvents(out,out.now,out.profileRaw);return out}
@@ -41,10 +41,10 @@
    c.runSource=stable(c.run);c.profileSource=stable(c.profile);const result=R.speech(c.profile,c.run,c.level,now);write(c,'profile',result.profile);apply(()=>host.applyProfile(result.profile,now));
    const gift=result.gift;return {ok:true,gift,message:gift.granted?'A Speed Potion for you! Scoring animations take 30% less time for two minutes.':gift.rolled?'A Speed gift rolled, but both potion slots are full. Make room for a future gift!':null};
   }catch(error){return {ok:false,reason:error.message}}finally{acting=false}}
-  function projection(c,now,context={}){const w=c.run&&c.run._uiId?R.workshopInfo(c.run,now):null;
-   // Match W.info's virtual deadline using the existing lightweight projection;
-   // rendering must not inspect canonical cards, hidden piles or either RNG.
-   if(w&&own(context,'pokerEvents')&&now>=w.nextGiveAt-W.COOLDOWN_MS){w.cooldownRemainingMs=0;w.nextGiveAt=Math.min(now,w.nextGiveAt)}return {progress:R.progress(c.profile,c.level),capabilities:R.capabilities(c.profile,c.level),workshop:w};
+  function projection(c,now,context={}){const w=c.run&&c.run._uiId?R.workshopInfo(c.run,now,context):null;
+   // The model's public workshop-ledger projection supplies the same effective
+   // deadline as give(); no canonical cards, hidden piles or RNG inspection.
+   return {progress:R.progress(c.profile,c.level),capabilities:R.capabilities(c.profile,c.level),workshop:w};
   }
   function status(){const c=host.get(),now=clock();if(!c?.profile)return {progress:null,capabilities:null,workshop:null};const s=projection(c,now);if(!own(c.profile,'emeraldPokerEvents'))return s;try{return projection(c,now,workshopEvents(c,now,read('profile'),false))}catch(error){return {...s,capabilities:{...s.capabilities,workshop:false},reason:error.message}}}
   function welcome(){if(entered)return null;entered=true;const c=get();return R.capabilities(c.profile,c.level).welcome?'Welcome Back! I’m glad you’re here!':null}
@@ -61,7 +61,7 @@
    if(w.busy)body='<p>'+ (w.ready?'Your original card is ready to collect.': 'Emerald is working silently. '+Math.ceil(w.workRemainingMs/1000)+' seconds remaining.')+'</p>'+(w.ready?'<button class="btn primary" data-emerald-action="claim">Collect upgraded card</button>':'');
    else if(w.cooldownRemainingMs>0)body='<p>Cooling down after completion · '+Math.ceil(w.cooldownRemainingMs/1000)+' seconds remaining.</p>';
    else body='<p>Give one owned playing card. It leaves your deck for '+(F.info(c.profile.emeraldFriendship).workMs/1000)+' seconds of silent work; collect it in this run’s shop. A 5-minute cooldown starts when work finishes. Replacing or abandoning this run forfeits its reserved card.</p><p>Same card ID and suit; rank +'+s.capabilities.workshopRankGain+' (Ace maximum). '+(s.progress.level>=10?'40% primary modifier chance, plus an independent 10% chance for one enhancement and one edition together.':'10% chance for Foil, Holographic or Polychrome.')+'</p><label for="emerald-card-pick">Owned playing card</label><select id="emerald-card-pick">'+r.cards.map(card=>'<option value="'+esc(card.id)+'">'+esc(cardName(card))+'</option>').join('')+'</select><button class="btn primary" data-emerald-action="give" '+(!r.cards.length?'disabled':'')+'>Give selected card</button>';
-   if(own(c.eventContext,'pokerEvents'))body+='<p>While your Royal Flush event is active, only the 5-minute after-job cooldown is skipped. Silent work and explicit collection still apply.</p>';
+   if(own(c.eventContext,'pokerEvents'))body+='<p>While your Royal Flush event is active, only the 5-minute after-job cooldown is halved to 2 minutes 30 seconds. Silent work and explicit collection still apply.</p>';
    host.modal('Emerald’s card workshop',body+'<p class="build-note">Only fictional game cards. No payment, real gambling or external accounts.</p><button class="btn ghost" data-emerald-action="close">Close</button>');return true;
   }catch(error){host.notify(error.message);return false}}
   function consent(){check(pending,'Reopen Emerald’s current card offer.');const c=pending;fence(c,true);const now=clock(),level=R.progress(c.profile,c.level).level,context=workshopEvents(c,now,read('profile'));check(stable(c.profile.emeraldFriendship??null)===c.friendship&&level===c.petLevel&&(c.run.emeraldWorkshop?.revision||0)===c.revision&&stable(c.run.cards)===c.cards&&c.run.phase==='shop','The card, workshop or Emerald level changed. Reopen the workshop.');return {c:{...c,actionNow:now,runSource:stable(c.run),profileSource:stable(c.profile)},now,context}}

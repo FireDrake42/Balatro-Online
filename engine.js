@@ -15,18 +15,49 @@
   // Practice authority is private, synchronous and never serialised or exported.
   var practiceRuns=new WeakSet();
   function isLabMarked(value) {return !!value&&typeof value==='object'&&(value.practiceOnly===true||value.kind==='combo-lab-result'||value.kind==='combo-lab-spec');}
+  var SUIT_EVOLUTIONS={
+    gluttonous_joker:{key:'clubs',suit:'C',name:'Gluttonous Joker',suitName:'Clubs',effect:'First scoring Club retriggers'},
+    lusty_joker:{key:'hearts',suit:'H',name:'Lusty Joker',suitName:'Hearts',effect:'First scoring Heart gives ×1.5 Mult'},
+    greedy_joker:{key:'diamonds',suit:'D',name:'Greedy Joker',suitName:'Diamonds',effect:'First scoring Diamond gives +$2 Bank'},
+    wrathful_joker:{key:'spades',suit:'S',name:'Wrathful Joker',suitName:'Spades',effect:'First scoring Spade gives +30 Chips'}
+  };
+  function suitEvolution(j) {return j&&Object.prototype.hasOwnProperty.call(SUIT_EVOLUTIONS,j.id)?SUIT_EVOLUTIONS[j.id]:null;}
   function validateJokerEvolution(j) {
     if(!j||typeof j!=='object')return false;
     if(!Object.prototype.hasOwnProperty.call(j,'evolution'))return true;
-    var d=Object.getOwnPropertyDescriptor(j,'evolution'),v=d&&d.value;
-    return !!d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')&&j.id==='gluttonous_joker'&&dataFields(v,['version','clubs'])&&v.version===1&&Number.isSafeInteger(v.clubs)&&v.clubs>=0&&v.clubs<=50;
+    var d=Object.getOwnPropertyDescriptor(j,'evolution'),v=d&&d.value,meta=suitEvolution(j);
+    return !!d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')&&!!meta&&dataFields(v,['version',meta.key])&&v.version===1&&Number.isSafeInteger(v[meta.key])&&v[meta.key]>=0&&v[meta.key]<=50;
   }
   function validateRunEvolution(s) {return !!s&&typeof s==='object'&&['jokers','jokerReserve','consumables'].every(function(k){return s[k]===undefined||Array.isArray(s[k])&&s[k].every(validateJokerEvolution);})&&[s.shop?s.shop.items:undefined,s.pack?s.pack.options:undefined].every(function(list){return list===undefined||Array.isArray(list)&&list.every(validateJokerEvolution);});}
   function evolutionInfo(j) {
     check(validateJokerEvolution(j),'Joker evolution needs attention. No run was changed.');
-    if(j.id!=='gluttonous_joker')return null;
-    var n=j.evolution?j.evolution.clubs:0;return {clubs:n,goal:50,evolved:n===50};
+    var meta=suitEvolution(j);if(!meta)return null;
+    var n=j.evolution?j.evolution[meta.key]:0,info={};info[meta.key]=n;info.goal=50;info.evolved=n===50;return info;
   }
+  // Rush alone uses a future top-level header. Nested ledgers stay genuinely v1;
+  // in particular valid Frenzy is present from the constructor so strict OLD
+  // applications recognize a sensitive run and refuse it before default writes.
+  function modeField(o,k) {var d=Object.getOwnPropertyDescriptor(o,k);return !!d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value');}
+  function modeArray(a,max) {if(!Array.isArray(a)||Object.getPrototypeOf(a)!==Array.prototype||a.length>max||Reflect.ownKeys(a).length!==a.length+1)return false;for(var i=0;i<a.length;i++)if(!modeField(a,String(i)))return false;return true;}
+  function isBossRush(s) {return !!s&&s.version===2&&s.runMode&&s.runMode.id==='boss-rush';}
+  function validateRunMode(s) {
+    try{
+      if(!s||typeof s!=='object'||![Object.prototype,null].includes(Object.getPrototypeOf(s))||!modeField(s,'version'))return false;
+      if(s.version===1)return !('runMode' in s)&&(!('phase' in s)||modeField(s,'phase')&&s.phase!=='boss-rush-won');
+      if(s.version!==2||!['runMode','frenzy','ante','blindIndex','round','phase','bossId','endless','progressionEnabled','playerLevel','progressEvents','progressSeq','vouchers'].every(function(k){return modeField(s,k);}))return false;
+      var m=s.runMode;if(!dataFields(m,['version','id','cleared','history'])||m.version!==1||m.id!=='boss-rush'||!Number.isSafeInteger(m.cleared)||m.cleared<0||m.cleared>5||!modeArray(m.history,5)||m.history.length!==m.cleared)return false;
+      if(!Frenzy||!Frenzy.validate(s.frenzy)||s.endless!==false||s.blindIndex!==2||s.progressionEnabled!==true||!Number.isInteger(s.playerLevel)||s.playerLevel<1||s.playerLevel>100||['challenge','challengeId','challengeMode','dailyChallenge','_challenge'].some(function(k){return k in s;}))return false;
+      var seen={};for(var i=0;i<m.history.length;i++){var id=m.history[i],b=typeof id==='string'&&Object.prototype.hasOwnProperty.call(bossById,id)?bossById[id]:null;if(!b||b.minAnte===8||b.minAnte>i+1||seen[id])return false;seen[id]=true;}
+      var current=typeof s.bossId==='string'&&Object.prototype.hasOwnProperty.call(bossById,s.bossId)?bossById[s.bossId]:null;if(!current||current.minAnte===8||current.minAnte>s.ante)return false;
+      if(s.phase==='boss-rush-won'){if(m.cleared!==5||s.ante!==5||s.round!==5||s.bossId!==m.history[4])return false;}
+      else{if(m.cleared>=5||s.ante!==m.cleared+1||seen[s.bossId]||['select','play','cashout','shop','pack','lost'].indexOf(s.phase)<0)return false;var playing=s.phase==='play'||s.phase==='cashout';if(s.phase==='lost'){if(s.round!==m.cleared&&s.round!==m.cleared+1)return false;}else if(s.round!==m.cleared+(playing?1:0))return false;}
+      if(!s.vouchers||typeof s.vouchers!=='object'||Array.isArray(s.vouchers))return false;for(var vi=0;vi<2;vi++){var key=['hieroglyph','petroglyph'][vi];if(key in s.vouchers)return false;}
+      if(!modeArray(s.progressEvents,20000)||!Number.isSafeInteger(s.progressSeq)||s.progressSeq!==s.progressEvents.length)return false;
+      for(var ei=0;ei<s.progressEvents.length;ei++){var e=s.progressEvents[ei],allowed=['seq','kind','baseXp','cards','potionXpMultiplier','pokerXpMultiplier','jokerXpMultiplier'];if(!e||typeof e!=='object'||![Object.prototype,null].includes(Object.getPrototypeOf(e))||!['seq','kind','baseXp','cards'].every(function(k){return modeField(e,k);})||!Reflect.ownKeys(e).every(function(k){return allowed.indexOf(k)>=0&&modeField(e,k);})||e.seq!==ei+1||e.kind!=='hand-play'||!Number.isInteger(e.cards)||e.cards<1||e.cards>(s.playerLevel>=35?6:5)||e.baseXp!==e.cards)return false;for(var mi=4;mi<allowed.length;mi++){var mk=allowed[mi];if(mk in e&&(!Number.isFinite(e[mk])||e[mk]<=0))return false;}}
+      return true;
+    }catch(_){return false;}
+  }
+  function validateRunVersion(s) {return validateRunMode(s);}
   // A tutorial policy is a synchronous host scope, never a JSON run flag. Only
   // validated fresh-generation paired tutorial state may request this in app.js.
   var tutorialContexts=new WeakMap();
@@ -74,7 +105,7 @@
     var d=Object.getOwnPropertyDescriptor(s,'wallet');
     check(d&&d.enumerable&&Object.prototype.hasOwnProperty.call(d,'value')&&Wallet&&Wallet.validate(d.value),'Wallet save needs attention. No balance was changed.');
   }
-  function frenzyInfo(s,actualLevel,now) {check(Frenzy,'Load the Frenzy model before the engine.');validateFrenzy(s);return Frenzy.info(s?s.frenzy:undefined,actualLevel,now);}
+  function frenzyInfo(s,actualLevel,now) {check(validateRunVersion(s),'Run version/mode needs attention.');check(Frenzy,'Load the Frenzy model before the engine.');validateFrenzy(s);return Frenzy.info(s?s.frenzy:undefined,actualLevel,now);}
   function commitFrenzy(s,context,scoringTriggers,scoringCards) {
     var next=Frenzy.commit(s.frenzy,context.actualLevel,context.now,scoringTriggers),receipt=next.receipt;
     if(scoringTriggers>0)s.frenzy=next.state;
@@ -488,7 +519,7 @@
   // queries/hydration. Present malformed HP fails closed instead of healing.
   function mothimHP(j) {return !j||j.id!=='mothim'?0:j.hp===undefined?3:Number.isInteger(j.hp)&&j.hp>=0&&j.hp<=3?j.hp:0;}
   function canMothimAttack(s,index) {
-    if(!s||s.version!==1||!Array.isArray(s.jokers)||!Number.isInteger(index))return false;
+    if(!validateRunVersion(s)||!Array.isArray(s.jokers)||!Number.isInteger(index))return false;
     var j=s.jokers[index];return !!(j&&j.id==='mothim'&&!j.eternal&&isJokerActive(j)&&mothimHP(j)>0&&Object.prototype.hasOwnProperty.call(bossById,s.bossId)&&activeBoss(s,s.bossId));
   }
   function playerLuckMultiplier(s) {return s&&s.progressionEnabled===true&&Number.isInteger(s.playerLevel)&&s.playerLevel>=17&&s.playerLevel<=100?(s.playerLevel>=57?1.375:1.25):1;}
@@ -606,6 +637,7 @@
     normalizeProgression(s);
   }
   function progressEvent(s,kind,baseXp,context) {
+    if(isBossRush(s)&&kind!=='hand-play')return; // Filter BEFORE allocating a sequence/receipt.
     if(s.progressionEnabled!==true||baseXp<=0&&!(baseXp===0&&kind==='blind-win'&&context&&context.ante===0))return;
     check(Number.isFinite(baseXp)&&Number.isSafeInteger(s.progressSeq)&&s.progressSeq<Number.MAX_SAFE_INTEGER,'Invalid progression XP.');
     var event=Object.assign({seq:++s.progressSeq,kind:kind,baseXp:baseXp},context);
@@ -649,12 +681,13 @@
   function refresh(s) {rebalanceJokers(s);var v=summary(s);s.handSize=v.handSize;s.jokerSlots=v.jokerSlots;s.consumableSlots=v.consumableSlots;}
   function hydrate(s) {validateFoods(s);if(s.level10Deal===undefined)s.level10Deal=false;normalizeProgression(s);if(s.potions){check(Potions,'Load the potion model before the engine.');s.potions=Potions.recover(s.potions,null);}rebalanceJokers(s);if(s.stake===undefined)s.stake='white';if(s.stakeIndex===undefined)s.stakeIndex=runStake(s).index;var map={};s.cards.forEach(function(c){map[c.id]=c;});['hand','drawPile','discardPile'].forEach(function(k){s[k]=(s[k]||[]).map(function(c){check(map[c.id],'Save contains an unknown playing card.');return map[c.id];});});refreshPrices(s);}
   function atomic(fn) {return function(s){
-    check(!isLabMarked(s),'Practice reports cannot be used as a real run.');check(s&&s.version===1,'This save is not supported.');check(validateRunEvolution(s),'Joker evolution needs attention. No run was changed.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);validateFoods(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));if(tutorialContexts.has(s))tutorialContexts.set(next,tutorialContexts.get(s));if(practiceRuns.has(s))practiceRuns.add(next);
+    check(!isLabMarked(s),'Practice reports cannot be used as a real run.');check(validateRunVersion(s),'This save version/mode is not supported.');check(validateRunEvolution(s),'Joker evolution needs attention. No run was changed.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);validateFoods(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));if(tutorialContexts.has(s))tutorialContexts.set(next,tutorialContexts.get(s));if(practiceRuns.has(s))practiceRuns.add(next);
     try{hydrate(next);fn.apply(null,[next].concat(args));refresh(next);
       // Level19 now adds a pack option, replacing the former Boss-special
       // dollar award. Retain native Boss evaluation/receipts without payment.
       sortHand(next,fn===setPotionState||fn===setPlayerLevel||fn===setCoinUnlocks||fn===setLevel10Deal||fn===abandon);
     }finally{bossEffectActions.delete(next);pokerContexts.delete(next);tutorialContexts.delete(next);practiceRuns.delete(next);}
+    check(validateRunVersion(next),'Run version/mode transition needs attention. No run was changed.');
     Object.keys(s).forEach(function(k){delete s[k];});Object.keys(next).forEach(function(k){s[k]=next[k];});return s;
   };}
   function phase(s,list) {check(list.indexOf(s.phase)!==-1,'This action is not available during '+s.phase+'.');}
@@ -767,20 +800,22 @@
   }
   function evaluateRun(s,cards) {var r=evaluate(cards,{fourFingers:has(s,'four_fingers'),shortcut:has(s,'shortcut'),state:s});r.royalFlush=containsRoyalFlush(s,cards);return r;}
   function preview(s,ids,options) {var cards=selected(s,ids,s.hand,selectionLimit(s,selectionActualLevel(options)),1),r=evaluateRun(s,cards),h=HANDS[r.key],l=handLevel(s,r.key)-1;return {name:r.name,key:r.key,chips:h[1]+h[3]*l,mult:h[2]+h[4]*l,indices:r.indices,royalFlush:r.royalFlush,baseOnly:true,description:'Base hand value only. Card effects, held cards, Jokers and random effects are resolved when played.'};}
-  function pickBoss(s) {var finals=s.ante>0&&s.ante%8===0,pool=bosses.filter(function(b){return b.minAnte<=Math.max(1,s.ante)&&(finals?b.minAnte===8:b.minAnte!==8);});return pick(s,pool).id;}
+  function pickBoss(s) {var finals=s.ante>0&&s.ante%8===0,pool=bosses.filter(function(b){return b.minAnte<=Math.max(1,s.ante)&&(finals?b.minAnte===8:b.minAnte!==8)&&(!isBossRush(s)||s.runMode.history.indexOf(b.id)<0);});return pick(s,pool).id;}
   function blindInfo(s) {var stake=runStake(s),base=s.ante===0?100:stake.anteTargets[Math.min(s.ante,8)-1];if(s.ante>8)base=Math.floor(stake.anteTargets[7]*Math.pow(1.6+(s.ante-8)*0.5,s.ante-8));base=finite(base);var boss=bossById[s.bossId]||bosses[0],factor=s.blindIndex===0?1:s.blindIndex===1?1.5:boss.factor;if(s.blindIndex===2&&(boss.id==='wall'||boss.id==='violet_vessel')&&(has(s,'chicot')||s.phase==='play'&&(s.bossDisabled||potionBossSuppressed(s))))factor=2;var foodFactor=Foods?Foods.targetFactor(s,activeBoss(s,s.bossId),['select','shop','pack','won'].indexOf(s.phase)>=0):1;return {name:s.blindIndex===0?'Small Blind':s.blindIndex===1?'Big Blind':boss.name,description:s.blindIndex===2?boss.description:'Score enough Chips before your hands run out.',target:finite(Math.ceil((roundBlindFactor(s)===1?Math.floor(base*factor*(s.deckId==='plasma'&&!enhancedDeck(s)?2:1)):Math.ceil(base*factor*(s.deckId==='plasma'&&!enhancedDeck(s)?2:1)*roundBlindFactor(s)))*foodFactor)),reward:s.blindIndex===0?stake.smallBlindReward:s.blindIndex===1?4:5,canSkip:s.phase==='select'&&s.blindIndex<2,tag:clone(tagById[s.blindTags[s.blindIndex]||'handy'])};}
   function nextBlind(s) {if(s.blindIndex===2){s.ante++;s.blindIndex=0;s.bossId=pickBoss(s);s.blindTags=[pick(s,tags).id,pick(s,tags).id];s.antePlayed=[];s.bossRerolled=false;}else s.blindIndex++;s.stats.highestAnte=Math.max(s.stats.highestAnte,s.ante);}
   function newRun(deckId,seed,options) {
     check(decks.some(function(d){return d.id===deckId;}),'Choose a valid deck.');
     check(options===undefined||options!==null&&typeof options==='object'&&!Array.isArray(options),'Choose valid run options.');options=options||{};
+    var mode='classic';if('mode' in options){check(modeField(options,'mode'),'Choose a valid run mode.');mode=options.mode;}check(mode==='classic'||mode==='boss-rush','Choose a valid run mode.');var rush=mode==='boss-rush';
     var stakeId=options.stake===undefined?'white':options.stake;check(typeof stakeId==='string'&&Object.prototype.hasOwnProperty.call(stakeById,stakeId),'Choose a valid stake.');
-    var meta=Object.prototype.hasOwnProperty.call(options,'playerLevel');if(meta)validPlayerLevel(options.playerLevel);
+    var meta=Object.prototype.hasOwnProperty.call(options,'playerLevel');if(meta)validPlayerLevel(options.playerLevel);check(!rush||meta,'Boss Rush requires the actual player level.');
     check((!decks.find(function(d){return d.id===deckId;}).unlockLevel&&stakeById[stakeId].index<8)||meta&&options.playerLevel>=29,'These decks and stakes unlock at actual player Level 29.');
     var coinUnlocks=Object.prototype.hasOwnProperty.call(options,'coinUnlocks')?validatedCoinUnlocks(options.coinUnlocks):null;
     seed=seed===undefined?'BO-'+Date.now():String(seed);
     var enhanced=meta&&options.playerLevel>=45;
     var levels={};Object.keys(HANDS).forEach(function(k){levels[k]=deckId==='scholar'?(enhanced?3:2):1;});
     var s={version:1,seed:seed,rng:hash(seed),nextId:1,deckId:deckId,stake:stakeId,stakeIndex:stakeById[stakeId].index,phase:'select',ante:1,blindIndex:0,round:0,money:deckId==='yellow'?14:4,hands:0,discards:0,handSize:8,jokerSlots:5,consumableSlots:2,target:0,score:0,hand:[],drawPile:[],discardPile:[],cards:[],jokers:[],consumables:[],levels:levels,vouchers:{},tags:[],doubleTags:0,skips:0,unusedDiscards:0,handSizeBonus:0,handsBonus:0,discardsBonus:0,tarotsUsed:0,planetTypes:{},ectoplasms:0,antePlayed:[],roundHandBonus:0,endless:false,shop:{items:[],rerollCost:5,voucher:null,packs:[]},pack:null,payout:{lines:[],total:0},lastResult:{name:'',chips:0,mult:0,total:0,glassBroken:0,lines:[]},log:[],stats:{handsPlayed:0,discardsUsed:0,cardsPlayed:0,cardsDiscarded:0,blindsWon:0,moneyEarned:0,bestHand:0,highestAnte:1,handCounts:{}}};
+    if(rush){check(Frenzy,'Load the native Frenzy model before Boss Rush.');s.version=2;s.runMode={version:1,id:'boss-rush',cleared:0,history:[]};s.blindIndex=2;s.frenzy=Frenzy.create();}
     if(meta&&options.playerLevel>=6)s.money+=1;
     if(meta&&options.playerLevel>=59)s.money=10; // normal start; special45+ deck overrides below remain authoritative.
     if(enhanced){s.deckProfile={version:1,startingLevel:options.playerLevel,deckId:deckId};if(deckId==='yellow')s.money=25;if(deckId==='erratic'){var statsDice={rng:hash(seed+'|deck45:erratic')},stats={};ERRATIC_KEYS.forEach(function(k){stats[k]=int(statsDice,10)+1;});s.deckProfile.stats=stats;s.money=stats.money;}}
@@ -793,7 +828,7 @@
     if(enhanced&&deckId==='checkered')['H','S'].forEach(function(suit){[14,13,12,11,10,9,8,7,6,5,4,3,2,14].forEach(function(rank){s.cards.push(newCard(s,rank,suit));});});
     if(enhanced&&deckId==='abandoned')addJoker(s,'ride_the_bus');if(enhanced&&deckId==='prism')addJoker(s,'the_tribe');
     s.startingDeckSize=s.cards.length;s.bossId=pickBoss(s);s.blindTags=[pick(s,tags).id,pick(s,tags).id];refresh(s);
-    if(deckId==='magic'){addConsumable(s,'fool');addConsumable(s,'fool');}if(deckId==='ghost'){addConsumable(s,'hex');if(enhanced)addConsumable(s,'ankh');}note(s,'Started '+decks.find(function(d){return d.id===deckId;}).name+'. Seed: '+seed);return s;
+    if(deckId==='magic'){addConsumable(s,'fool');addConsumable(s,'fool');}if(deckId==='ghost'){addConsumable(s,'hex');if(enhanced)addConsumable(s,'ankh');}note(s,'Started '+decks.find(function(d){return d.id===deckId;}).name+'. Seed: '+seed);if(rush){s.phase='shop';generateShop(s);check(validateRunVersion(s),'Boss Rush constructor needs attention.');note(s,'Boss Rush: opening shop, then five distinct Bosses.');}return s;
   }
   function applyDebuffs(s,reward) {var newlyDebuffed=false;s.cards.forEach(function(c){var before=!!c.debuffed;c.debuffed=false;if(activeBoss(s,'club')&&suit(c,'C',s)||activeBoss(s,'goad')&&suit(c,'S',s)||activeBoss(s,'window')&&suit(c,'D',s)||activeBoss(s,'head')&&suit(c,'H',s)||activeBoss(s,'plant')&&face(s,c)||activeBoss(s,'pillar')&&s.antePlayed.indexOf(c.id)>=0||activeBoss(s,'verdant_leaf'))c.debuffed=true;if(c.debuffed&&!before)newlyDebuffed=true;});if(reward&&newlyDebuffed)recordBossEffect(s,s.bossId,'debuff-application');}
   function draw(s,n,afterPlay) {var concealed=false;for(var i=0;i<n&&s.drawPile.length;i++){var c=s.drawPile.pop(),before=!!c.faceDown;c.faceDown=!!(activeBoss(s,'house')&&s.roundHands===0&&s.roundDiscards===0||activeBoss(s,'fish')&&afterPlay||activeBoss(s,'wheel')&&chance(s,7)||activeBoss(s,'mark')&&face(s,c));if(c.faceDown&&!before)concealed=true;s.hand.push(c);}if(concealed)recordBossEffect(s,s.bossId,'face-down-draw');applyDebuffs(s,true);if(activeBoss(s,'cerulean_bell')&&s.hand.length){s.forcedCardId=pick(s,handInDrawOrder(s)).id;recordBossEffect(s,'cerulean_bell','forced-selection');}else s.forcedCardId=null;sortHand(s);}
@@ -977,13 +1012,13 @@
     var h=HANDS[r.key],lv=s.levels[r.key]-1;chips=h[1]+lv*h[3];mult=h[2]+lv*h[4];if(activeBoss(s,'flint')){chips=Math.max(1,Math.ceil(chips/2));mult=Math.max(1,Math.ceil(mult/2));r.bossTriggered=true;recordBossEffect(s,'flint','base-score-halved');}lines.unshift(r.name+' level '+s.levels[r.key]+': '+chips+' Chips × '+mult+' Mult');
     firstFace=scored.find(function(c){return !c.debuffed&&face(s,c);});
     // Use the SAME post-Midas/Vampire effective-suit predicate as +3 Club Mult.
-    var firstClub=scored.find(function(c){return !c.debuffed&&suit(c,'C',s);});
+    var firstClub=scored.find(function(c){return !c.debuffed&&suit(c,'C',s);}),firstHeart=scored.find(function(c){return !c.debuffed&&suit(c,'H',s);}),firstDiamond=scored.find(function(c){return !c.debuffed&&suit(c,'D',s);}),firstSpade=scored.find(function(c){return !c.debuffed&&suit(c,'S',s);});
     scored.forEach(function(c,scoredIndex){if(c.debuffed){if(activeBoss(s,s.bossId)&&['club','goad','window','head','plant','pillar','verdant_leaf'].indexOf(s.bossId)>=0)r.bossTriggered=true;lines.push(describeCard(c).split('\n')[0]+': debuffed');return;}
-      if(!practiceRuns.has(s)&&suit(c,'C',s))bindings.order.forEach(function(j){
-        if(j.id!=='gluttonous_joker'||!isJokerActive(j)||s.jokers.indexOf(j)<0)return;
-        var n=evolutionInfo(j).clubs;if(n>=50)return;
-        j.evolution={version:1,clubs:n+1};
-        if(n===49)lines.push('Gluttonous Joker EVOLVED · 50/50 Clubs! First scoring Club retriggers from NEXT hand.');
+      if(!practiceRuns.has(s))bindings.order.forEach(function(j){
+        var meta=suitEvolution(j);if(!meta||!isJokerActive(j)||s.jokers.indexOf(j)<0||!suit(c,meta.suit,s))return;
+        var n=evolutionInfo(j)[meta.key];if(n>=50)return;
+        j.evolution={version:1};j.evolution[meta.key]=n+1;
+        if(n===49)lines.push(meta.name+' EVOLVED · 50/50 '+meta.suitName+'! '+meta.effect+' from NEXT hand.');
       });
       var triggers=1+(c.seal==='red'?1:0);
       // Queue additive repeats once, never recursively re-run the providers.
@@ -1005,7 +1040,10 @@
         if(potion.cardMult)M(potion.cardMult,'Mult Potion');if(potion.cardChips)C(potion.cardChips,'Chips Potion');
         var baseCrit=permanent+potion.baseCritChance;if(baseCrit&&chance(s,1/baseCrit))CRIT(c,(permanent?(permanent===.02?'Level 53':'Level 32')+(potion.baseCritChance?' + Potion':''):potion.gamingHP!==null?'Gaming Potion':'Critical Potion')+' CRIT!');
         eachAbility(s,bindings,'scored',function(j,b){var ranked=c.enhancement!=='stone',label=abilityLabel(b);switch(j.id){
-          case 'greedy_joker':if(suit(c,'D',s))M(3,label);break;case 'lusty_joker':if(suit(c,'H',s))M(3,label);break;case 'wrathful_joker':if(suit(c,'S',s))M(3,label);break;case 'gluttonous_joker':if(suit(c,'C',s))M(3,label);break;
+          case 'greedy_joker':if(suit(c,'D',s)){M(3,label);if(t===0&&c===firstDiamond&&bindings.evolved.indexOf(b.source.uid)>=0){addMoney(s,2);lines.push(label+' Evolved: first scoring Diamond +$2 Bank');}}break;
+          case 'lusty_joker':if(suit(c,'H',s)){M(3,label);if(t===0&&c===firstHeart&&bindings.evolved.indexOf(b.source.uid)>=0)X(1.5,label+' Evolved: first scoring Heart');}break;
+          case 'wrathful_joker':if(suit(c,'S',s)){M(3,label);if(t===0&&c===firstSpade&&bindings.evolved.indexOf(b.source.uid)>=0)C(30,label+' Evolved: first scoring Spade');}break;
+          case 'gluttonous_joker':if(suit(c,'C',s))M(3,label);break;
           case 'eight_ball':if(ranked&&c.rank===8&&chance(s,4))addConsumable(s,randomConsumable(s,'tarot').id);break;
           case 'fibonacci':if(ranked&&[14,2,3,5,8].indexOf(c.rank)>=0)M(8,label);break;case 'scary_face':if(face(s,c))C(30,label);break;
           case 'even_steven':if(ranked&&[2,4,6,8,10].indexOf(c.rank)>=0)M(4,label);break;case 'odd_todd':if(ranked&&[14,3,5,7,9].indexOf(c.rank)>=0)C(31,label);break;
@@ -1197,7 +1235,7 @@
     var handBindings=captureJokerBindings(s);
     // Freeze eligibility, not suits or counters: the 50th physical Club unlocks
     // NEXT hand. A copied terminal borrows its effect, never its challenge growth.
-    handBindings.evolved=handBindings.bindings.filter(function(b){return b&&b.ability&&b.ability.id==='gluttonous_joker'&&evolutionInfo(b.ability).evolved;}).map(function(b){return b.source.uid;});
+    handBindings.evolved=handBindings.bindings.filter(function(b){return b&&b.ability&&suitEvolution(b.ability)&&evolutionInfo(b.ability).evolved;}).map(function(b){return b.source.uid;});
     // Obelisk compares against history BEFORE this hand increments its count.
     r.previousCount=s.stats.handCounts[r.key]||0;r.previousMax=Object.keys(HANDS).reduce(function(n,key){return Math.max(n,s.stats.handCounts[key]||0);},0);
     r.matadorPaid={};r.bossTriggered=!!forbidden;if(forbidden)recordBossEffect(s,s.bossId,'hand-prohibited');
@@ -1261,11 +1299,11 @@
   function payFor(s,amount,payment) {bankPayment(payment);check(Number.isFinite(amount)&&amount>=0,'Invalid purchase price.');check(s.money-amount>=-creditLimit(s),'Not enough money.');s.money-=amount;if(s.phase==='shop')progressEvent(s,'shop-spend',amount,{dollars:amount});}
   // Read-only live-price/consent snapshot. Never hydrate the caller or draw RNG.
   function purchaseQuote(s,kind,index) {
-    check(s&&s.version===1,'Invalid purchase run.');validateLegacyWallet(s);validatePassiveMoney(s);
+    check(validateRunVersion(s),'Invalid purchase run version/mode.');validateLegacyWallet(s);validatePassiveMoney(s);
     var n=clone(s);hydrate(n);var item,amount,label;
     if(kind==='item'||kind==='item-use'){phase(n,['shop']);check(Number.isInteger(index)&&n.shop.items[index]&&!n.shop.items[index].sold,'Choose an available shop item.');item=n.shop.items[index];if(kind==='item-use')check(consumableById[item.id]&&['tarot','planet'].indexOf(item.type)>=0&&consumableById[item.id].type===item.type,'Only shop Tarot and Planet cards can be used immediately.');amount=itemPrice(n,item);label=item.name;}
     else if(kind==='pack'){phase(n,['shop']);check(Number.isInteger(index)&&n.shop.packs[index]&&!n.shop.packs[index].sold,'Choose an available pack.');item=n.shop.packs[index];check(packById[item.id],'Unknown Booster Pack.');amount=itemPrice(n,{type:'pack',id:item.id,price:item.price});label=item.name;}
-    else if(kind==='voucher'){phase(n,['shop']);item=n.shop.voucher;check(item&&!item.sold&&voucherById[item.id]&&!owned(n,item.id),'No voucher is available.');check(!UPGRADES[item.id]||owned(n,UPGRADES[item.id]),'Buy the first-tier voucher first.');amount=item.price;label=item.name;}
+    else if(kind==='voucher'){phase(n,['shop']);item=n.shop.voucher;check(item&&!item.sold&&voucherById[item.id]&&!owned(n,item.id),'No voucher is available.');check(!isBossRush(n)||['hieroglyph','petroglyph'].indexOf(item.id)<0,'Ante-reducing vouchers are unavailable in Boss Rush.');check(!UPGRADES[item.id]||owned(n,UPGRADES[item.id]),'Buy the first-tier voucher first.');amount=item.price;label=item.name;}
     else if(kind==='reroll'){phase(n,['shop']);amount=n.shop.rerollCost;label='Shop reroll';}
     else if(kind==='boss'){phase(n,['select','shop']);check(owned(n,'directors_cut')||owned(n,'retcon'),"Director's Cut or Retcon is required.");check(owned(n,'retcon')||!n.bossRerolled,'The Boss has already been rerolled this Ante.');amount=bossRerollCost(n);label='Boss reroll';}
     else check(false,'Unknown run-cash purchase.');
@@ -1274,6 +1312,7 @@
     // price, inventory, RNG, phase, capacity, purse and native credit dependency.
     var token=JSON.stringify([n._uiId||null,n.deckId,n.stake,kind,index===undefined?null:index,n.phase,n.ante,n.round,n.blindIndex,n.rng,n.nextId,n.progressionEnabled===true,n.playerLevel||null,n.money,n.wallet||null,n.shop,n.vouchers,n.jokers,n.jokerReserve||[],n.consumables,n.coinUnlocks||[],n.jokerSlots,n.consumableSlots,n.bossRerolled===true,n.bossId]);
     if(kind==='item-use')token=JSON.stringify([token,n.cards,n.levels,n.lastConsumable,n.tarotsUsed,n.planetTypes]);
+    if(isBossRush(n))token=JSON.stringify([token,n.version,n.runMode]);
     return {kind:kind,index:index===undefined?null:index,price:amount,label:label,token:token};
   }
   function jokerItem(s,rarity,forcedEdition,forcedId) {if(forcedId!==undefined)check(tutorialContexts.get(s)==='shop2'&&forcedId==='droll_joker','Only the native second tutorial shop may request Droll.');var def=forcedId===undefined?randomJoker(s,rarity):jokerById[forcedId],ed=forcedEdition===undefined?edition(s):forcedEdition;return rollShopStickers(s,{type:'joker',id:def.id,name:def.name,description:def.description,rarity:def.rarity,edition:ed,price:price(s,def.price+(ed==='foil'?2:ed==='holo'?3:ed==='poly'||ed==='negative'?5:0))});}
@@ -1295,7 +1334,7 @@
   }
   function generateShop(s) {
     var tutorial=tutorialContexts.get(s);if(tutorial)check(s.ante===1&&((tutorial==='shop1'&&s.round===1)||(tutorial==='shop2'&&s.round===2))&&s.deckId==='red'&&s.stake==='white'&&s.playerLevel===1,'Tutorial native shop no longer matches this run.');
-    var items=[],num=2+(owned(s,'overstock')?1:0)+(owned(s,'overstock_plus')?1:0);for(var i=0;i<num;i++)items.push(tutorial==='shop2'&&i===0?jokerItem(s,'common',null,'droll_joker'):shelfItem(s));var candidates=vouchers.filter(function(v){return !owned(s,v.id)&&(!UPGRADES[v.id]||owned(s,UPGRADES[v.id]));});
+    var items=[],num=2+(owned(s,'overstock')?1:0)+(owned(s,'overstock_plus')?1:0);for(var i=0;i<num;i++)items.push(tutorial==='shop2'&&i===0?jokerItem(s,'common',null,'droll_joker'):shelfItem(s));var candidates=vouchers.filter(function(v){return (!isBossRush(s)||['hieroglyph','petroglyph'].indexOf(v.id)<0)&&!owned(s,v.id)&&(!UPGRADES[v.id]||owned(s,UPGRADES[v.id]));});
     if(!s.anteVoucher||s.anteVoucher.ante!==s.ante)s.anteVoucher={ante:s.ante,id:candidates.length?pick(s,candidates).id:null,sold:false};
     var voucher=s.anteVoucher.id&&!s.anteVoucher.sold&&!owned(s,s.anteVoucher.id)?clone(voucherById[s.anteVoucher.id]):null;if(voucher){voucher.price=price(s,10);voucher.baseVoucher=true;}var packs=[clone(packItem(s)),clone(packItem(s))];if(!s.shopsVisited)packs[0]=clone(packById.buffoon);if(tutorial==='shop1')packs=[clone(packById.buffoon),clone(packById.standard)];s.shopsVisited=(s.shopsVisited||0)+1;packs.forEach(function(p){p.price=price(s,p.price);});
     var coupon=false,d6=0,voucherQueue=[];s.tags=s.tags.filter(function(t){var id=t.id;if(['uncommon','rare','negative','foil','holo','poly'].indexOf(id)>=0){var item=jokerItem(s,id==='uncommon'||id==='rare'?id:undefined,['negative','foil','holo','poly'].indexOf(id)>=0?id:undefined);item.price=0;items.push(item);return false;}
@@ -1304,7 +1343,7 @@
     if(coupon){items.forEach(function(i){i.price=0;});packs.forEach(function(p){p.price=0;});}
     s.shop={items:items,packs:packs,voucher:voucher,voucherQueue:voucherQueue,rerolls:0,baseRerollCost:d6?0:5,freeRerolls:count(s,'chaos_the_clown'),rerollCost:0};if(Foods)Foods.enterShop(s);s.shop.rerollCost=s.shop.freeRerolls?0:rerollCost(s,0);refreshPrices(s);
   }
-  function cashout(s) {phase(s,['cashout']);addMoney(s,s.payout.total);s.jokers.forEach(function(j){j.disabled=false;});s.roundHandBonus=0;s.firstRoundHand=null;if(s.ante===8&&s.blindIndex===2&&!s.endless){s.phase='won';note(s,'Eight Antes complete! Continue explicitly for endless mode.');return;}nextBlind(s);s.phase='shop';generateShop(s);}
+  function cashout(s) {phase(s,['cashout']);addMoney(s,s.payout.total);s.jokers.forEach(function(j){j.disabled=false;});s.roundHandBonus=0;s.firstRoundHand=null;if(isBossRush(s)){s.runMode.history.push(s.bossId);s.runMode.cleared++;if(s.runMode.cleared===5){s.phase='boss-rush-won';note(s,'Boss Rush complete: five distinct Bosses.');return;}s.ante=s.runMode.cleared+1;s.blindIndex=2;s.bossId=pickBoss(s);s.blindTags=[pick(s,tags).id,pick(s,tags).id];s.antePlayed=[];s.bossRerolled=false;s.stats.highestAnte=Math.max(s.stats.highestAnte,s.ante);s.phase='shop';generateShop(s);return;}if(s.ante===8&&s.blindIndex===2&&!s.endless){s.phase='won';note(s,'Eight Antes complete! Continue explicitly for endless mode.');return;}nextBlind(s);s.phase='shop';generateShop(s);}
   function continueRun(s) {phase(s,['won']);s.endless=true;nextBlind(s);s.phase='shop';generateShop(s);note(s,'Endless mode: Ante '+s.ante+'.');}
   function leaveShop(s) {phase(s,['shop']);var exitBindings=captureJokerBindings(s);eachAbility(s,exitBindings,'shopExit',function(j){if(j.id==='perkeo'&&s.consumables.length){var original=pick(s,s.consumables),c=clone(original);c.uid=uid(s,'u');c.edition='negative';s.consumables.push(c);}});s.phase='select';s.hand=[];s.drawPile=[];s.discardPile=[];s.firstRoundHand=null;}
   function buyFood(s,id,actualLevel) {phase(s,['shop']);check(Foods,'Keep food-effects.js and food-catalog.js with the game.');var food=Foods.buy(s,id,actualLevel);note(s,'Food ticket: '+food.name+' queued for the next Blind.');}
@@ -1320,7 +1359,7 @@
     item.sold=true;spendFoodCoupon(s,item);refreshPrices(s);note(s,'Bought '+item.name+' for $'+cost+'.');useConsumable(s,at,ids);
   }
   function reroll(s,payment) {phase(s,['shop']);var nativeCost=s.shop.freeRerolls>0?0:nativeRerollCost(s,s.shop.rerolls);payFor(s,s.shop.rerollCost,payment);if(Foods)Foods.spent(s,{kind:'reroll',price:nativeCost});if(s.shop.freeRerolls>0)s.shop.freeRerolls--;else s.shop.rerolls++;var n=2+(owned(s,'overstock')?1:0)+(owned(s,'overstock_plus')?1:0);s.shop.items=[];for(var i=0;i<n;i++)s.shop.items.push(shelfItem(s));s.shop.rerollCost=s.shop.freeRerolls>0?0:rerollCost(s,s.shop.rerolls);s.jokers.forEach(function(j){if(j.id==='flash_card'&&isJokerActive(j))j.counter+=2;});refreshPrices(s);}
-  function buyVoucher(s,payment) {phase(s,['shop']);var v=s.shop.voucher;check(v&&!v.sold,'No voucher is available.');check(voucherById[v.id]&&!owned(s,v.id),'This voucher is already owned.');check(!UPGRADES[v.id]||owned(s,UPGRADES[v.id]),'Buy the first-tier voucher first.');payFor(s,v.price,payment);spendFoodCoupon(s,v);s.vouchers[v.id]=true;v.sold=true;if(s.anteVoucher&&s.anteVoucher.id===v.id)s.anteVoucher.sold=true;
+  function buyVoucher(s,payment) {phase(s,['shop']);var v=s.shop.voucher;check(v&&!v.sold,'No voucher is available.');check(voucherById[v.id]&&!owned(s,v.id),'This voucher is already owned.');check(!isBossRush(s)||['hieroglyph','petroglyph'].indexOf(v.id)<0,'Ante-reducing vouchers are unavailable in Boss Rush.');check(!UPGRADES[v.id]||owned(s,UPGRADES[v.id]),'Buy the first-tier voucher first.');payFor(s,v.price,payment);spendFoodCoupon(s,v);s.vouchers[v.id]=true;v.sold=true;if(s.anteVoucher&&s.anteVoucher.id===v.id)s.anteVoucher.sold=true;
     if(v.id==='hieroglyph'){s.ante=Math.max(0,s.ante-1);s.handsBonus--;s.bossId=pickBoss(s);}if(v.id==='petroglyph'){s.ante=Math.max(0,s.ante-1);s.discardsBonus--;s.bossId=pickBoss(s);}if(v.id==='overstock'||v.id==='overstock_plus')s.shop.items.push(shelfItem(s));
     if(['clearance_sale','liquidation'].indexOf(v.id)>=0){var ratio=v.id==='liquidation'&&owned(s,'clearance_sale')?2/3:0.75;s.shop.items.concat(s.shop.packs,s.shop.voucher?[s.shop.voucher]:[],s.shop.voucherQueue||[]).forEach(function(i){if(!i.sold&&(i.basePrice===undefined?i.price:i.basePrice)>0)i.price=i.basePrice=Math.max(1,Math.floor((i.basePrice===undefined?i.price:i.basePrice)*ratio));});}
     s.shop.rerollCost=s.shop.freeRerolls?0:rerollCost(s,s.shop.rerolls);refreshPrices(s);note(s,'Redeemed '+v.name+'.');if(s.shop.voucherQueue&&s.shop.voucherQueue.length)s.shop.voucher=s.shop.voucherQueue.shift();}
@@ -1437,13 +1476,13 @@
       check(c.seal==null||Object.prototype.hasOwnProperty.call(SEALS,c.seal),'Unknown practice seal.');
       return {id:'lab-'+(i+1),rank:c.rank,suit:c.suit,enhancement:c.enhancement||null,edition:c.edition||null,seal:c.seal||null,bonusChips:0};
     });
-    spec.jokers.forEach(function(j){check(labFields(j,['id'],['edition','evolved'])&&Object.prototype.hasOwnProperty.call(jokerById,j.id)&&(j.edition==null||['foil','holo','poly','negative'].indexOf(j.edition)>=0)&&(j.evolved===undefined||typeof j.evolved==='boolean'&&(!j.evolved||j.id==='gluttonous_joker')),'Invalid practice Joker.');});
+    spec.jokers.forEach(function(j){check(labFields(j,['id'],['edition','evolved'])&&Object.prototype.hasOwnProperty.call(jokerById,j.id)&&(j.edition==null||['foil','holo','poly','negative'].indexOf(j.edition)>=0)&&(j.evolved===undefined||typeof j.evolved==='boolean'&&(!j.evolved||!!suitEvolution(j))),'Invalid practice Joker.');});
     var s=newRun('red',spec.seed);practiceRuns.add(s);
     try {
       atomic(startBlind)(s);
       // Keep a normal 52-card base deck, no held cards, no profile/earned events.
       s.cards=cs.concat(s.cards.slice(cs.length));s.hand=cs;s.drawPile=s.cards.slice(cs.length);s.discardPile=[];s.target=1e12;
-      s.jokers=spec.jokers.map(function(j){var x=jokerInstance(s,j.id,j.edition);if(j.evolved)x.evolution={version:1,clubs:50};return x;});refresh(s);
+      s.jokers=spec.jokers.map(function(j){var x=jokerInstance(s,j.id,j.edition);if(j.evolved){x.evolution={version:1};x.evolution[suitEvolution(j).key]=50;}return x;});refresh(s);
       var chosen=cs.map(function(c){return c.id;}),p=preview(s,chosen);s.levels[p.key]=spec.handLevel;p=preview(s,chosen);
       atomic(play)(s,chosen);
       var r=s.lastResult,safe={};['name','key','handLevel','chips','mult','total','lines','scoringTriggers','scoringCards','critEvents'].forEach(function(k){if(Object.prototype.hasOwnProperty.call(r,k))safe[k]=r[k];});
@@ -1453,7 +1492,7 @@
   function describeCard(c) {check(c&&SUIT_NAMES[c.suit],'Unknown playing card.');var lines=[(RANK_NAMES[c.rank]||c.rank)+' of '+SUIT_NAMES[c.suit]];if(c.enhancement)lines.push(ENHANCEMENTS[c.enhancement]||'Unknown enhancement.');else lines.push('Base card: +'+rankChips(c)+' Chips when scored.');if(c.edition)lines.push(EDITIONS[c.edition]||'Unknown edition.');if(c.seal)lines.push(SEALS[c.seal]||'Unknown Seal.');if(c.bonusChips)lines.push('Permanent bonus: +'+c.bonusChips+' Chips when scored.');if(c.debuffed)lines.push('Debuffed: no Chips, card effects, edition, Seal or card-triggered Joker effects.');if(c.faceDown)lines.push('Face down for this Blind.');return lines.join('\n');}
   return {version:1,decks:decks,stakes:stakes,jokers:jokers,tags:tags,planets:planets,tarots:tarots,spectrals:spectrals,vouchers:vouchers,bosses:bosses,packs:PACKS,enhancements:clone(ENHANCEMENTS),editions:clone(EDITIONS),seals:clone(SEALS),hands:clone(HANDS),
     achievements:[{id:'first_blind',name:'First Blind',description:'Win a Blind.'},{id:'ante_eight',name:'Eight Antes',description:'Defeat the Ante 8 Boss.'}],
-    isLabMarked:isLabMarked,validateJokerEvolution:validateJokerEvolution,validateRunEvolution:validateRunEvolution,evolutionInfo:evolutionInfo,simulate:simulate,validateDeckProfile:validateDeckProfile,deckDescription:deckDescription,withPokerEvents:withPokerEvents,withTutorialPolicy:withTutorialPolicy,prepareTutorial:atomic(prepareTutorial),newRun:newRun,evaluate:evaluate,preview:preview,selectionLimit:selectionLimit,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
+    isLabMarked:isLabMarked,validateRunVersion:validateRunVersion,validateRunMode:validateRunMode,validateJokerEvolution:validateJokerEvolution,validateRunEvolution:validateRunEvolution,evolutionInfo:evolutionInfo,simulate:simulate,validateDeckProfile:validateDeckProfile,deckDescription:deckDescription,withPokerEvents:withPokerEvents,withTutorialPolicy:withTutorialPolicy,prepareTutorial:atomic(prepareTutorial),newRun:newRun,evaluate:evaluate,preview:preview,selectionLimit:selectionLimit,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
     setHandSort:atomic(setHandSort),setLevel10Deal:atomic(setLevel10Deal),setPotionState:atomic(setPotionState),drinkPotion:atomic(drinkPotion),setCoinUnlocks:atomic(setCoinUnlocks),setPlayerLevel:atomic(setPlayerLevel),disableBossOnce:atomic(disableBossOnce),mothimAttack:atomic(mothimAttack),startBlind:atomic(startBlind),skipBlind:atomic(skipBlind),play:atomic(play),discard:atomic(discard),cashout:atomic(cashout),buyFood:atomic(buyFood),buy:atomic(buy),buyUse:atomic(buyUse),reroll:atomic(reroll),buyVoucher:atomic(buyVoucher),openPack:atomic(openPack),openPendingTagPack:atomic(openPendingTagPack),choosePack:atomic(choosePack),sellJoker:atomic(sellJoker),moveJoker:atomic(moveJoker),useConsumable:atomic(useConsumable),sellConsumable:atomic(sellConsumable),abandon:atomic(abandon),continueRun:atomic(continueRun),leaveShop:atomic(leaveShop),nextRound:atomic(leaveShop),rerollBoss:atomic(rerollBoss),sellValue:sellValue,
     coverage:{decks:decks.length,jokers:jokers.length,tarots:tarots.length,planets:planets.length,spectrals:spectrals.length,vouchers:vouchers.length,tags:tags.length,bosses:bosses.length,stakes:stakes.length,stickers:3},
     _test:{addJoker:function(s,id,edition){return addJoker(s,id,edition);},addConsumable:function(s,id){return addConsumable(s,id);},grantTag:function(s,id){grantTag(s,id);},generateShop:function(s){generateShop(s);},rollShopStickers:rollShopStickers,chance:chance,edition:edition,resolveJokerAbility:resolveJokerAbility,captureJokerBindings:captureJokerBindings,eachAbility:eachAbility}
