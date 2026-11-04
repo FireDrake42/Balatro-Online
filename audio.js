@@ -40,7 +40,7 @@
   const GAME_AUDIO = root.BOGameAudioData;
   const SFX_NAMES = new Set(['select', 'deselect', 'deal', 'discard', 'play', 'chip',
     'mult', 'xmult', 'joker', 'coin', 'purchase', 'pack', 'win', 'lose', 'error', 'click', 'xp', 'money_gain', 'battery_charge',
-    'poker_select', 'poker_unselect', 'poker_level_up', 'interest_critical', 'slots_lock_left', 'slots_lock_middle', 'slots_lock_right', ...Object.keys(GAME_AUDIO?.sounds || {})]);
+    'poker_select', 'poker_unselect', 'poker_level_up', 'interest_critical', 'slots_lock_left', 'slots_lock_middle', 'slots_lock_right', 'faucet_tick', ...Object.keys(GAME_AUDIO?.sounds || {})]);
   const COALESCE = { deal: 0.018, chip: 0.027, mult: 0.035, xmult: 0.075,
     joker: 0.05, win: 0.25, lose: 0.25, pack: 0.12, purchase: 0.08, xp: 0.4, money_gain: 0.1, battery_charge: 0.8,
     poker_select: 0.045, poker_unselect: 0.045, poker_level_up: 0.55, interest_critical: 0.16,
@@ -460,6 +460,13 @@
   });
   const trackId = (id, level) => tracksForPlayerLevel(actualPlayerLevel(level)).some(track => track.id === id) ? id : DEFAULTS.track;
 
+  function faucetTickSound(graph,at,options){
+    const intensity=unit(options&&options.intensity,1),v=voice(graph,'fx',at,0,0.05);
+    tone(graph,v,at,84,0.055,0.05*intensity,'sine',2400,0.004,0.22);
+    tone(graph,v,at+0.004,96,0.035,0.009*intensity,'sine',3000,0.003,0.2);
+    return v;
+  }
+
   function effect(graph, name, at, options) {
     if(GAME_AUDIO?.sounds[name])return gameSound(graph,GAME_AUDIO.sounds[name],at,options);
     if(name==='poker_select'||name==='poker_unselect'||name==='poker_level_up')return pokerSound(graph,name,at,options);
@@ -467,6 +474,7 @@
     if(name==='money_gain')return moneyGainSound(graph,at,options);
     if(name==='battery_charge')return batteryChargeSound(graph,at,options);
     if(name==='slots_lock_left'||name==='slots_lock_middle'||name==='slots_lock_right')return slotsLockSound(graph,name,at,options);
+    if(name==='faucet_tick')return faucetTickSound(graph,at,options);
     const intensity = unit(options && options.intensity, 1);
     const rawPitch = number(options && options.pitch, 0);
     const step = PENTATONIC[clamp(Math.floor(rawPitch), 0, PENTATONIC.length - 1)];
