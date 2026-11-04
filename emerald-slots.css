@@ -80,7 +80,16 @@
 .emerald-slots .slots-symbol-coin { color: #76500b; }
 .emerald-slots .slots-coin-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 3px double #8d5d12; background: #f2ce68; text-shadow: 0 1px #ffffc5; font-size: 23px; }
 .emerald-slots .slots-symbol-unknown { color: #597367; background: repeating-linear-gradient(0deg, #e4ede7 0 15px, #d6e1da 15px 30px); }
-.emerald-slots .slots-reel-waiting .slots-symbol-unknown { animation: slots-pending-breathe 2.5s ease-in-out infinite alternate; }
+/* Fixed low-contrast decoration translates continuously, never flashes/fades.
+   Actual symbols are still revealed exclusively by the native public lock. */
+.emerald-slots .slots-reel { position: relative; overflow: hidden; --slots-row-pitch: 73px; }
+.emerald-slots .slots-motion { display: none; position: absolute; inset: 0; padding: 0; margin: 0; overflow: hidden; }
+.emerald-slots .slots-reel-moving > .slots-symbol { opacity: 0; }
+.emerald-slots .slots-reel-moving > .slots-motion { display: block; }
+.emerald-slots .slots-visual-track { display: grid; grid-template-rows: repeat(48, var(--slots-row-pitch)); height: calc(48 * var(--slots-row-pitch)); width: 100%; will-change: transform; }
+.emerald-slots .slots-visual-cell { display: flex; align-items: center; justify-content: center; color: #577568; background: #e4ede7; border: 1px solid #d7e3dc; font-size: clamp(28px, 7vw, 46px); font-weight: 800; line-height: 1; }
+[data-slots-motion="reduced"] .slots-reel-moving > .slots-motion { display: none; }
+[data-slots-motion="reduced"] .slots-reel-moving > .slots-symbol { opacity: 1; }
 .emerald-slots .slots-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
 .emerald-slots .slots-actions > button { flex: 1 1 160px; }
 .emerald-slots .slots-pending-note { font-size: .72rem; line-height: 1.5; color: #d0ded6; text-align: center; margin-top: 10px; }
@@ -124,10 +133,12 @@
   .emerald-slots .slots-counters p { padding: 8px 4px; }
   .emerald-slots .slots-counters span { font-size: .7rem; }
   .emerald-slots .slots-counters strong { font-size: .96rem; }
-  .emerald-slots .slots-reel { grid-template-rows: repeat(3, 64px); }
+  .emerald-slots .slots-reel { grid-template-rows: repeat(3, 64px); --slots-row-pitch: 67px; }
   .emerald-slots .slots-companion-photo { width: 108px; height: 103px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .emerald-slots .slots-reel-moving > .slots-motion { display: none; }
+  .emerald-slots .slots-reel-moving > .slots-symbol { opacity: 1; }
   .emerald-slots *, .emerald-slots *::before, .emerald-slots *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 [data-reduced-motion="true"] .emerald-slots *, .reduced-motion .emerald-slots *, .emerald-slots[data-reduced-motion="true"] * { animation: none !important; transition: none !important; }
