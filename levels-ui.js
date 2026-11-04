@@ -122,11 +122,14 @@ function paintFaucetClaim(f){
  document.querySelectorAll('[data-faucet-claim-control]').forEach(node=>{node.dataset.faucetState=v.status});const button=$('#faucet-begin');if(button){button.disabled=!v.ready;button.title=v.caption}
 }
 function paintFaucetCaption(button,ready,ms,unlocked){
- button.removeAttribute('data-i18n');button.removeAttribute('data-i18n-params');button.textContent=unlocked?'Open Faucet →':'Faucet · Lv25';
+ // Display only: ms/ready are the existing canonical snapshot, never an admission or clock.
+ const locale=globalThis.BOTranslation?.getLocale?.(),copy=locale==='es'?{name:'Grifo',ready:'Grifo listo',unavailable:'Grifo no disponible',locked:'Grifo · Nv25'}:locale==='fr'?{name:'Robinet',ready:'Robinet prêt',unavailable:'Robinet indisponible',locked:'Robinet · Niv25'}:{name:'Faucet',ready:'Faucet ready',unavailable:'Faucet unavailable',locked:'Faucet · Lv25'};
+ const text=!unlocked?copy.locked:!Number.isFinite(ms)||ms<0?copy.unavailable:ms>0?copy.name+' · '+time(ms):ready===true?copy.ready:copy.unavailable;
+ button.removeAttribute('data-i18n');button.removeAttribute('data-i18n-params');if(button.textContent!==text)button.textContent=text;
 }
 function refreshClock(){
  // A read-only timer can outlive its paused owner. Never invent replacement financial config.
- if(!api||!P())return;if(!P().buffs(progress().level).faucet){paintEmeraldAssist(null);faucetNotice(null);return}let f;try{f=info()}catch(_){paintEmeraldAssist(null);faucetNotice(null);paintFaucetClaim(null);return}paintEmeraldAssist(f);faucetNotice(f);if(document.hidden)return;
+ if(!api||!P())return;if(!P().buffs(progress().level).faucet){paintEmeraldAssist(null);faucetNotice(null);return}let f;try{f=info()}catch(_){paintEmeraldAssist(null);faucetNotice(null);paintFaucetClaim(null);const button=$('#faucet-hud-button');if(button)paintFaucetCaption(button,false,NaN,true);return}paintEmeraldAssist(f);faucetNotice(f);if(document.hidden)return;
  const daily=$('.faucet-activity'),resetAt=Number(daily?.dataset.resetAt);if(daily&&resetAt>0&&Date.now()>=resetAt)daily.outerHTML=faucetActivity(f);
  document.querySelectorAll('.faucet-claim-xp').forEach(el=>{const text=xpNumber(f.awardedXp??f.awardXp??10)+' XP';if(el.textContent!==text)el.textContent=text});document.querySelectorAll('.faucet-new-cooldown').forEach(el=>{const text=time(f.cooldownMs);if(el.textContent!==text)el.textContent=text});
  const ms=f.remainingMs,ready=claimable(f),button=$('#faucet-hud-button');if(button){paintFaucetCaption(button,ready,ms,true);button.dataset.claimable=String(ready);if(ready)_auxSetAttribute(button,"title","aux.levels.ui.1cdb8be03cfb","Open the faucet and solve the claim challenges");else if(ms>0)_auxSetAttribute(button,"title","aux.levels.ui.6585a1662410","Next claim in {value1}",{value1:time(ms)});else _auxSetAttribute(button,"title","aux.levels.ui.ed701c907008","The current balance, save ownership or clock cannot accept a claim.");}
