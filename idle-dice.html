@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111d">
+<title>Idle Dice · Starlight Lab · Original Games</title>
+<link rel="stylesheet" href="game.css">
+<link rel="stylesheet" href="../fonts.css">
+<script defer src="../manual-restoration-model.js" integrity="sha384-EHDmA/i35vIBzLbX3o02lKUMOSq8OXil0ioGFdGU2QFKroAsFSiJDGY4qbsiIGgZ" crossorigin="anonymous"></script>
+<script defer src="../emerald-poker.js" integrity="sha384-203tSa9+3IMhN8Y80Z+IsurhserucUsERoKplKyPf+rDSI9HET9HEb6xbe//ECgO" crossorigin="anonymous"></script>
+<script defer src="../emerald-poker-events.js" integrity="sha384-s3qYFMtjtf+PBtYshk+cjHz0QvLrCq8ZIkwDkRqWRaPXPu8b0xNZCDGQ/Qqr0xkX" crossorigin="anonymous"></script>
+<script defer src="../emerald-friendship.js" integrity="sha384-oSET5jocj3Ok0lDbEhwoGIF8eDOc2215wH7X5huztf6DJ/vyoeS2rCl5rNMXl8GZ" crossorigin="anonymous"></script>
+<script defer src="../emerald-strict-poker.js" integrity="sha384-uhGcr09RHLmCUex2JtPGnu+ns6wwPG4TzCvsGNpZPZh+V/ywx9VdCgNo0urjdwpw" crossorigin="anonymous"></script>
+<script defer src="../xp-cost-policy.js" integrity="sha384-zJ/OCb4iSXZ2kddJ5UOJ4NGInxIq4NQ9MPtc9SZJMXY/n22krkJb5J1I3JTk12TP" crossorigin="anonymous"></script>
+<script defer src="../emerald-slots.js" integrity="sha384-ZCgiPkszz2H7co1TPQKqIuFNenfhJPv5OBhCUas6fa331dwD97kXYnhXAGcz9TGB" crossorigin="anonymous"></script>
+<script defer src="game-engine.js" integrity="sha384-kQNIlYWFOJO3n6jsHAe9G0RQi8Lh/IyZ8H4sUEXQadB3cuC1uoQzflEtpGQoLL3T" crossorigin="anonymous"></script>
+<script defer src="../arcade-cycle-data.js" integrity="sha384-TnWXurP91MZ3silutAYMowwxXIpG0f3+UGQL/fhdNPJgD4R9O2Ypo2mwVohc035Q" crossorigin="anonymous"></script>
+<script defer src="../game-offers.js" integrity="sha384-uC+XVFMIW6Hn+nlkv01pcYsZl1btU+Cc/9pfppRZDXFqBu0Z7HD+dheyoM/EPSpX" crossorigin="anonymous"></script>
+<script defer src="../expansion-rewards.js" integrity="sha384-Tl7CQPSLHk2ayDMP36x1VJhqDIHN4iDcbqWHS4iMYpN9fWeWapsahBAIrngmILll" crossorigin="anonymous"></script>
+<script defer src="../expansion-profile.js" integrity="sha384-D5qhrE0ilhr7SR+U9VRQSyBChuLR/saIx0EtYRgdlbdw/KnNqBPCyc0yi0UDzr6v" crossorigin="anonymous"></script>
+<script defer src="../emerald-poker-profile.js" integrity="sha384-kChzBv8tJOcNG7BVyZjMGAF3bjcgy3y2q/6XkN85wEOfoIIU5UMkGH3fVBVEH35Y" crossorigin="anonymous"></script>
+<script defer src="../potions.js" integrity="sha384-J7Hc/hja5ZSr/Mlh984ePrlwi3SGFDccPtv7WAjvzAtjoJ9XnmOlTfJJh0UmWVtf" crossorigin="anonymous"></script>
+<script defer src="../feature-power.js" integrity="sha384-6dYuqaTrS3n8j8PVSFTF1lToMkK1uM8MKiHkP4jS4chS2QGK50pd28xkcmvxbDtH" crossorigin="anonymous"></script>
+<script defer src="../battery-display.js" integrity="sha384-7TR2snDb/urhdU46n90svRDCK/+ld2KzM60psU2phtM7nnbyI0tGXNSjdfBkycve" crossorigin="anonymous"></script>
+<script defer src="../battery.js" integrity="sha384-GTN9pr3fWiQQWEzdUJtzW1QvebW9kjoGb6NOM6JlH4HIPVTyNQ+S/0etL7knK3EM" crossorigin="anonymous"></script>
+<script defer src="../passive-money.js" integrity="sha384-kUMcaREMLj/yKJnkJpDWXgAMDqd9IXvcVTg2sftHCxyujnBwwSbdlgHH8RKipf7j" crossorigin="anonymous"></script>
+<script defer src="../run-wallet.js" integrity="sha384-40ZO41gJUs6GIVp4sCvp5+82iIUAhfzAkc9VU27W2Rav2EGbQM9TflL038e6xvhJ" crossorigin="anonymous"></script>
+<script defer src="../frenzy.js" integrity="sha384-oFfVelQScj1lUD8MSLnPoLLk27WuWrVj7CkZdIgGPHZnmjsp2y0StDYw1b8vzoiq" crossorigin="anonymous"></script>
+<script defer src="../food-catalog.js" integrity="sha384-uHaEU3OOE8VOSTg0TjUqmhwtyGE3JUD2HhM25pc7g5i6AW/TrAnUpOB7KyLPnmpJ" crossorigin="anonymous"></script>
+<script defer src="../food-effects.js" integrity="sha384-ezogX/ux6JxjgQn5SFnqdsU25rYiMqYJOSv6jo4mKQ5QPs/8sWgUn6kY/lHxPrPA" crossorigin="anonymous"></script>
+<script defer src="../tutorial-native-policy.js" integrity="sha384-DjPAu+x0BBIdHe7P1/Vgh/CWqsrxeGG0RrYwkEospQtaaxa689dra9Att4BJphES" crossorigin="anonymous"></script>
+<script defer src="../engine.js" integrity="sha384-72TcBU9SBSLL6DaiFEIBhIlJPDY0J8sBBqr37/tOZGniW6KxA1Ll0JX0436akiFh" crossorigin="anonymous"></script>
+<script defer src="../achievements-data.js" integrity="sha384-J089OwjTERmaKDQ/3QycSH/FX+L3qTYX+xs/6fnygELrphTBERiEPi4HDlPdfp7G" crossorigin="anonymous"></script>
+<script defer src="../late-level-costs.js" integrity="sha384-QcWDEXvMkU1RzRMGS0CiSGmXh9FCFsFuB5w6B2IZhEWZyZfwh7UlMonlT7NlHZO2" crossorigin="anonymous"></script>
+<script defer src="../late-level-rules.js" integrity="sha384-I8zxbT+U75DQndHucQ/TQ0d/TueRmsqJpRZ4eR8ASCtN7Iv4WPsH5+5iCUSnDKFo" crossorigin="anonymous"></script>
+<script defer src="../progression.js" integrity="sha384-OCIN6rZZnXenuRNgz5G1jx0sXLebI3Z6SegT3RZUU7bjagFGBpPdzAcAN4M5iipG" crossorigin="anonymous"></script>
+<script defer src="../passive-xp.js" integrity="sha384-+PBw+HIMyQF5lYZFr9yIsRZf5cHGSGhvwyST79a/+wr6J9c8KeGFZXL2q0PPB2lM" crossorigin="anonymous"></script>
+<script defer src="../interest-settings.js" integrity="sha384-QPyIxovtXuNYeRS0LnEherfVqYuNCIJ32KgMn8MlFXxFGc85z6QEuYvDxrCcSc0R" crossorigin="anonymous"></script>
+<script defer src="../interest-legacy.js" integrity="sha384-vQujc0/iMTp+C+ygQbBUBtfCGLJeaV1gMWXhe/ylWmvOVAAv0ijxfn6ty7yVRD0i" crossorigin="anonymous"></script>
+<script defer src="../compound-interest-proof.js" integrity="sha384-HORTsP8QD1m+eyvPT67fU7X61qGpxoyLJ5KPjOkg4eID+dgpwZk8jPUirpuDN9py" crossorigin="anonymous"></script>
+<script defer src="../exp-interest.js" integrity="sha384-9nzRKpTbzm4rRysCnenaE7dZWkAgYHTGSz2Xn33X8Jhhbo9DAXvJRqxfBaGd1AF+" crossorigin="anonymous"></script>
+<script defer src="../collection-tracking.js" integrity="sha384-RGCns/qMZFVpgG0phxGiatID/DPLi2rsG50uTBrNTjvuapQabBhmemUs10jLrroE" crossorigin="anonymous"></script>
+<script defer src="../game-audio-data.js" integrity="sha384-qpTrh8uZVnB2/zlXxnaWEnwPoklcoa9hKn7F9NvJUeeGbk6z1AUaZREfnhvyIFGN" crossorigin="anonymous"></script>
+<script defer src="../audio.js" integrity="sha384-X5CTAaDA9M+0nsMvuXfQckRrGs0X0CGm9fcXToQbXSDLbf0qGM/eNm02su3MzMMl" crossorigin="anonymous"></script>
+<script defer src="../stats.js" integrity="sha384-KQE6KudpBGO+IozSwEbk7/ipN7VaQYV3jfqHauYyrWfS25zJ6F9rg/zVKc7eJRvY" crossorigin="anonymous"></script>
+<script defer src="../stock-market.js" integrity="sha384-Zrj9qp8rjsrnEIEXgLJDxxICHKkqzFvgH4OoPH99eBkufDAV7rqAnqG/HdGbtKMw" crossorigin="anonymous"></script>
+<script defer src="../daily-streak.js" integrity="sha384-TcZrdk7PxI3y9urckN+x6lcWh2AsqajOMXNKr2/nRKblPL/ySs48x40vmHm0bD6f" crossorigin="anonymous"></script>
+<script defer src="../daily-tasks.js" integrity="sha384-4ToPzWQ4K8KgusQBEXZYN6+ijjXXcTrxzrwJbLqbbWRbPDWfhEOyM30wtNjohgFV" crossorigin="anonymous"></script>
+<script defer src="../surveys.js" integrity="sha384-eN0E6nW2kAfRKCr1BVHbrJebTB9irTJtF8QRlUDqaSNZDn366CHINS2N8zr5ZrVB" crossorigin="anonymous"></script>
+<script defer src="../player-identity.js" integrity="sha384-x6xX6Fvvm+0BdPUs2ay6qHvsUnCvOEaiHV1FgTrJoH/bDW2526vWipvBvMoHR/DJ" crossorigin="anonymous"></script>
+<script defer src="../survey-runner.js" integrity="sha384-xy5o5AtSSeLs7+Rutasua2OwXbFkY6tgvn0b8h5aS67lANrKOOShHRvKSdPvwm5W" crossorigin="anonymous"></script>
+<script defer src="../surveys-ui.js" integrity="sha384-5wG4VLj5eybFoAxj+S3Y3ZcdvbGBDQWGkCmQyxdEpDMTHGw7sVyTOzqJjKnHQ9pT" crossorigin="anonymous"></script>
+<script defer src="../custom-images.js" integrity="sha384-PHJjiiduQbi3zWCHuRiVQyNv4g+DYJilcDClXflvr3t5QJapA8ItmnKEXcm6OKR9" crossorigin="anonymous"></script>
+<script defer src="../moving-panels.js" integrity="sha384-P2Fypprl9Y2/GK1hjmohc2C+ExLeY5QlNx4pnSmyJZPUrAqZsAAHT2QzkBwp1iNL" crossorigin="anonymous"></script>
+<script defer src="../text-customization.js" integrity="sha384-19EdrCj8zGkT87os5/aJTP+9qRRTCSYwsx+UUzsbf52gucnL/hhM6euajPV5PoDX" crossorigin="anonymous"></script>
+<script defer src="../emerald-progress.js" integrity="sha384-1L1h0ovIewxP3n3XGO/i0T7WwNQAgHlAChFV7+ziJCWL7iAppdHoT3wmdm7U+QnZ" crossorigin="anonymous"></script>
+<script defer src="../emerald-blackjack.js" integrity="sha384-UB53jU3e72wsei+PYpBNX8Gx8x2l8g40jd5yGuXe7iGSxK3+QYvOPRJZjzzNwoSn" crossorigin="anonymous"></script>
+<script defer src="../emerald-workshop.js" integrity="sha384-5Jx08977sJv+RPx6+in8Ep6EO106uEqfYKiHVf/wIX8VNxyTW3afz+G274gfXYeB" crossorigin="anonymous"></script>
+<script defer src="../emerald-runtime.js" integrity="sha384-/PimnCHKs5RjSYOBfVfLYDuEEl7rZUUqtTlzjefEljLlJLuaDWXzvqJATzvAi7Eh" crossorigin="anonymous"></script>
+<script defer src="../native-feature-transaction.js" integrity="sha384-MePnnkehI/joaZ4f0MUc07G2xYcypXq+rQLowONUwNxztT7fLhSbQo72grRH8Syj" crossorigin="anonymous"></script>
+<script defer src="../tutorial-native-model.js" integrity="sha384-no8+uskNyNImg+8gKNNwdTHTemb4lUTbHNdoirf+hzVE/zz5k65SzydeMGSNkSLK" crossorigin="anonymous"></script>
+<script defer src="../native-quiet-story.js" integrity="sha384-l0h/elPl6ehJ0+ZSfcAcsH/PnNFopqxVgQb2zyol1lR0or1KTz8srVQlotp9bNZb" crossorigin="anonymous"></script>
+<script defer src="../emerald-chill-games.js" integrity="sha384-BfEjRCSkZjluIINs1RcM2qJ+NIngv9sxBvRaZ58CZUWDE3vFGtCnuujX0S9wvQaF" crossorigin="anonymous"></script>
+<script defer src="../darts-501.js" integrity="sha384-8QeAEZAuuNOMsfLcV+Zi7MBFOm5YHonH9QSsvsu/RG7bgm/U2usT8bpx8kWJvwSA" crossorigin="anonymous"></script>
+<script defer src="../darts-native.js" integrity="sha384-ulRS73Vpl4BgAJAm5IitrWIMPSxKugAcCcww8k/rLp4BXXC2ObZDBh77z38/gPy5" crossorigin="anonymous"></script>
+<script defer src="../native-speech.js?three=47923d657b1aa91b" integrity="sha384-ot/dS2a174m8x2SCpXEQ1AI5za9EUEUYZYcns+oOzQaBFH7oPFfAYlWeDknf8GiA" crossorigin="anonymous" data-sha256="47923d657b1aa91b152f58708cb70bf3fbed1901f4bfb54a6928cc93f47f1769"></script>
+<script defer src="../cloud-save.js" integrity="sha384-V/85Pmlf9mJeCQZtGnugL2k+3fIbj1XBD1rJ0aUzRcJpgXLq2QgHR0PmsGu1JBVk" crossorigin="anonymous"></script>
+<script defer src="../save-slots.js" integrity="sha384-rgaQ3QAazZrF2RBkFLGW+/SPrzqwiUlizyVgVZAXwtXwhgQuXLOnVtC9mD7Bqwu8" crossorigin="anonymous"></script>
+<script defer src="../emerald-conduct.js" integrity="sha384-CDKoOops5jn1bcx42MBVR19+r2Wy6dQAGd0zjiD7HPu43rfvv3Yk1+NvIkCy6b0V" crossorigin="anonymous"></script>
+<script defer src="../native-player-xp.js" integrity="sha384-5PTKMX97EbQom9iLHesVQlqEm0WribAyX+GaaV20OKpwSzu40SZeQtnYdS/ZdpFi" crossorigin="anonymous"></script>
+<script defer src="../achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script>
+<script defer src="../native-profile-host.js" integrity="sha384-6zTnUMG5frLGMbzCdiq30EKAU1Fj/EayN1ocy97sY37jsNzy79Ibyzfy8I3MV/J4" crossorigin="anonymous"></script>
+<script defer src="game-renderer.js" integrity="sha384-gsJ4DG/9bYr93+6Mzzz+ja9tckP6wtQ+t5Ugea9ZnqoqLi9jmvptJVJJo8zWJ2R3" crossorigin="anonymous"></script>
+<script defer src="profile-xp-host.js" integrity="sha384-NoqNiYbd9tiKMoo+9HHXDLUE31MQU75IHhts+kbhGHebaf2lb57hHOtKLzrBQn3T" crossorigin="anonymous"></script>
+<script defer src="game-runtime.js" integrity="sha384-CniLmZxtyYUqI+BKxjFh39+8PFrQn99GnFSK87zYcRhD8K3eoHmxUMYEu2VB7Oy7" crossorigin="anonymous"></script>
+</head>
+<body data-game="idle-dice">
+<main class="game-shell">
+<header class="game-top"><span class="game-wordmark">ORIGINAL GAMES / LOCAL ARCADE</span><a class="game-back" id="game-back" href="../index.html">← Main game &amp; rewards</a></header>
+<section class="game-heading"><h1 id="game-title">Idle Dice · Starlight Lab</h1><p id="game-instructions">Open this original game from the main website’s Level 50 Games offers.</p></section>
+<div class="game-layout">
+<section class="game-stage" aria-label="Gameplay">
+<canvas class="game-canvas" id="game-canvas" width="600" height="360" tabindex="0" role="img" aria-label="Idle Dice · Starlight Lab gameplay">Use the accessible touch buttons or keyboard controls below to play. Gameplay status is also presented as text.</canvas>
+<p class="game-canvas-caption">Keyboard &amp; touch controls · P pauses and saves · no hidden/offline minigame earnings</p>
+<div class="game-main-actions"><button class="game-toggle" id="game-toggle" type="button" disabled>Start / Resume</button><button class="game-save" id="game-save" type="button">Save &amp; Pause</button></div>
+<p class="game-save-status" id="game-save-status" role="status" aria-live="polite">Checking the same-origin offer and exclusive gameplay save lock…</p>
+<p class="game-return-reminder">Your minigame progress stays in this browser. Return to the main game, or reload it, to collect verified completed milestones into your main profile.</p>
+</section>
+<aside class="game-panel" aria-label="Game status and controls">
+<div class="game-metric" id="game-metric">0 progress</div>
+<h2 class="game-primary" id="game-primary">Loading your saved game…</h2>
+<p class="game-detail" id="game-detail"></p>
+<label class="game-progress-label" id="game-goal-label" for="game-goal-progress">Next goal</label>
+<progress class="game-progress" id="game-goal-progress" value="0" max="100"></progress>
+<div class="game-controls" id="game-controls" aria-label="Accessible gameplay controls"></div>
+</aside>
+</div>
+<p class="game-footnote"><strong>Real local gameplay, honest local limits.</strong> Original artwork and rules, no third-party website, account, install or payment. This game’s selected-slot/generation-bound action journal remains independent. Genuine foreground buttons at Player60+ may award FINAL5 Player XP through the full native PROFILE/RUN owner; if unavailable, no XP is owed or retried. Verified milestone rewards are still collected in the main app. These replay receipts are local integrity checks, not server anti-cheat. If saving is uncertain, keep browser data and reload safely; never clear or reset to recover a reward.</p>
+<noscript><p class="game-nojs">JavaScript is required for these original browser games. No profile or reward has been changed.</p></noscript>
+</main>
+</body>
+</html>
