@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; img-src data:; media-src 'none'; font-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="data:,">
+<title>Switch 2 browser CHECK r1 - not the game</title>
+<style>
+html{background:#102128;color:#f1f6f8;font:18px/1.4 Arial,sans-serif}
+body{max-width:1100px;margin:0 auto;padding:18px}
+h1{font-size:26px;margin:0 0 8px;color:#f6d98d}
+h2{font-size:21px;margin:12px 0 6px}
+p{margin:7px 0}
+section{border:1px solid #7995a1;border-radius:9px;padding:12px;margin:12px 0;background:#182e37}
+pre{font:17px/1.4 monospace;white-space:pre-wrap;word-wrap:break-word;margin:7px 0}
+button{font:inherit;min-height:48px;padding:9px 16px;border:1px solid #d4e5ed;
+ border-radius:7px;background:#285466;color:white;cursor:pointer}
+.note{color:#d4e3e9;font-size:16px}
+#status{font-weight:bold;color:#ffe5a1}
+#details{display:none}
+@media(max-width:600px){body{padding:12px}h1{font-size:23px}pre{font-size:16px}}
+</style>
+</head>
+<body>
+<h1>Switch 2 browser CHECK, not the game</h1>
+<p class="note">Check ID: switch2-readonly-check-r1. No game files or save values are loaded.</p>
+<section>
+<p id="status" role="status">HTML loaded. JavaScript has not run.</p>
+<p class="note">If that line stays unchanged, photograph this screen. It does not yet tell us why the script did not run.</p>
+<pre id="context">Browser information will appear here if the check runs.</pre>
+</section>
+<section>
+<h2>Photograph these results</h2>
+<pre id="summary">No checks have run.</pre>
+<pre id="syntax-summary">Syntax checks have not run.</pre>
+<p class="note">API presence and syntax results are clues, not a diagnosis of the game's loading problem.</p>
+</section>
+<p id="safety" class="note">NOT tested: game startup, actual game version, script/SRI delivery, save reading or writing, storage access, quota, or save durability. Even if every check passes, the game may still fail.</p>
+<p class="note">This page makes no background requests. It does not open the game, access saves, register a worker, change settings, or contact an account. Results stay on this screen. No need to reload repeatedly.</p>
+<button type="button" id="details-button">Show all checks</button>
+<div id="details">
+<section><h2>API presence only</h2><pre id="api">Not run.</pre></section>
+<section><h2>Syntax only</h2><pre id="syntax">Not run.</pre></section>
+</div>
+<script id="check-script">
+(function(root){
+ 'use strict';
+ var doc=root.document;
+ function el(id){return doc.getElementById(id);}
+ function text(id,value){
+  var n=el(id);if(!n)return;
+  while(n.firstChild)n.removeChild(n.firstChild);
+  n.appendChild(doc.createTextNode(String(value)));
+ }
+ function errorName(e){
+  try{return e&&typeof e.name==='string'?e.name:'unknown error';}
+  catch(ignore){return 'unknown error';}
+ }
+ function fn(label,getter,optional){
+  var state;
+  try{state=typeof getter()==='function'?'present':'absent';}
+  catch(e){state='unknown ('+errorName(e)+')';}
+  return {label:label,state:state,optional:!!optional};
+ }
+ function storagePresence(name){
+  try{return name+': '+(name in root?'present (presence only; not accessed)':'absent');}
+  catch(e){return name+': unknown ('+errorName(e)+')';}
+ }
+ try{
+  text('status','JavaScript is running. Reading API presence only.');
+  var nav=root.navigator||{},context=['Check: switch2-readonly-check-r1'],ua='unavailable';
+  try{if(typeof nav.userAgent==='string')ua=nav.userAgent.slice(0,384);}
+  catch(ignoreUA){}
+  context.push('UA: '+ua);
+  try{context.push('Scheme/host: '+root.location.protocol+'//'+root.location.host);}
+  catch(ignoreLocation){context.push('Scheme/host: unavailable');}
+  try{context.push('Secure context: '+(typeof root.isSecureContext==='boolean'?
+   String(root.isSecureContext):'unknown (property absent)'));}
+  catch(ignoreSecure){context.push('Secure context: unknown');}
+  text('context',context.join('\n'));
+  var rows=[
+   fn('Object.hasOwn',function(){return root.Object.hasOwn;}),
+   fn('Object.fromEntries',function(){return root.Object.fromEntries;}),
+   fn('Object.assign',function(){return root.Object.assign;}),
+   fn('Object.getOwnPropertyDescriptor',function(){return root.Object.getOwnPropertyDescriptor;}),
+   fn('Array.from',function(){return root.Array.from;}),
+   fn('Array.includes',function(){return root.Array.prototype.includes;}),
+   fn('String.padStart',function(){return root.String.prototype.padStart;}),
+   fn('Promise',function(){return root.Promise;}),
+   fn('Promise.finally',function(){return root.Promise.prototype['finally'];}),
+   fn('WeakMap',function(){return root.WeakMap;}),
+   fn('Map',function(){return root.Map;}),
+   fn('Set',function(){return root.Set;}),
+   fn('URL',function(){return root.URL;}),
+   fn('URLSearchParams',function(){return root.URLSearchParams;}),
+   fn('TextEncoder',function(){return root.TextEncoder;}),
+   fn('AbortController',function(){return root.AbortController;}),
+   fn('structuredClone',function(){return root.structuredClone;}),
+   fn('Event.composedPath',function(){return root.Event.prototype.composedPath;}),
+   fn('MouseEvent',function(){return root.MouseEvent;}),
+   fn('Element.replaceChildren',function(){return root.Element.prototype.replaceChildren;}),
+   fn('Element.append',function(){return root.Element.prototype.append;}),
+   fn('Element.closest',function(){return root.Element.prototype.closest;}),
+   fn('performance.now',function(){return root.performance.now;}),
+   fn('crypto.getRandomValues (presence only)',function(){return root.crypto.getRandomValues;},true),
+   fn('crypto.randomUUID (fallback may exist)',function(){return root.crypto.randomUUID;},true),
+   fn('Web Locks (guarded fallback)',function(){return nav.locks&&nav.locks.request;},true),
+   fn('ServiceWorker (optional PWA)',function(){return nav.serviceWorker&&nav.serviceWorker.register;},true),
+   fn('BroadcastChannel (optional)',function(){return root.BroadcastChannel;},true)
+  ];
+  var api=[],gaps=[],unknown=[],i,r;
+  for(i=0;i<rows.length;i++){
+   r=rows[i];api.push(r.label+': '+r.state+(r.optional?' [optional observation; not a requirement]':''));
+   if(!r.optional&&r.state==='absent')gaps.push(r.label);
+   if(!r.optional&&r.state.indexOf('unknown')===0)unknown.push(r.label);
+  }
+  api.push(storagePresence('localStorage'));
+  api.push(storagePresence('sessionStorage'));
+  api.push(storagePresence('indexedDB'));
+  api.push('Storage presence says NOTHING about whether storage reads/writes work.');
+  text('api',api.join('\n'));
+  var overview=[];
+  overview.push(gaps.length?'Sampled API gaps (not a cause verdict): '+gaps.join(', '):
+   'No sampled API gaps. This does NOT prove the game will load or save.');
+  if(unknown.length)overview.push('Unknown API observations: '+unknown.join(', '));
+  overview.push('Locks/PWA/crypto observations are not a required-API verdict.');
+  text('summary',overview.join('\n'));
+  // Only these fixed, local strings are compiled. Feature bodies are NEVER executed.
+  var probes=[
+   ['let/const','let a=1; const b=2; return a+b;'],
+   ['arrow functions','return (()=>1);'],
+   ['async/await','return (async function(){await 0;});'],
+   ['object spread','return ({...{a:1}});'],
+   ['optional chaining','var a={b:1}; return a?.b;'],
+   ['nullish coalescing','return null ?? 1;'],
+   ['destructuring','var a={b:1}; var {b}=a; return b;'],
+   ['Unicode property regex','return /\\p{C}/u;']
+  ];
+  var syntax=[],baseline=false,Fn,blocked=false,failures=[],reason='';
+  try{
+   Fn=root.Function;
+   if(typeof Fn!=='function')reason='INDETERMINATE: Function constructor unavailable.';
+   else if((new Fn('return 1;'))()===1){baseline=true;syntax.push('ES5 Function control: PASS');}
+   else reason='INDETERMINATE: ES5 control returned an unexpected result.';
+  }catch(controlError){
+   reason=errorName(controlError)==='EvalError'?
+    'BLOCKED / INDETERMINATE: dynamic compilation denied (EvalError; possibly CSP).':
+    'INDETERMINATE: ES5 Function control failed ('+errorName(controlError)+').';
+  }
+  if(!baseline){
+   syntax.push(reason);syntax.push('Feature syntax was NOT tested. This is not evidence of unsupported syntax.');
+   text('syntax-summary',reason);
+  }else{
+   for(i=0;i<probes.length;i++){
+    if(blocked){syntax.push(probes[i][0]+': NOT TESTED (compilation unavailable)');continue;}
+    try{new Fn(probes[i][1]);syntax.push(probes[i][0]+': PARSES');}
+    catch(probeError){
+     if(errorName(probeError)==='SyntaxError'){
+      syntax.push(probes[i][0]+': NOT SUPPORTED (SyntaxError)');failures.push(probes[i][0]);
+     }else{
+      blocked=true;syntax.push(probes[i][0]+': BLOCKED / INDETERMINATE ('+errorName(probeError)+')');
+     }
+    }
+   }
+   text('syntax-summary',blocked?'Syntax: INDETERMINATE; compilation became unavailable. See all checks.':
+    failures.length?'Syntax gaps: '+failures.join(', '):'All 8 sampled syntax features PARSE. Game startup remains untested.');
+  }
+  text('syntax',syntax.join('\n'));
+  el('details-button').onclick=function(){
+   var show=el('details').style.display!=='block';
+   el('details').style.display=show?'block':'none';
+   text('details-button',show?'Hide all checks':'Show all checks');
+  };
+  text('status','Check complete. This is not a game or save test.');
+ }catch(error){
+  text('status','Check stopped: '+errorName(error)+'. Photograph this screen; no game or save test ran.');
+ }
+})(window);
+</script>
+</body>
+</html>
