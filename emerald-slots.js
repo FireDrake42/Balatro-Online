@@ -3,7 +3,7 @@
  * Reads/validation never draw. Rewards are proposals until the host atomically
  * commits the whole profile and paired native reward sources. All persisted
  * amounts are safe integer tenths, coin hundredths, or milliseconds. */
-(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldSlots=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+(function(root,factory){'use strict';const api=factory(typeof module==='object'&&module.exports?require('./xp-cost-policy'):root.BOXPCostPolicy);if(typeof module==='object'&&module.exports)module.exports=api;else root.BOEmeraldSlots=api;})(typeof globalThis!=='undefined'?globalThis:this,function(XP){'use strict';
  const MR=typeof module==='object'&&module.exports?require('./manual-restoration-model'):globalThis.BOManualRestoration;
  function declared(s){return own(s,'manualRestoration')?(check(MR&&typeof MR.amount==='function','Declared Slots baseline validator unavailable.'),MR.amount(s,'slotsSxp10')):0}
  const MAX=Number.MAX_SAFE_INTEGER,MAX_TIME=8640000000000000,DAY_MS=86400000,TOKEN_MS=100000,TOKEN_CAP_MS=100000000;
@@ -31,17 +31,7 @@
  const EFFECT_KEYS=freeze(['double-emerald-wins','six-xp','coins-17']);
  const EFFECT_IDS=freeze({'double-emerald-wins':'slots-double-emerald-wins','six-xp':'slots-six-xp','coins-17':'slots-coins-17'});
  const EFFECT_NAMES=freeze({'double-emerald-wins':'Double Emerald win counter','six-xp':'Six-times XP','coins-17':'All coins ×1.7'});
- function pay(name,xp10,fp10,coins10,medals10,sxp10){return {name,xp10,fp10,coins10,medals10,sxp10}}
- const PAYOUTS=freeze({
-  none:pay('No matching payout',0,0,0,0,0),
-  'triple-emerald':pay('Triple Emerald',363630,3630,3630,3630,3630),
-  'triple-seven':pay('Triple 7',77770,2770,2770,2770,7770),
-  'triple-joker':pay('Triple Joker',20000,2000,2000,2000,0),
-  'triple-xp':pay('Triple XP',50000,300,300,300,3000),
-  'double-seven':pay('Double 7',7777,277,277,277,777),
-  'triple-coin':pay('Triple Coin',10000,1000,1500,1500,1500),
-  'triple-spade':pay('Triple Spade',1000,30,20,20,100)
- });
+ const PAYOUTS=XP.SLOT_PAYOUTS;
  const TRIPLES=freeze({seven:'triple-seven',xp:'triple-xp',joker:'triple-joker',coin:'triple-coin',spade:'triple-spade'});
  const LEVEL_THRESHOLDS=freeze([0,100,1000,2000,3000,4000,5000,7000,9000,...Array.from({length:25},(_,i)=>11000+2000*i),80000,100000,150000,200000,250000,300000]);
  const SYMBOL_COUNTS=freeze(REELS.map(r=>Object.fromEntries(SYMBOLS.map(s=>[s,r.filter(x=>x===s).length]))));
@@ -55,6 +45,13 @@
   while(level<40&&sxp10>=LEVEL_THRESHOLDS[level]*10)level++;
   const capped=level===40,start10=LEVEL_THRESHOLDS[level-1]*10,next10=capped?null:LEVEL_THRESHOLDS[level]*10;
   return {level,capped,totalSxp10:sxp10,start10,next10,remaining10:capped?0:next10-sxp10,percent:capped?100:100*(sxp10-start10)/(next10-start10),speedFactor:(101-level)/100};
+ }
+ function costProgress(s,total10,serial){return s.version===3&&(serial===undefined||serial>s.costContract.prefixSpinSerial)?XP.slotsInfo(total10,s.costContract):progress(total10)}
+ function installCostContract(next,before,policy){
+  if(!policy){check(next.version!==3,'A cost-bearing Slots action needs the real master policy.');return}
+  XP.validate(policy);
+  if(next.version===3)check(next.costContract.policyId===policy.policyId&&XP.equal(next.costContract.anchor,policy.slots)&&next.costContract.firstEligibleOutgoing===policy.slots.firstEligibleOutgoing,'Slots action/master policy mismatch.');
+  else{next.costContract=XP.contract(policy,before.spinsStarted);next.version=3}
  }
  function payoutFor(line){
   check(array(line,3)&&line.every(s=>SYMBOLS.includes(s)),'Slots needs exactly three known middle-line symbols.');
@@ -81,7 +78,8 @@
  const STATE_FIELDS=['version','revision','rng','createdAtMs','clockAtMs','creditedDay','freeSpins','tokenMs','spinsStarted','spinsSettled','freeSpent','tokensSpent','counts','xpBoosted','coinsBoosted','emeraldMaxSpins','totals','effects','pending','last'];
  function validSpin(r,keys){return fields(r,keys)&&count(r.serial)&&r.serial>0&&time(r.startedAtMs)&&array(r.stops,3)&&r.stops.every(x=>Number.isInteger(x)&&x>=0&&x<36&&!Object.is(x,-0))&&levelNumber(r.level)&&typeof r.ownEmeraldMax==='boolean'&&time(lockAt(r,3))}
  function validate(s){try{
-  if(!fields(s,STATE_FIELDS.concat(own(s,'manualRestoration')?['manualRestoration']:[]))||s.version!==(own(s,'manualRestoration')?2:1)||!count(add(s.totals.sxp10,declared(s)))||!seed(s.rng)||!time(s.createdAtMs)||!time(s.clockAtMs)||s.clockAtMs<s.createdAtMs)return false;
+  if(!fields(s,STATE_FIELDS.concat(own(s,'manualRestoration')?['manualRestoration']:[],own(s,'costContract')?['costContract']:[]))||s.version!==(own(s,'costContract')?3:own(s,'manualRestoration')?2:1)||!count(add(s.totals.sxp10,declared(s)))||!seed(s.rng)||!time(s.createdAtMs)||!time(s.clockAtMs)||s.clockAtMs<s.createdAtMs)return false;
+  if(s.version===3){XP.validateContract(s.costContract);const a=s.costContract.anchor,n=a.native;if(s.costContract.prefixSpinSerial>s.spinsStarted||!XP.equal(XP.optionalOf(s,'manualRestoration'),a.declared))return false;if(n&&(s.spinsStarted<n.spinsStarted||s.spinsSettled<n.spinsSettled||IDS.some(k=>s.counts[k]<n.counts[k]||s.xpBoosted[k]<n.xpBoosted[k]||s.coinsBoosted[k]<n.coinsBoosted[k])||CREDIT_KEYS.some(k=>s.totals[k]<n.totals[k])))return false}
   if(!['revision','creditedDay','freeSpins','tokenMs','spinsStarted','spinsSettled','freeSpent','tokensSpent','emeraldMaxSpins'].every(k=>count(s[k]))||s.tokenMs>TOKEN_CAP_MS||s.creditedDay!==Math.floor(s.clockAtMs/DAY_MS))return false;
   if(!validCounts(s.counts)||!validCounts(s.xpBoosted)||!validCounts(s.coinsBoosted)||!validCredits(s.totals))return false;
   if(BigInt(s.freeSpins)!==100n*BigInt(s.creditedDay-Math.floor(s.createdAtMs/DAY_MS)+1)-BigInt(s.freeSpent)||BigInt(s.freeSpent)+BigInt(s.tokensSpent)!==BigInt(s.spinsStarted))return false;
@@ -94,12 +92,12 @@
   if(s.spinsSettled===0){if(s.last!==null||s.emeraldMaxSpins!==0)return false}else{
    const r=s.last;if(!validSpin(r,RECEIPT_FIELDS)||r.serial!==s.spinsSettled||r.id!=='slots:'+r.serial||r.startedAtMs<s.createdAtMs||r.atMs!==lockAt(r,3)||r.atMs>s.clockAtMs||!own(PAYOUTS,r.payout)||r.payout!==payoutFor(r.stops.map((n,i)=>REELS[i][n]))||r.source!=='slots:'+r.payout||typeof r.xpBoosted!=='boolean'||typeof r.coinsBoosted!=='boolean'||!validCredits(r.credits))return false;
    if(!CREDIT_KEYS.every(k=>r.credits[k]===credits(r.payout,r.xpBoosted,r.coinsBoosted)[k])||s.counts[r.payout]===0||r.xpBoosted&&s.xpBoosted[r.payout]===0||r.coinsBoosted&&s.coinsBoosted[r.payout]===0||!r.xpBoosted&&s.xpBoosted[r.payout]===s.counts[r.payout]||!r.coinsBoosted&&s.coinsBoosted[r.payout]===s.counts[r.payout])return false;
-   if(r.level!==progress(add(s.totals.sxp10-r.credits.sxp10,declared(s))).level)return false;
+   if(r.level!==costProgress(s,add(s.totals.sxp10-r.credits.sxp10,declared(s)),r.serial).level)return false;
    if(r.payout==='triple-emerald'){const key=r.ownEmeraldMax?'six-xp':'double-emerald-wins';if(s.effects[key].count===0||s.effects[key].expiresAtMs<r.atMs+36363000)return false}
    if(['triple-seven','double-seven'].includes(r.payout)&&s.effects['coins-17'].expiresAtMs<r.atMs+(r.payout==='triple-seven'?7777000:777700))return false;
   }
   if(s.pending===null){if(s.spinsStarted!==s.spinsSettled)return false}else{
-   const p=s.pending;if(!validSpin(p,PENDING_FIELDS)||p.serial!==s.spinsSettled+1||s.spinsStarted!==p.serial||p.startedAtMs<s.createdAtMs||p.startedAtMs>s.clockAtMs||s.last&&p.startedAtMs<s.last.atMs||p.level!==progress(add(s.totals.sxp10,declared(s))).level)return false;
+   const p=s.pending;if(!validSpin(p,PENDING_FIELDS)||p.serial!==s.spinsSettled+1||s.spinsStarted!==p.serial||p.startedAtMs<s.createdAtMs||p.startedAtMs>s.clockAtMs||s.last&&p.startedAtMs<s.last.atMs||p.level!==costProgress(s,add(s.totals.sxp10,declared(s)),p.serial).level)return false;
   }
   return true;
  }catch(_){return false}}
@@ -129,17 +127,18 @@
  }
  function effectsAt(s,now,source='other'){check(time(now),'Invalid absolute Slots effect time.');check(typeof source==='string'&&source.length<=240,'Invalid Slots XP reward source.');check(s===undefined||validate(s),'Invalid supplied Slots event ledger.');return effectsUnchecked(s,now,source)}
  function scaleCoinsHundredths(amount,s,now){check(count(amount),'Coin amounts must be integer hundredths.');const effect=effectsAt(s,now);return safe((BigInt(amount)*BigInt(effect.coinNumerator)+5n)/10n)}
- function move(s,request,expectedRevision,now,options){
+ function move(s,request,expectedRevision,now,options,policy){
   const next=copy(s);check(count(expectedRevision)&&expectedRevision===s.revision,'Slots revision changed. Read the current saved machine.');check(time(now),'Invalid absolute Slots action time.');check(fields(request,['type'])&&['spin','settle','checkpoint'].includes(request.type),'Invalid Slots action.');
   const type=request.type;if(type==='spin')check(fields(options,['ownEmeraldMax'])&&typeof options.ownEmeraldMax==='boolean','A spin needs the actual Emerald MAX snapshot.');else check(options===undefined,'Unexpected Slots action options.');
   elapse(next,now);let receipt=null;
   if(type==='spin'){
    check(!next.pending,'Finish the saved pending spin before starting another.');check(next.freeSpins>0||next.tokenMs>=TOKEN_MS,'No free spin or complete SpinToken is available.');
-   const level=progress(add(next.totals.sxp10,declared(next))).level,drawn=draw(next.rng),serial=add(next.spinsStarted,1),p={serial,startedAtMs:next.clockAtMs,stops:drawn.stops,level,ownEmeraldMax:options.ownEmeraldMax};check(time(lockAt(p,3)),'This spin cannot finish within the safe clock range.');
+   installCostContract(next,s,policy);
+   const serial=add(next.spinsStarted,1),level=costProgress(next,add(next.totals.sxp10,declared(next)),serial).level,drawn=draw(next.rng),p={serial,startedAtMs:next.clockAtMs,stops:drawn.stops,level,ownEmeraldMax:options.ownEmeraldMax};check(time(lockAt(p,3)),'This spin cannot finish within the safe clock range.');
    if(next.freeSpins>0){next.freeSpins--;next.freeSpent=add(next.freeSpent,1)}else{next.tokenMs-=TOKEN_MS;next.tokensSpent=add(next.tokensSpent,1)}
    next.spinsStarted=serial;next.rng=drawn.rng;next.pending=p;
   }else if(type==='settle'){
-   const p=next.pending;check(p&&next.clockAtMs>=lockAt(p,3),'The saved reels must all lock before settling.');const at=lockAt(p,3),id=payoutFor(p.stops.map((n,i)=>REELS[i][n]));
+   const p=next.pending;check(p&&next.clockAtMs>=lockAt(p,3),'The saved reels must all lock before settling.');installCostContract(next,s,policy);const at=lockAt(p,3),id=payoutFor(p.stops.map((n,i)=>REELS[i][n]));
    // Award at the actual third lock, NOT reopening time. Use the OLD event
    // ledger before this action's high-water checkpoint/brand-new effect.
    const effect=effectsUnchecked({...s,clockAtMs:Math.min(s.clockAtMs,at)},at,'slots:'+id),xpBoosted=id!=='none'&&effect.xpMultiplier===6,coinsBoosted=id!=='none'&&effect.coinNumerator===17;
@@ -151,14 +150,23 @@
   }
   if(equal(next,s))return {state:next,changed:false,completed:false,receipt:null};next.revision=add(next.revision,1);check(validate(next),'Invalid Slots transition; no proposal was committed.');return {state:next,changed:true,completed:type==='settle',receipt:receipt?clone(receipt):null};
  }
+ // Installing after a Player-first positive settlement never rewrites the old
+ // pending serial, its level, three deadlines, receipt, RNG, or revision.
+ function bindCostPolicy(state,before,policy){
+  check(validate(before)&&validate(state)&&before.version!==3&&state.version!==3&&before.pending&&state.last?.serial===before.pending.serial,'Only a fresh legacy settlement can bind a new policy.');
+  const replay=move(before,{type:'settle'},before.revision,state.clockAtMs);check(replay.completed&&XP.equal(replay.state,state)&&replay.receipt.credits.sxp10>0,'Cost binding needs the actual positive SXP settlement.');
+  check(XP.equal(XP.slotsAnchor({emeraldSlots:before}),policy.slots),'Cost binding lost the original pre-settlement Slots anchor.');const next=clone(state);installCostContract(next,before,policy);check(validate(next),'Invalid newly bound Slots cost source.');return next;
+ }
  function rewardTotals(s){check(validate(s),'Invalid Slots reward source ledger.');return {...s.totals}}
  function validateProfile(p){
-  check(record(p),'Slots needs an ordinary profile.');const d=Object.getOwnPropertyDescriptor(p,'emeraldSlots');if(d)check(own(d,'value')&&d.enumerable&&validate(d.value),'Invalid optional canonical Slots ledger.');return true;
+  check(record(p),'Slots needs an ordinary profile.');const d=Object.getOwnPropertyDescriptor(p,'emeraldSlots');if(d)check(own(d,'value')&&d.enumerable&&validate(d.value),'Invalid optional canonical Slots ledger.');XP.validateProfile(p);return true;
  }
- function publicState(s,now){
+ function costThresholds(master){if(master)XP.validate(master);return master?XP.slotsInfo(0,master).thresholds:LEVEL_THRESHOLDS.slice()}
+ function publicState(s,now,master){
+   if(master){XP.validate(master);if(s.version===3)check(s.costContract.policyId===master.policyId&&XP.equal(s.costContract.anchor,master.slots),'Slots display/master policy mismatch.')}const displayPolicy=master||(s.version===3?s.costContract:null);
   check(validate(s),'Slots save needs attention.');check(time(now),'Invalid absolute Slots display time.');const at=Math.max(now,s.clockAtMs),r=s.pending||s.last,pendingReady=!!s.pending&&at>=lockAt(s.pending,3);
   const reels=[0,1,2].map(i=>{const locked=!!r&&(!s.pending||at>=lockAt(r,i+1));return {locked,lockAtMs:s.pending?lockAt(r,i+1):null,symbols:locked?[REELS[i][(r.stops[i]+35)%36],REELS[i][r.stops[i]],REELS[i][(r.stops[i]+1)%36]]:null}});
-  return {version:1,revision:s.revision,phase:s.pending?(pendingReady?'ready':'spinning'):s.last?'result':'empty',pendingReady,reels,freeSpins:s.freeSpins,tokens:s.tokenMs/TOKEN_MS,tokenMs:s.tokenMs,tokenCap:1000,canSpin:!s.pending&&(s.freeSpins>0||s.tokenMs>=TOKEN_MS),nextDailyAtMs:(s.creditedDay+1)*DAY_MS,regenerating:s.freeSpins===0,spinsStarted:s.spinsStarted,spinsSettled:s.spinsSettled,progress:progress(add(s.totals.sxp10,declared(s))),totals:{...s.totals},counts:{...s.counts},effects:effectsUnchecked(s,now,'other'),last:s.last?{id:s.last.id,serial:s.last.serial,atMs:s.last.atMs,payout:s.last.payout,source:s.last.source,xpBoosted:s.last.xpBoosted,coinsBoosted:s.last.coinsBoosted,credits:{...s.last.credits}}:null};
+  return {version:1,revision:s.revision,phase:s.pending?(pendingReady?'ready':'spinning'):s.last?'result':'empty',pendingReady,reels,freeSpins:s.freeSpins,tokens:s.tokenMs/TOKEN_MS,tokenMs:s.tokenMs,tokenCap:1000,canSpin:!s.pending&&(s.freeSpins>0||s.tokenMs>=TOKEN_MS),nextDailyAtMs:(s.creditedDay+1)*DAY_MS,regenerating:s.freeSpins===0,spinsStarted:s.spinsStarted,spinsSettled:s.spinsSettled,progress:displayPolicy?XP.slotsInfo(add(s.totals.sxp10,declared(s)),displayPolicy):progress(add(s.totals.sxp10,declared(s))),totals:{...s.totals},counts:{...s.counts},effects:effectsUnchecked(s,now,'other'),last:s.last?{id:s.last.id,serial:s.last.serial,atMs:s.last.atMs,payout:s.last.payout,source:s.last.source,xpBoosted:s.last.xpBoosted,coinsBoosted:s.last.coinsBoosted,credits:{...s.last.credits}}:null};
  }
- return Object.freeze({VERSION:1,DAY_MS,TOKEN_MS,TOKEN_CAP_MS,EFFECT_IDS,SYMBOLS,REELS,PAYOUTS,LEVEL_THRESHOLDS,SYMBOL_COUNTS,OUTCOME_COUNTS,create,validate,validateProfile,copy,move,publicState,progress,payoutFor,rewardTotals,effectsAt,scaleCoinsHundredths});
+ return Object.freeze({VERSION:1,DAY_MS,TOKEN_MS,TOKEN_CAP_MS,EFFECT_IDS,SYMBOLS,REELS,PAYOUTS,LEVEL_THRESHOLDS,SYMBOL_COUNTS,OUTCOME_COUNTS,create,validate,validateProfile,copy,move,bindCostPolicy,publicState,costThresholds,progress,payoutFor,rewardTotals,effectsAt,scaleCoinsHundredths});
 });

@@ -58,6 +58,7 @@
     for (const key of ['getFeatureEnabled','getPaused'])
       check(host[key] === undefined || typeof host[key] === 'function', 'invalid-host', 'Invalid synchronous Passive Money host.' + key);
     check(host.clockMode === undefined || ['elapsed','observed'].includes(host.clockMode), 'invalid-host', 'Invalid Passive Money clockMode.');
+    check(host.nativeSource === undefined || typeof host.nativeSource === 'boolean', 'invalid-host', 'Invalid native Passive Money source option.');
     const elapsedClock = host.clockMode !== 'observed';
     check(!elapsedClock || ['pollElapsed','startElapsed','setPausedElapsed'].every(key => typeof M[key] === 'function'), 'missing-model', 'The elapsed Passive Money model is required.');
     const pauseClock = typeof host.getFeatureEnabled === 'function' || typeof host.getPaused === 'function';
@@ -68,6 +69,11 @@
       return {powerPaused:!enabled || paused,powerKey:JSON.stringify([enabled,paused])};
     }
     let busy = false, destroyed = false, uncertain = false, retaining = false, epoch = 0, observation = null, carry = null;
+    // A native stage executes the ORIGINAL synchronous command and all its
+    // prewrite fences, but stops at its first write. No fake write/readback,
+    // public success, durable cursor or private observation is published here.
+    let staging = null;
+    const nativeStages = new WeakMap();
     function resetObservation() {
       epoch++;
       // A reset inside a transaction is cancellation, never an earning pause.
@@ -146,6 +152,7 @@
       const now = host.now(), mono = host.monotonic();
       check(Number.isSafeInteger(now) && now >= 0 && now <= M.MAX_TIME, 'invalid-time', 'Invalid absolute clock.');
       check(typeof mono === 'number' && Number.isFinite(mono) && mono >= 0 && mono <= M.MAX_TIME, 'invalid-monotonic', 'Invalid observable monotonic clock.');
+      if (staging) staging.clock = {now,mono};
       return {now,mono};
     }
     function identify(c, now, mono, pending, since = now, prior = pending) {
@@ -236,6 +243,12 @@
         // seal whole live data; no model mutations or asynchronous gap exist.
         confirmedFence(c);
         check(serialized(proposal.run) === intended, 'proposal-changed', 'The intended complete RUN changed before writing.');
+        if (staging) {
+          check(!staging.commit, 'multiple-source-writes', 'Only one native Passive Money source is allowed per original command.');
+          staging.commit = {c,proposal:M.copyData(proposal),now,mono,fraction};
+          return M.copyData(proposal.result);
+        }
+        check(host.nativeSource !== true, 'native-boundary-required', 'Passive Money requires its complete native source transaction. No RUN-only fallback was saved.');
         attempted = true;
         const written = host.write('run', proposal.run);
         check(written !== false && !thenable(written), 'write-failed', 'The complete RUN write was not synchronously confirmed.');
@@ -433,8 +446,84 @@
           ready:result.ok === true && result.ready && eligible && !c.powerPaused,uncertain,destroyed};
       } catch (error) { return {...fail(error.code || 'invalid-context', error.message),ready:false,uncertain,destroyed}; }
     }
+    function stageCommand(kind, options) {
+      check(elapsedClock, 'native-clock-unsupported', 'Native staging requires the existing elapsed Passive Money controller. Observed standalone commands are unchanged.');
+      check(!staging && !busy && !retaining && !destroyed && !uncertain, 'native-stage-unavailable', 'This native source is busy, cancelled or uncertain. Reload safely.');
+      check(['start','tick','syncPower'].includes(kind) && (kind === 'syncPower' || options === undefined), 'invalid-native-command', 'Use one original native Passive Money command.');
+      const before = {epoch,observation,carry}, frame = {epoch,commit:null,clock:null,result:null,published:false,finished:false,consumed:false}, token = Object.freeze({});
+      staging = frame;
+      try { frame.result = M.copyData(kind === 'syncPower' ? syncPower(options) : kind === 'start' ? start() : tick()); }
+      finally {
+        staging = null;
+        // Never undo an external reset, destruction or original refusal. A
+        // cancelled projection cannot resurrect an earlier private budget.
+        if (epoch === before.epoch && !destroyed && !uncertain) { observation = before.observation; carry = before.carry; }
+        else { observation = null; carry = null; }
+      }
+      nativeStages.set(token,frame); return token;
+    }
+    function assertStage(token, options) {
+      const f = nativeStages.get(token);
+      check(f && !f.consumed && !f.published && f.epoch === epoch && !destroyed && !uncertain, 'native-stage-consumed', 'This native source was cancelled, consumed or already published.');
+      check(options === undefined || options && Object.keys(options).length === 1 && options.nativeTransaction === true, 'invalid-native-fence', 'Use only the native whole-transaction source fence.');
+      if (f.commit) {
+        const c = f.commit.c;
+        // prepareStage ALWAYS confirms original raws. Once inside the paired
+        // journal, NFT authenticates its exact phase-known whole bank images;
+        // an old standalone raw fence must not reject its OWN partial writes.
+        // Keep every original live/owner/power/epoch fence at all phases.
+        if (options?.nativeTransaction === true) {
+          // The host's explicit paired-phase guard must likewise not mistake
+          // this journal/its phase-known PROFILE for an unrelated save writer.
+          const allowed = host.assertWritable({nativeTransaction:true});
+          check(allowed !== false && !thenable(allowed), 'read-only', 'This native source owner is no longer writable.');
+          if (!c.powerTransition) {
+            check(host.eligible({nativeTransaction:true}) === true, 'ineligible', 'The original foreground source is no longer eligible.');
+            check(!power().powerPaused, 'power-paused', 'The original source power policy changed.');
+          }
+          verifyLive(c);
+        } else confirmedFence(c);
+      }
+      return true;
+    }
+    function prepareStage(token) {
+      assertStage(token); const f = nativeStages.get(token), p = f.commit;
+      return {result:M.copyData(f.result),at:p ? p.now : f.clock?.now,
+        ...(p ? {run:M.copyData(p.proposal.run),beforeProfileJSON:p.c.profileJSON,beforeRunJSON:p.c.runJSON} : {})};
+    }
+    function publishStage(token) {
+      const f = nativeStages.get(token), p = f?.commit;
+      check(f && p && !f.consumed && !f.published && f.epoch === epoch && !destroyed && !uncertain, 'native-stage-consumed', 'This native source is not an unpublished committed stage.');
+      retentionGuard(); const c = p.c, next = liveContext(), r = next.source;
+      // The paired host may legitimately add Player XP/new200 and its strict
+      // whole mirrors. Preserve original run identities and exact source money,
+      // income and cursor; authenticate the WHOLE current readback, not old XP.
+      check(next.run === c.run && next.profile === c.profile && r._uiId === c.id && next.page === c.page &&
+        next.powerKey === c.powerKey && host.stamp() === c.stamp && f.epoch === epoch && !destroyed && !uncertain,
+        'native-committed-context', 'The confirmed native source no longer matches its original context.');
+      check(host.read('run') === next.runJSON && host.ownRaw('run') === next.runJSON &&
+        host.read('profile') === next.profileJSON && host.ownRaw('profile') === next.profileJSON &&
+        r.money === p.proposal.run.money && r.stats.moneyEarned === p.proposal.run.stats.moneyEarned &&
+        serialized(M.normalize(r.passiveMoney)) === serialized(M.normalize(p.proposal.run.passiveMoney)),
+        'native-committed-mismatch', 'The whole confirmed native readback does not match the original Passive Money source.');
+      f.published = true; observation = null; carry = null; return true;
+    }
+    function finishStage(token) {
+      const f = nativeStages.get(token);
+      check(f && f.published && !f.finished && !f.consumed, 'native-stage-consumed', 'A committed source can publish its effects only once.');
+      f.finished = true; const result = M.copyData(f.result);
+      if (typeof host.changed === 'function') host.changed(result);
+      return result;
+    }
+    function discardStage(token, error) {
+      const f = nativeStages.get(token);
+      if (!f || f.consumed || f.published) return false;
+      f.consumed = true;
+      if (error && (error.attempted === true || error.reloadRequired === true)) { uncertain = true; epoch++; observation = null; carry = null; }
+      return true;
+    }
     function destroy() { destroyed = true; resetObservation(); }
-    return Object.freeze({status,start,tick,syncPower,resetObservation,destroy});
+    return Object.freeze({status,start,tick,syncPower,resetObservation,destroy,stageCommand,assertStage,prepareStage,publishStage,finishStage,discardStage});
   }
   return Object.freeze({create});
 }));

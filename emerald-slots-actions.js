@@ -57,7 +57,7 @@
    const snap=host.rewardSnapshot(profile);check(!thenable(snap)&&fields(snap,['coins100','fpMilli','medalsMilli'])&&['coins100','fpMilli','medalsMilli'].every(k=>count(snap[k])),'Native Slots coin/FP/medal snapshot is invalid.');check(snap.coins100===nativeCoins100(profile),'Slots coins must use the normal native bank, never a separate wallet.');return {...snap};
   }
   function status(){
-   try{const c=gate(host.get());json(c.profile);validate(c.profile);const state=data(c.profile,'emeraldSlots'),now=clock();return {unlocked:true,blocked:false,busy,state:state===undefined?null:G.publicState(state,now)}}
+   try{const c=gate(host.get());json(c.profile);validate(c.profile);const state=data(c.profile,'emeraldSlots'),now=clock();return {unlocked:true,blocked:false,busy,state:state===undefined?null:G.publicState(state,now,record(c.profile.progression.xpDiscountSavings)?c.profile.progression.xpDiscountSavings:null)}}
    catch(error){return {unlocked:false,blocked:true,busy,state:null,reason:error.message}}
   }
   function failure(error,attempted,applied,quiet=false){
@@ -73,21 +73,23 @@
     check(!resumeOnly||before!==undefined&&before.pending!==null,'Resume cannot create a Slots ledger or a new spin.');
     if(before===undefined&&request.action==='checkpoint')return {ok:true,changed:false,completed:false,state:null,receipt:null,xpResult:null};
     check(before!==undefined||request.action==='spin','Start a saved spin before settling.');const oldRewards=rewards(c.profile),source=before===undefined?G.create(host.seed(),c.nowMs):before;
-    const proposal=G.move(source,{type:request.action},request.expectedRevision,c.nowMs,request.action==='spin'?{ownEmeraldMax:ownMax(c.profile,c.level)}:undefined);
-    if(!proposal.changed)return {ok:true,changed:false,completed:false,state:G.publicState(proposal.state,c.nowMs),receipt:null,xpResult:null};
+    const proposal=G.move(source,{type:request.action},request.expectedRevision,c.nowMs,request.action==='spin'?{ownEmeraldMax:ownMax(c.profile,c.level)}:undefined,record(next.progression.xpDiscountSavings)?next.progression.xpDiscountSavings:undefined);
+    if(!proposal.changed)return {ok:true,changed:false,completed:false,state:G.publicState(proposal.state,c.nowMs,record(c.profile.progression.xpDiscountSavings)?c.profile.progression.xpDiscountSavings:null),receipt:null,xpResult:null};
     next.emeraldSlots=proposal.state;const slotsJSON=json(proposal.state),receipt=proposal.receipt?freeze(JSON.parse(json(proposal.receipt))):null;let xpResult=null;
     if(proposal.completed){
-     const result=host.prepareRewards(next,receipt,Object.freeze({nowMs:c.nowMs,spinAtMs:receipt.atMs,level:c.level,source:receipt.source,slotsXpMultiplierApplied:true}));
+     const result=host.prepareRewards(next,receipt,Object.freeze({nowMs:c.nowMs,spinAtMs:receipt.atMs,level:c.level,source:receipt.source,slotsXpMultiplierApplied:true,beforeProfile:freeze(JSON.parse(c.profileJSON))}));
      check(!thenable(result)&&fields(result,['xpResult']),'Native Slots rewards need synchronous detached preparation.');xpResult=result.xpResult;
      check(xpResult===null||record(xpResult)&&!thenable(xpResult)&&typeof xpResult.awardedXp==='number'&&Number.isFinite(xpResult.awardedXp)&&xpResult.awardedXp>=0&&xpResult.duplicate!==true,'Native Slots XP receipt was not confirmed.');
      check(receipt.credits.xp10===0||xpResult!==null,'The earned Slots XP source was not prepared.');
     }
-    check(json(next.emeraldSlots)===slotsJSON,'Native reward preparation altered the Slots proposal.');validate(next);const afterRewards=rewards(next),credit=receipt?.credits||{coins100:0,fp10:0,medals10:0};
+    check(json(next.emeraldSlots)===slotsJSON,'Native reward preparation altered the Slots proposal.');
+    if(proposal.completed&&receipt.credits.sxp10>0&&next.emeraldSlots.version!==3&&record(next.progression.xpDiscountSavings))next.emeraldSlots=G.bindCostPolicy(next.emeraldSlots,source,next.progression.xpDiscountSavings);
+    validate(next);const afterRewards=rewards(next),credit=receipt?.credits||{coins100:0,fp10:0,medals10:0};
     const delta={coins100:credit.coins100,fpMilli:sum(0,BigInt(credit.fp10)*100n),medalsMilli:sum(0,BigInt(credit.medals10)*100n)};
     for(const key of ['coins100','fpMilli','medalsMilli'])check(afterRewards[key]===sum(oldRewards[key],delta[key]),'Native Slots '+key+' credit does not match its single receipt.');
     const raw=json(next);fence(c);attempted=true;const written=host.write('profile',next);check(written===true&&!thenable(written),'The complete Slots profile write was not confirmed.');fence(c,raw);fence(c,raw);
     const appliedResult=host.applyProfile(next,xpResult);check(appliedResult!==false&&!thenable(appliedResult),'The saved Slots reward could not be applied through native mirrors.');check(json(host.get().profile)===raw,'The saved whole Slots profile was not applied live.');applied=true;
-    const after=G.publicState(proposal.state,c.nowMs),event={game:'slots',action:request.action,resumed:resumeOnly,before:before?G.publicState(before,c.nowMs):null,after,completed:proposal.completed,receipt,xpResult};
+    const after=G.publicState(next.emeraldSlots,c.nowMs,record(next.progression.xpDiscountSavings)?next.progression.xpDiscountSavings:null),event={game:'slots',action:request.action,resumed:resumeOnly,before:before?G.publicState(before,c.nowMs,record(c.profile.progression.xpDiscountSavings)?c.profile.progression.xpDiscountSavings:null):null,after,completed:proposal.completed,receipt,xpResult};
     try{host.render(event)}catch(_){notify('Slots is saved. Reopen the table if its display has not refreshed.')}
     return {ok:true,changed:true,completed:proposal.completed,state:after,receipt,xpResult};
    }catch(error){return failure(error,attempted,applied,resumeOnly)}finally{busy=false}

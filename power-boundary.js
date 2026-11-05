@@ -153,5 +153,129 @@
     }
     return Object.freeze({run,status});
   }
-  return Object.freeze({create});
+  // Native earning checkpoints must await the existing four-lock owner. Keep
+  // create()/run() above byte-identical: this is a SEPARATE explicit authority,
+  // selected once by the app, not a Promise-conversion of the legacy protocol.
+  function createAsync(host) {
+    if (!host || !['object','function'].includes(typeof host)) throw new TypeError('A native asynchronous power-boundary host is required.');
+    const fn = Object.create(null);
+    for (const name of REQUIRED) {
+      const callback = host[name];
+      if (typeof callback !== 'function') throw new TypeError('Missing native power-boundary host.' + name);
+      fn[name] = callback;
+    }
+    const NativePromise = Promise, nativePrototype = NativePromise.prototype, nativeThen = nativePrototype.then;
+    const species = Object.getOwnPropertyDescriptor(NativePromise, Symbol.species);
+    let busy = false, held = false, holdConfirmed = true, uncertain = false;
+    let stage = 'idle', code = 'idle', reason = '', pauseAttempted = false, globalPauseConfirmed = false;
+    function status() { return Object.freeze({busy,held,holdConfirmed,uncertain,stage,code,reason,pauseAttempted,globalPauseConfirmed}); }
+    function fault(at, value, definite, cause) { return {stage:at,value,definite,cause}; }
+    function admitted(value) {
+      const kind = resultKind(value);
+      if (kind !== 'unknown') return {value,kind};
+      // NEVER await an arbitrary return value or read/call its .then. Only the
+      // captured same-realm intrinsic Promise protocol is admitted explicitly;
+      // own then/constructor overrides, subclasses and forged thenables refuse.
+      const constructor = Object.getOwnPropertyDescriptor(nativePrototype, 'constructor');
+      const currentSpecies = Object.getOwnPropertyDescriptor(NativePromise, Symbol.species);
+      if (!value || typeof value !== 'object' || Object.getPrototypeOf(value) !== nativePrototype ||
+          Object.getOwnPropertyDescriptor(value, 'then') || Object.getOwnPropertyDescriptor(value, 'constructor') ||
+          !constructor || constructor.value !== NativePromise || constructor.get || constructor.set ||
+          !currentSpecies || currentSpecies.get !== species.get || currentSpecies.set !== species.set || currentSpecies.value !== species.value)
+        throw new TypeError('Native power callbacks require own-data results or a trusted intrinsic Promise.');
+      return new NativePromise((resolve,reject) => {
+        nativeThen.call(value, result => {
+          try { resolve({value:result,kind:resultKind(result)}); } catch (error) { reject(error); }
+        }, reject);
+      });
+    }
+    async function step(name, args = []) {
+      stage = name; let value, kind;
+      try { const result = await admitted(fn[name].apply(host, args)); value = result.value; kind = result.kind; }
+      catch (cause) { throw fault(name, value, false, cause); }
+      if (kind !== 'ok') throw fault(name, value, kind === 'definite');
+      // Wrap opaque data: returning a callback record directly from async code
+      // would perform a second, uncontrolled then lookup/assimilation.
+      return {value};
+    }
+    function discardPendingControl(value) {
+      // Invalid async CONTROL results are never awaited. A trusted rejected
+      // Promise still needs a rejection observer so it cannot escape as an
+      // unhandled job after the permanent latch. No getter/thenable admission.
+      try { const pending = admitted(value); if (Object.getPrototypeOf(pending) === nativePrototype) nativeThen.call(pending, () => {}, () => {}); } catch (_) {}
+    }
+    function controlHold(value) {
+      stage = 'hold'; held = value; holdConfirmed = false;
+      let result, kind;
+      try { result = fn.hold.call(host, value); kind = resultKind(result); }
+      catch (cause) { throw fault('hold', result, false, cause); }
+      if (kind !== 'ok') { discardPendingControl(result); throw fault('hold', result, false); }
+      holdConfirmed = true;
+    }
+    function actualXpPaused() {
+      stage = 'xpPaused'; let value;
+      try { value = fn.xpPaused.call(host); }
+      catch (cause) { throw fault('xpPaused', value, false, cause); }
+      if (typeof value !== 'boolean') { discardPendingControl(value); throw fault('xpPaused', value, false); }
+      return value;
+    }
+    async function finish() {
+      await step('syncXp', [actualXpPaused()]);
+      controlHold(false);
+      await step('syncMoney');
+      await step('interestPause', [false]);
+      await step('resetBattery');
+    }
+    function blocked() { return {ok:false,code:'uncertain',uncertain:true,held:true,holdConfirmed,stage,reason}; }
+    async function latch(failure, actionResult, actionConfirmed) {
+      uncertain = true; code = 'uncertain'; stage = failure.stage;
+      reason = 'Power change is unconfirmed at ' + stage + '. Keep saved data; reload safely. Do not retry or roll back.';
+      const reassert = !held || !holdConfirmed; held = true;
+      if (reassert) {
+        holdConfirmed = false;
+        try { const result = fn.hold.call(host, true); holdConfirmed = resultKind(result) === 'ok'; if (!holdConfirmed) discardPendingControl(result); } catch (_) {}
+      }
+      const error = new Error(reason); error.code = 'power-uncertain'; error.stage = stage;
+      error.cause = failure.cause === undefined ? failure.value : failure.cause;
+      if (!pauseAttempted) {
+        pauseAttempted = true;
+        try { globalPauseConfirmed = (await admitted(fn.pause.call(host, error))).kind === 'ok'; } catch (_) {}
+      }
+      return {...blocked(),result:actionResult,actionConfirmed,failure:failure.value};
+    }
+    async function run(action) {
+      if (uncertain) return blocked();
+      if (busy) return {ok:false,code:'busy',definite:true,stage,reason:'A power change is already in progress.'};
+      if (typeof action !== 'function') return {ok:false,code:'refused',definite:true,stage:'action',reason:'A guarded native policy action is required.'};
+      // Set authority before the FIRST await, including a pending preflight.
+      busy = true; let actionResult, actionConfirmed = false;
+      try {
+        try { await step('preflight'); }
+        catch (failure) { code = 'refused'; reason = 'Power change preflight was not confirmed.'; return {ok:false,code,definite:true,stage:'preflight',reason,failure:failure.value}; }
+        try {
+          controlHold(true);
+          await step('interestPause', [true]);
+          await step('syncMoney');
+          await step('flushBattery');
+          await step('syncXp', [true]);
+          stage = 'action'; let kind;
+          try { const result = await admitted(action()); actionResult = result.value; kind = result.kind; }
+          catch (cause) { throw fault('action', actionResult, false, cause); }
+          if (kind !== 'ok') throw fault('action', actionResult, kind === 'definite');
+          actionConfirmed = true; await finish(); code = 'committed'; reason = '';
+          return {ok:true,code,result:actionResult};
+        } catch (failure) {
+          if (failure.definite && !actionConfirmed) {
+            try { await finish(); }
+            catch (cleanupFailure) { return await latch(cleanupFailure, actionResult, actionConfirmed); }
+            code = 'refused'; reason = 'Power policy validation refused before a policy write; confirmed checkpoints were retained.';
+            return {ok:false,code,definite:true,stage:failure.stage,reason,result:actionResult,failure:failure.value};
+          }
+          return await latch(failure, actionResult, actionConfirmed);
+        }
+      } finally { busy = false; if (!uncertain) stage = 'idle'; }
+    }
+    return Object.freeze({run,status});
+  }
+  return Object.freeze({create,createAsync});
 }));

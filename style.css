@@ -583,4 +583,9 @@ body.reduced-motion #faucet-hud-button[data-faucet-cd-ui="26"]::after,body.motio
 .faucet-ready-notice{background:#203b38;color:#d1e9df;border-color:#668d7f;box-shadow:0 3px 12px #0004;font-size:12px}
 #passive-xp-button.faucet-shortcut{background:#203b38;color:#d1e9df;border-color:#668d7f;box-shadow:none;animation:none}
 #passive-xp-button.faucet-shortcut .faucet-shortcut-bubbles{display:none}
+/* Requested Emerald Faucet Skill: one portrait, cumulative bar above, two real-time tracks below. */
+.fsk-job-panel{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:80;width:min(290px,calc(100vw - 24px));max-height:calc(100dvh - 100px);overflow:auto;display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid #74ca9c;border-radius:16px;background:#122a24f5;color:#eafff1;box-shadow:0 5px 24px #0008;font-size:12px;pointer-events:none}
+.fsk-job-panel>p{margin:0;line-height:1.35}.fsk-job-panel>:nth-child(4){max-width:100px;max-height:124px;align-self:center;object-fit:contain}.fsk-award:empty{display:none}
+.fsk-skill{display:block;max-width:290px;padding:7px;border:1px solid #74ca9c;border-radius:9px;background:#15352f;color:#eafff1;font-size:12px}.fsk-skill[hidden]{display:none}.fsk-skill p{margin:3px 0}.fsk-track{height:7px;background:#061a16;border:1px solid #497664;border-radius:5px;overflow:hidden}.fsk-track>span{display:block;height:100%;background:#75e2ac;width:0}.fsk-stage{display:grid;gap:3px}.fsk-stage small{font-variant-numeric:tabular-nums;color:#c8e6da}.fsk-portrait-muted{visibility:hidden!important}.fsk-speech-muted{display:none!important}
+#fsk-confirm-window{display:flex;flex-direction:column;gap:12px;align-items:center}#fsk-confirm-window> :first-child{max-width:112px;max-height:140px;object-fit:contain}#fsk-confirm-form{display:grid;gap:8px;width:100%}#fsk-confirm-input{width:100%;box-sizing:border-box;font-size:16px}
 

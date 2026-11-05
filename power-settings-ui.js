@@ -12,9 +12,9 @@
   const ID = 'power-settings-controls';
   const EN = Object.freeze({
     title: 'Interest and feature power',
-    interestRulesLate: 'One saved interest stream. Existing XP/Joker/Poker boosts apply before its nominal cap. From Level63 the roadmap cap is XP/sec, converted to each payment interval. From50, one critical roll per real payment doubles that capped payment afterward. At80 earned cadence takes over; the saved choice remains.',
+    interestRulesLate: 'One saved compound interest stream: current unspent bank × actual rate × earned/Joker/Poker boosts, with no payment ceiling. One replay-stable roll per genuine payment: ×2 from50; 10% chance of×3 from62. At80 earned cadence takes over; the saved choice remains.',
     interestTitle: 'Compound Interest · one saved stream',
-    interestRules: 'From actual Level 42, the cap is 10 actual XP per payment, not per second. These rows edit one interest stream, not separate payments. Percentages are base rates before earned-XP bonuses and the cap.',
+    interestRules: 'These rows edit one compound interest stream, not separate payments. Each payment uses the current bank and its actual rate, before earned/Joker/Poker boosts. No payment ceiling.',
     fullUnlock: 'Full interval/rate choice unlocks at Level 44. Until then, the native timing and rate stay unchanged.',
     row: 'Level {level} · Compound Interest',
     rowLocked: 'This row unlocks at actual Level {level}; it will edit the same saved choice.',
@@ -58,7 +58,10 @@
     return ' data-i18n="powerSettings.' + key + '"' +
       (params ? ' data-i18n-params="' + esc(JSON.stringify(params)) + '"' : '');
   }
-  function message(tag, key, params, attrs = '') {
+    const _powerNumericFields=Object.freeze({"row":["level"],"rowLocked":["level"],"native":["ms","percent"],"choice":["ms","percent"],"life":["count","percent","factor"]});
+  function powerDisplayParams(key,params){const fields=_powerNumericFields[key],H=root.BOI18nAuthored;if(!fields||!params||typeof H?.numberParameter!=='function'||root.BOI18nCatalogs?.['en-US']?.['powerSettings.'+key]!==EN[key])return params;const out={...params};for(const field of fields){const value=params[field];if((typeof value!=='number'||!Number.isFinite(value))&&(typeof value!=='string'||!/^\d+(?:\.\d+)?$/.test(value)))return params;const number=H.numberParameter(value);if(!number||typeof number!=='object'||number.kind!=='authored-number')return params;out[field]=number}return out}
+function message(tag, key, params, attrs = '') {
+    params = powerDisplayParams(key, params);
     return '<' + tag + attrs + binding(key, params) + '>' + esc(label(key, params)) + '</' + tag + '>';
   }
   function project(profile, prefs) {

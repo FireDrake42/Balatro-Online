@@ -1,0 +1,66 @@
+/* Optional native speech v1. Pure bounded counters + an owned synchronous DOM
+ * admission adapter. NO entropy, rewards, gift opportunities, storage writes,
+ * read migrations, timers or recovery producer. The existing whole-profile
+ * host owns every durable write. DOM admission is NOT proof a human saw it. */
+(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.BONativeSpeech=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+ const MAX=Number.MAX_SAFE_INTEGER,PROFILE='danis-table.profile.v1',BUDGET=640;
+ const QUOTES=Object.freeze({strict:Object.freeze([
+  "You've got to know when to hold 'em, know when to fold 'em.",
+  "As long as you've got 'a chip and a chair', there's still hope.",
+  "The name of the game is No Limit Texas Hold'em, the game that takes a minute to learn but a lifetime to master.",
+  "If you can't spot the sucker in your first half hour at the table, then you ARE the sucker.",
+  "Of course I lied. It's poker.",
+  "Money won is twice as sweet as money earned.",
+  "I have a good poker face because I am half-dead inside."
+ ]),chill:Object.freeze([
+  "Life is not always a matter of good cards. Sometimes it's a good play with a bad hand.",
+  "The majority of players are looking for reasons to fold. I am looking for reasons to play.",
+  "You will show your poker greatness by the hands you fold, not the hands you play."
+ ]),slots:Object.freeze([
+  "There's something about the energy and the expectations that an audience projects at you. I get up on stage and work and work, and there's chaos all around me, then I'll shut my eyes, and boom! I slot into the zone. It's like the eye of the hurricane. Everything is easy, and I'm capable of doing things I didn't know I was.",
+  "Every few seconds it changes - up an eighth, down an eighth - it's like playing a slot machine. I lose $20 million, I gain $20 million.",
+  "We never wanted to move to a niche slot at 11 at night so that we could be a lot cleverer and bluer. We just want to do those big light-entertainment shows",
+  "There has been a great laziness in my soul. Lots of days I could write songs, but I could also take my $400 and play the slot machines at the riverfront casino.",
+  "I think that Vegas is one of the wildest places I've ever been to. You can look to your left and there's a drag queen getting married by Elvis, to the right there is some old bird sticking quarters into a slot machine for hours.",
+  "I'm not a poker player (Even though I am!!!) I play slot machines!"
+ ])});
+ // Explicit conservative policy: native Strict supports folding, but not insults,
+ // financial/history claims or lying claims. Chill has no fold. Slots has no
+ // stage/TV/song/real-money/biography event. Preserve the exact source pools;
+ // skip those entries, not rewrite them or invent a supporting native event.
+ const SAFE=Object.freeze({strict:Object.freeze([0,1,2]),chill:Object.freeze([0]),slots:Object.freeze([5])});
+ const MODES=Object.freeze({'strict-poker':'strict',poker:'chill',slots:'slots'}),OTHER=Object.freeze(['balatro','blackjack','baccarat','high-low','darts','emerald-clicker','snake','prism-stack','money-idle-maker','rocket-hit','dodge-slimes','lantern-guard','idle-dice','mossbound-critters','dragon-drill','circuit-weaver','star-harbor']),GAMES=Object.freeze([...Object.keys(MODES),...OTHER]);
+ const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k),copy=o=>JSON.parse(JSON.stringify(o)),count=n=>Number.isSafeInteger(n)&&n>=0&&!Object.is(n,-0);
+ function fields(o,keys){if(!o||typeof o!=='object'||![Object.prototype,null].includes(Object.getPrototypeOf(o))||Reflect.ownKeys(o).length!==keys.length)return false;return keys.every(k=>{const d=Object.getOwnPropertyDescriptor(o,k);return d&&own(d,'value')&&d.enumerable})}
+ function identity(o){return fields(o,['instance','sequence'])&&typeof o.instance==='string'&&o.instance.length>0&&o.instance.length<=160&&!/[\u0000-\u001f\u007f]/.test(o.instance)&&count(o.sequence)}
+ function empty(){return {version:1,modes:Object.fromEntries(Object.keys(QUOTES).map(k=>[k,{count:0,cursor:0,last:null}])),events:Object.fromEntries(OTHER.map(k=>[k,null]))}}
+ function validate(s){try{return fields(s,['version','modes','events'])&&s.version===1&&fields(s.modes,Object.keys(QUOTES))&&Object.keys(QUOTES).every(k=>{const m=s.modes[k];return fields(m,['count','cursor','last'])&&count(m.count)&&count(m.cursor)&&m.cursor<QUOTES[k].length&&m.cursor<=Math.floor(m.count/10)&&(m.cursor===0||SAFE[k].some(i=>(i+1)%QUOTES[k].length===m.cursor))&&(m.last===null?m.count===0:m.count>0&&identity(m.last))})&&fields(s.events,OTHER)&&OTHER.every(k=>s.events[k]===null||identity(s.events[k]))}catch(_){return false}}
+ function validateProfile(p){if(!p||typeof p!=='object')throw Error('Speech needs a native profile.');const d=Object.getOwnPropertyDescriptor(p,'nativeSpeech');if(d&&(!own(d,'value')||!d.enumerable||!validate(d.value)))throw Error('Invalid optional native speech record.');return true}
+ function prepare(profile,spec){validateProfile(profile);const refused=()=>({accepted:false,profile,text:null,quoteIndex:null});if(!fields(spec,['game','identity','primary','veryNice'])||!GAMES.includes(spec.game)||!identity(spec.identity)||typeof spec.primary!=='string'||!spec.primary.trim()||spec.primary.length>BUDGET||typeof spec.veryNice!=='boolean')return refused();
+  const before=own(profile,'nativeSpeech')?profile.nativeSpeech:null,key=MODES[spec.game],last=before?(key?before.modes[key].last:before.events[spec.game]):null;if(last&&last.instance===spec.identity.instance&&spec.identity.sequence<=last.sequence)return refused();if(key&&before?.modes[key].count===MAX)return refused();
+  const next=before?copy(before):empty();let text=spec.primary,quoteIndex=null;const warm=' Thanks for sharing this game with me — well played.';if(spec.veryNice&&text.length+warm.length<=BUDGET)text+=warm;
+  if(key){const m=next.modes[key];m.count++;m.last=copy(spec.identity);if(m.count%10===0){const pool=QUOTES[key];for(let offset=0;offset<pool.length;offset++){const i=(m.cursor+offset)%pool.length;if(!SAFE[key].includes(i))continue;const suffix='\nQuote: “'+pool[i]+'”';if(text.length+suffix.length>BUDGET)continue;text+=suffix;quoteIndex=i;m.cursor=(i+1)%pool.length;break}}}else next.events[spec.game]=copy(spec.identity);
+  const p=copy(profile);p.nativeSpeech=next;if(!validate(next))throw Error('Invalid admitted speech projection.');return {accepted:true,profile:p,text,quoteIndex,id:'native-speech:'+spec.game+':'+spec.identity.instance+':'+spec.identity.sequence};
+ }
+ function create(host){let paused=false,active=null,scheduled=false,serial=0;const pending=new Map(),dropped=reason=>({accepted:false,reason});
+  function uncertain(error){if(paused)return;paused=true;if(active)active.dom.uncertain();host.pause(error)}
+  function criticalError(error){if(!active)return false;let unchanged=false;try{unchanged=host.unchangedBefore(active.before)===true}catch(_){}if(!error?.attempted&&!error?.reloadRequired&&!host.isPaused()&&unchanged){active.dom.rollback();active=null;return true}uncertain(error);return false}
+  function criticalResult(result){if(!active)return false;const error=Object.assign(Error('Own speech publication was not confirmed; retained for safe reload.'),{attempted:result?.committed===true,reloadRequired:result?.committed===true});criticalError(error);if(paused)throw error;return true}
+  function confirmedPublication(next){if(!active||next?.sourceId!==active.id)return false;const a=active;if(host.context()!==a.context||!a.dom.current()||JSON.stringify(next.profile?.nativeSpeech)!==a.speechJSON||next.raw?.[PROFILE]!==a.profileJSON||host.confirmed(next,a)!==true){const error=Object.assign(Error('Matching speech readback or visible DOM receipt is uncertain. Reload safely; do not retry.'),{attempted:true,reloadRequired:true});uncertain(error);throw error}a.dom.confirmed?.();active=null;return true}
+  async function run(entry){if(paused||host.context()!==entry.context||!host.eligible(entry.cue)||host.isPaused())return entry.resolve(dropped('stale-or-hidden'));try{const result=await host.transact((pair,ctx)=>{if(paused||host.context()!==entry.context||!host.eligible(entry.cue)||host.isPaused())return {accepted:false};const spec=host.resolve(entry.cue,pair.profile,ctx);if(!spec)return {accepted:false};const prepared=prepare(pair.profile,spec);if(!prepared.accepted)return {accepted:false};if(active)throw Error('A prior speech admission is still active.');const token='native-speech-'+(++serial),dom=host.receive(prepared.text,token,entry.cue);if(!dom)return {accepted:false};active={id:prepared.id,dom,token,before:copy(ctx.before),context:entry.context,speechJSON:JSON.stringify(prepared.profile.nativeSpeech),profileJSON:JSON.stringify(prepared.profile)};return {...prepared,run:pair.run}},entry.intent);entry.resolve(result?.committed===true?{accepted:true,committed:true}:dropped('refused'))}catch(error){if(error?.reloadRequired||host.isPaused())uncertain(error);entry.resolve(dropped(paused?'uncertain':'refused'))}}
+  function offer(cue){if(paused||host.isPaused()||!cue||!GAMES.includes(cue.game)||!host.eligible(cue))return Promise.resolve(dropped('hidden-or-paused'));let context,intent;try{context=host.context();intent=host.origin()}catch(_){return Promise.resolve(dropped('owner-unavailable'))}return new Promise(resolve=>{const key=context+'|'+cue.game+'|'+String(cue.contextKey||''),old=pending.get(key);if(old&&old.cue.completed===true&&cue.completed!==true){resolve(dropped('coalesced'));return}if(old)old.resolve(dropped('coalesced'));pending.set(key,{cue,context,intent,resolve});if(!scheduled){scheduled=true;Promise.resolve().then(()=>{scheduled=false;const entries=[...pending.values()];pending.clear();for(const entry of entries)void run(entry)})}})}
+  return Object.freeze({offer,criticalError,criticalResult,confirmedPublication,status:()=>({paused,active:active!==null,queued:pending.size})});
+ }
+ // Require exposed viewport hits; an external pointer-transparent following group
+ // blocks table speech. Its OWN unclipped click-through bubble need not be hittable.
+ function visible(node){try{const doc=node?.ownerDocument,win=doc?.defaultView;if(!node?.isConnected||doc.hidden||doc.visibilityState!=='visible'||!win)return false;for(let n=node;n&&n.nodeType===1;n=n.parentElement){const s=win.getComputedStyle(n);if(n.hidden||s.display==='none'||s.visibility!=='visible'||Number(s.opacity)===0)return false}const b=node.getBoundingClientRect();if(!(b.width>0&&b.height>0&&b.bottom>0&&b.right>0&&b.top<win.innerHeight&&b.left<win.innerWidth)||typeof doc.elementFromPoint!=='function')return false;let ownFollowing=false;for(const cover of doc.querySelectorAll?.('.emerald-following .emerald-group')||[]){const s=win.getComputedStyle(cover),r=cover.getBoundingClientRect();if(cover===node||cover.contains(node)){ownFollowing=ownFollowing||(r.width>0&&r.height>0&&b.left>=r.left&&b.right<=r.right&&b.top>=r.top&&b.bottom<=r.bottom);continue}if(node.contains(cover))continue;if(!cover.hidden&&s.display!=='none'&&s.visibility==='visible'&&Number(s.opacity)>0&&r.width>0&&r.height>0&&r.left<b.right&&r.right>b.left&&r.top<b.bottom&&r.bottom>b.top)return false}if(ownFollowing&&win.getComputedStyle(node).pointerEvents==='none')return true;const left=Math.max(0,b.left),right=Math.min(win.innerWidth,b.right),top=Math.max(0,b.top),bottom=Math.min(win.innerHeight,b.bottom);return [.2,.5,.8].some(x=>[.2,.5,.8].some(y=>{const hit=doc.elementFromPoint(left+(right-left)*x,top+(bottom-top)*y);return !!hit&&(hit===node||node.contains(hit)||hit.contains(node))}))}catch(_){return false}}
+ const admittedDOM=new WeakMap();
+ function owns(node){const receipt=node&&admittedDOM.get(node);return !!receipt&&receipt.current()}
+ // A distinct plain-text node detaches any old legacy typewriter target without
+ // invoking its RNG/clear/restart paths. Legacy spans may be zero-width: require
+ // visibility of the NEW candidate below. Rollback reconnects ONLY that exact old
+ // node; uncertainty never restores it (native pause UI may unmount the table).
+ // No HTML parsing or primary trim.
+ function receive(node,text,token){if(typeof text!=='string'||text.length>BUDGET||!node?.isConnected||node.ownerDocument?.hidden||node.ownerDocument?.visibilityState!=='visible')return null;const candidate=node.cloneNode(false),current=()=>candidate.isConnected&&candidate.getAttribute('data-native-speech')===token&&candidate.textContent===text;candidate.textContent=text;candidate.setAttribute('data-native-speech',token);candidate.setAttribute('data-native-speech-state','candidate');node.replaceWith(candidate);if(!visible(candidate)){candidate.replaceWith(node);return null}const receipt={node:candidate,current,rollback(){if(!current())return false;candidate.replaceWith(node);admittedDOM.delete(candidate);return true},confirmed(){if(current())candidate.setAttribute('data-native-speech-state','confirmed')},uncertain(){if(current())candidate.setAttribute('data-native-speech-state','uncertain')}};admittedDOM.set(candidate,receipt);return receipt;}
+ return Object.freeze({VERSION:1,BUDGET,GAMES,OTHER,QUOTES,SAFE,empty,validate,validateProfile,prepare,create,visible,receive,owns});
+});

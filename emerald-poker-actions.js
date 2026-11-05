@@ -40,7 +40,25 @@
   function status(){try{const c=host.get();gate(c);const poker=c.profile?.emeraldPoker;return {unlocked:true,blocked:paused,busy,state:poker===undefined?null:R.publicPoker(c.profile),friendship:F.info(c.profile?.emeraldFriendship),effects:Events.effectsAt(c.profile?.emeraldPokerEvents,Math.trunc(host.now?host.now():Date.now()))}}catch(error){return {unlocked:false,blocked:true,state:null,reason:error.message}}}
   function xpConfig(next,now,oldEvents){const cfg=host.xpConfig(next,now);check(record(cfg)&&!thenable(cfg),'Poker needs a synchronous native XP configuration.');const context={...cfg,now,sourceKind:'emerald-poker',xpSource:'emerald-poker',extraRewardMultiplier:1,pokerXpMultiplier:Events.effectsAt(oldEvents,now).xpMultiplier};if(oldEvents===undefined)delete context.pokerEvents;else context.pokerEvents=oldEvents;return context}
   function capacity(p,amount){for(const key of ['xp','totalXp']){const old=p[key],sum=old+amount;check(typeof old==='number'&&Number.isFinite(old)&&old>=0&&Number.isFinite(sum)&&sum>old&&Math.abs((sum-old)-amount)<=1e-8,'The player XP bank has no exact capacity for this award.')}}
+  async function nativeAction(request){
+   if(busy||paused||destroyed)return {ok:false,reason:'Poker is busy or save-paused.'};busy=true;
+   try{const command=JSON.parse(json(request));let event,staged;
+    const outcome=await host.commitNative((snapshot,c)=>{
+     // Reuse the original synchronous actor against a wholly detached image.
+     // Its writer/publication hooks below stage only; no native bank or UI is touched.
+     let next=snapshot.profile,raw=json(next);const run=snapshot.run,runRaw=json(run);
+     const actor=create({...host,commitNative:undefined,get:()=>({...host.get(),profile:next,run,level:next.progression.level}),read:key=>key==='profile'?raw:run===null?null:runRaw,write:(key,value)=>{check(key==='profile','Poker stages its whole PROFILE only.');raw=json(value);return true},applyProfile:value=>{next=value;return true},now:()=>c.at,render:value=>{event=value},notify:()=>{},pause:()=>{}});
+     staged=actor.action(command);check(staged.ok,staged.reason||'The original Poker source was refused.');check(event,'The original Poker source did not finish its detached projection.');
+     const candidate={profile:next,run,summaries:event.xpResult?[event.xpResult]:[]};
+     if(event.completed){const quoted=next.pokerLevelRewards,source=snapshot.profile.emeraldPoker,coinNumerator=SL.effectsAt(snapshot.profile.emeraldSlots,c.at,'emerald-poker').coinNumerator;
+      candidate.finalizeRewards=finalProfile=>{const ledger=R.creditPoker(snapshot.profile.pokerLevelRewards,source,next.emeraldPoker,coinNumerator,PG.costPolicy(finalProfile.progression));check(json(ledger.bonus)===json(quoted.bonus)&&ledger.coinCreditsMilli===quoted.coinCreditsMilli&&R.receiptCount(ledger)===R.receiptCount(quoted),'The Player-first achievement cannot reprice this accepted hand.');finalProfile.pokerLevelRewards=ledger;};
+     }return candidate;
+    },()=>{writable();gate(host.get());});
+    check(outcome.committed===true,'The original Poker source was not confirmed.');const after=R.publicPoker(outcome.profile);event={...event,after,nativeRewardsPresented:true};try{host.render(event)}catch(_){announce('Poker is saved. Reopen the table if its display has not refreshed.');}return {...staged,state:after};
+   }catch(error){const uncertainSave=error.attempted===true||error.reloadRequired===true;if(uncertainSave)uncertain(error.message);else announce(error.message);return {ok:false,uncertain:uncertainSave,reason:error.message};}finally{busy=false;}
+  }
   function action(request){
+   if(typeof host.commitNative==='function')return nativeAction(request);
    if(busy||paused||destroyed)return {ok:false,reason:'Poker is busy or save-paused.'};
    busy=true;let attempted=false,applied=false;
    try{
@@ -53,12 +71,18 @@
     const proposal=P.move(source,{type:kind,...(kind==='toggle-hold'?{index:request.index}:{})},oldRevision);
     next.emeraldPoker=proposal.state;if(!own(next,'emeraldFriendship'))next.emeraldFriendship=F.create();let xpResult=null,checkpointResult=null;
     if(proposal.completed){
-     const receipt=proposal.receipt,rewards=receipt.rewards,oldEvents=next.emeraldPokerEvents,cfg=xpConfig(next,now,oldEvents),priorBonus=R.pokerBonus(c.profile),priorCoins=R.pokerCoinCredits(c.profile),coinNumerator=SL.effectsAt(c.profile.emeraldSlots,now,'emerald-poker').coinNumerator;next.pokerLevelRewards=R.creditPoker(next.pokerLevelRewards,source,proposal.state,coinNumerator);const bonus=R.pokerBonus(next),delta=Object.fromEntries(Object.keys(bonus).map(k=>[k,bonus[k]-(priorBonus?.[k]||0)])),rawXp=rewards.xp+delta.xpMilli/1000;
-     if(receipt.category==='full-house'&&own(next,'passiveXp')){check(typeof PX?.checkpointPokerEvents==='function','The passive XP event boundary module is unavailable.');const checkpointConfig={...cfg};delete checkpointConfig.pokerXpMultiplier;checkpointResult=PX.checkpointPokerEvents(next,now,checkpointConfig);check(checkpointResult?.ok===true,'The existing passive XP checkpoint could not be confirmed.');}
+     const receipt=proposal.receipt,rewards=receipt.rewards,oldEvents=next.emeraldPokerEvents,priorBonus=R.pokerBonus(c.profile),priorCoins=R.pokerCoinCredits(c.profile),coinNumerator=SL.effectsAt(c.profile.emeraldSlots,now,'emerald-poker').coinNumerator,preview=R.creditPoker(next.pokerLevelRewards,source,proposal.state,coinNumerator,PG.costPolicy(c.profile.progression)),bonus=preview.bonus,delta=Object.fromEntries(Object.keys(bonus).map(k=>[k,bonus[k]-(priorBonus?.[k]||0)])),rawXp=rewards.xp+delta.xpMilli/1000,awardBefore=JSON.parse(c.profileJSON);let cfg=xpConfig(awardBefore,now,oldEvents);
+     if(receipt.category==='full-house'&&own(next,'passiveXp')){check(typeof PX?.checkpointPokerEvents==='function','The passive XP event boundary module is unavailable.');const checkpointConfig={...cfg};delete checkpointConfig.pokerXpMultiplier;checkpointResult=PX.checkpointPokerEvents(awardBefore,now,checkpointConfig);check(checkpointResult?.ok===true,'The existing passive XP checkpoint could not be confirmed.');next.passiveXp=awardBefore.passiveXp;}
+     next.progression=awardBefore.progression;cfg=xpConfig(awardBefore,now,oldEvents);
+     // Price the hand from its original pre-hand level, but let the genuine
+     // Player source activate ALL3 before installing the authentic v2 suffix.
+     
+     if(rawXp>0){const expected=rawXp*PG.earnedXpMultiplier(next.progression.level)*cfg.pokerXpMultiplier;capacity(next.progression,expected);xpResult=PG.addEarnedXp(next.progression,rawXp,'emerald-poker:'+receipt.roundId,cfg);check(xpResult&&!xpResult.duplicate&&xpResult.awardedXp===expected,'The native Poker XP award could not be confirmed.');}
+     next.pokerLevelRewards=R.creditPoker(c.profile.pokerLevelRewards,source,proposal.state,coinNumerator,PG.costPolicy(next.progression));check(json(next.pokerLevelRewards.bonus)===json(preview.bonus)&&next.pokerLevelRewards.coinCreditsMilli===preview.coinCreditsMilli,'The cost policy cannot change this already-priced hand reward.');
      const friendship=next.emeraldFriendship;
      next.emeraldFriendship=F.completePoker(friendship,{roundId:receipt.roundId,completedRounds:receipt.completedRounds,fp:rewards.fp},friendship.revision).state;
-     next.emeraldFriendship=F.completeExpansion(next.emeraldFriendship,'poker',{id:receipt.roundId,sequence:next.pokerLevelRewards.receipts.length,pointsMilli:delta.fpMilli},next.emeraldFriendship.revision).state;
-     if(rawXp>0){const expected=rawXp*PG.earnedXpMultiplier(next.progression.level)*cfg.pokerXpMultiplier;capacity(next.progression,expected);xpResult=PG.addEarnedXp(next.progression,rawXp,'emerald-poker:'+receipt.roundId,cfg);check(xpResult&&!xpResult.duplicate&&xpResult.awardedXp===expected,'The native Poker XP award could not be confirmed.');}
+     next.emeraldFriendship=F.completeExpansion(next.emeraldFriendship,'poker',{id:receipt.roundId,sequence:R.receiptCount(next.pokerLevelRewards),pointsMilli:delta.fpMilli},next.emeraldFriendship.revision).state;
+     
      if(rewards.coins>0){const delta=rewards.coins*2,prior=next.progression.coinsHalf??0;check(count(prior)&&count(delta)&&count(prior+delta),'The native coin bank has no capacity for this award.');next.progression.coinsHalf=prior+delta;}
      R.creditCoins(next,'poker',R.pokerCoinCredits(next)-priorCoins);
      if(rewards.faucetClaims>0){const credit=PG.creditPokerClaims(next.progression,{roundId:receipt.roundId,serial:receipt.serial,claimsTotal:P.rewardTotals(proposal.state).faucetClaims},cfg);check(credit?.ok===true&&credit.creditedClaims===100,'The Royal Flush faucet progression source could not be confirmed.');}

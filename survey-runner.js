@@ -318,12 +318,14 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
       closing = view.closing; return view.closing;
     };
     function element(tag, text, className) { var e = d.createElement(tag); if (text !== undefined) _surveyBind(e, text); if (className) e.className = className; return e; }
-    function button(text, fn, secondary, idValue) { var b = element('button', text, secondary ? 'bo-survey-secondary' : ''); b.type = 'button'; if (idValue) b.id = idValue; b.addEventListener('click', fn); return b; }
+    function activate(event, command, owner) { if (!current()) return; var run = function () { if (current()) return command(); }; return w.BONativePlayerXP ? w.BONativePlayerXP.handle(event, run, {owner: owner, sourceWindow: w}) : run(); }
+    function button(text, fn, secondary, idValue) { var b = element('button', text, secondary ? 'bo-survey-secondary' : ''); b.type = 'button'; if (idValue) b.id = idValue; b.addEventListener('click', function (event) { if (b.disabled) return; return activate(event, function () { return fn.call(b, event); }, 'survey-runner'); }); return b; }
+    function bindSubmit(form, control, capture, command) { control.addEventListener('click', function (event) { event.preventDefault(); if (control.disabled || !current()) return; var answer = capture(); return activate(event, function () { return command(answer); }, 'survey-runner:submit'); }); form.addEventListener('submit', function (event) { event.preventDefault(); return command(capture()); }); }
     function state() { return view.controller && view.controller.getState(); }
     function navigate() {
       if (!current() || view.navigating) return;
       view.navigating = true;
-      if (mounted) { void view.close(); return; }
+      if (mounted) return view.close();
       var s = state();
       if (!navigateReturn(w.location, s ? s.returnUrl : w.location.href, id)) view.navigating = false;
     }
@@ -422,13 +424,13 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
         var label = element('label', S.captchaChallenge(s.id, s.seed).prompt, 'bo-survey-captcha-label'); label.htmlFor = 'bo-survey-captcha-answer';
         var input = element('input', undefined, 'bo-survey-captcha-input'); input.id = 'bo-survey-captcha-answer'; input.name = 'captcha'; input.type = 'text'; input.inputMode = 'numeric'; input.autocomplete = 'off'; input.maxLength = 3; input.setAttribute('aria-describedby', message.id);
         var submit = element('button', _auxValue("aux.survey.runner.822dca242316","Verify local CAPTCHA")); submit.id = 'bo-survey-captcha-submit'; submit.type = 'submit'; var actions = element('div', undefined, 'bo-survey-actions'); actions.appendChild(submit);
-        form.appendChild(label); form.appendChild(input); form.appendChild(message); form.appendChild(actions); form.addEventListener('submit', function (event) { event.preventDefault(); void advance(submit, input.value); }); card.appendChild(form);
+        form.appendChild(label); form.appendChild(input); form.appendChild(message); form.appendChild(actions); bindSubmit(form, submit, function () { return input.value; }, function (answer) { return advance(submit, answer); }); card.appendChild(form);
       } else {
         card.appendChild(element('p', _auxValue("aux.survey.runner.e826c9f10c83","The local CAPTCHA is complete. Take your time and use invented details. Your questionnaire and listed game reward are saved on this device.")));
         card.appendChild(element('p', s.questionnaireVersion === 3 ? _auxValue("aux.survey.runner.1f1629fa4522","This questionnaire includes clear instruction checks, seven-by-seven preference tables and real nature-video choices. Videos start paused and muted. Watching is optional; every video choice has a text description if its preview is unavailable.") : _auxValue("aux.survey.runner.a251ae564422","This questionnaire includes clear instruction checks and seven-by-seven preference tables. Media can be paused; optional real-world footage has a local illustration fallback."), 'bo-survey-muted'));
-        card.appendChild(message); var begin = button(_auxValue("aux.survey.runner.4a6d1d0dba30","Begin survey"), function () { void advance(begin); }, false, 'bo-survey-begin'); card.appendChild(begin);
+        card.appendChild(message); var begin = button(_auxValue("aux.survey.runner.4a6d1d0dba30","Begin survey"), function () { return advance(begin); }, false, 'bo-survey-begin'); card.appendChild(begin);
       }
-      shell.appendChild(card); shell.appendChild(button(_auxValue("aux.survey.runner.c4aa6ca09e7d","Pause and return to game"), async function () { if (!current() || view.busy) return; view.busy = true; if (!mounted) await view.controller.release(); navigate(); }, true, 'bo-survey-return'));
+      shell.appendChild(card); shell.appendChild(button(_auxValue("aux.survey.runner.c4aa6ca09e7d","Pause and return to game"), async function () { if (!current() || view.busy) return; view.busy = true; if (!mounted) await view.controller.release(); return navigate(); }, true, 'bo-survey-return'));
       view.renderedIndex = 'intro-' + s.intro.phase;
     }
     function elapsedText(s) { var elapsed = s.elapsedMs + (s.questionStartedAt ? Math.max(0, Date.now() - s.questionStartedAt) : 0), sec = Math.floor(elapsed / 1000); return _auxValue("aux.survey.runner.233b61c51a3e","Time elapsed {value1}:{value2}",{value1:(Math.floor(sec / 60)),value2:(String(sec % 60).padStart(2, '0'))}); }
@@ -613,11 +615,11 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
       else q.options.forEach(function (o) { var label = element('label', undefined, 'bo-survey-choice'), input = element('input'), text = element('span', o.label, 'bo-survey-answer-text'); if (q.variant === 'word-length' || q.type === 'attention' && ['Red','Green','Blue'].includes(o.label)) { text.lang = 'en'; text.setAttribute('translate', 'no'); } input.type = 'radio'; input.name = 'answer'; input.value = o.value; if (q.type === 'attention' && Number.isInteger(o.fontSize)) { text.style.fontSize = o.fontSize + 'px'; text.style.lineHeight = '1.15'; _surveyAttributeParts(input,'aria-label',[(q.variant === 'word-length' ? _auxValue('aux.survey.runner.9a0283957922','Word ') : _auxValue('aux.survey.runner.4ada4ace3330','Numeric value ')),o.label]); } label.appendChild(input); label.appendChild(text); form.appendChild(label); });
       var message = element('p', '', 'bo-survey-error'); message.id = 'bo-survey-error'; message.setAttribute('role', 'alert'); form.appendChild(message);
       var actions = element('div', undefined, 'bo-survey-actions'), next = element('button', s.index === S.sessionQuestionCount(s) - 1 ? _auxValue("aux.survey.runner.a48ac90935cd","Finish survey") : _auxValue("common.continue","Continue")); next.id = 'bo-survey-continue'; next.type = 'submit'; actions.appendChild(next); form.appendChild(actions);
-      form.addEventListener('submit', async function (event) {
-        event.preventDefault(); if (!current() || view.busy) return; view.busy = true; next.disabled = true; _surveyBind(message,'');
+      bindSubmit(form, next, function () { return readAnswer(form, q); }, async function (answer) {
+        if (!current() || view.busy) return; view.busy = true; next.disabled = true; _surveyBind(message,'');
         // Response values exist only for this call and the visible form. Only
         // quality codes/timings can reach canonical storage.
-        var result = await view.controller.submit(s.index, readAnswer(form, q)); view.busy = false;
+        var result = await view.controller.submit(s.index, answer); view.busy = false;
         if (!current()) return;
         next.disabled = false;
         if (result.session && (result.session.status === 'completed' || result.session.status === 'disqualified')) { renderTerminal(result.session); return; }
@@ -627,7 +629,7 @@ globalThis.BOI18n?.onChange?.(()=>{for(const [element,entries]of _surveyBound){i
         renderError(result.reason);
       }); card.appendChild(form); shell.appendChild(card);
       shell.appendChild(element('p', _auxValue("aux.survey.runner.a30dfea1c7fa","Take your time. Explicit attention checks, three speeding attempts, or clear spam can end a survey. Your raw answers are not saved."), 'bo-survey-muted'));
-      shell.appendChild(button(_auxValue("aux.survey.runner.c4aa6ca09e7d","Pause and return to game"), async function () { if (!current() || view.busy) return; view.busy = true; if (!mounted) await view.controller.release(); navigate(); }, true, 'bo-survey-return'));
+      shell.appendChild(button(_auxValue("aux.survey.runner.c4aa6ca09e7d","Pause and return to game"), async function () { if (!current() || view.busy) return; view.busy = true; if (!mounted) await view.controller.release(); return navigate(); }, true, 'bo-survey-return'));
       view.renderedIndex = s.index;
     }
     function startHeartbeat() {

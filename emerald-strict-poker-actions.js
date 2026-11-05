@@ -22,7 +22,20 @@
   function uncertain(reason){paused=true;const text='Strict Poker save could not be confirmed. The hand may already be saved. Do not retry or reset; reopen the website. '+reason;try{host.pause(text)}catch(_){}announce(text)}
   function pokerPXP(profile){const value=host.pokerPXP?sync(host.pokerPXP(profile),'Strict Poker combined PXP reads must be synchronous.'):profile?.emeraldPoker?.totalPXP??0;Levels.info(value);return value}
   function status(){try{const c=host.get();gate(c);const state=c.profile?.[KEY],totalPXP=pokerPXP(c.profile);return {unlocked:true,blocked:paused,busy,state:state===undefined?null:P.publicState(state),totalPXP,level:Levels.info(totalPXP)}}catch(error){return {unlocked:false,blocked:true,busy,state:null,reason:error.message}}}
+  async function nativeAction(request){
+   if(busy||paused||destroyed)return {ok:false,reason:'Strict Poker is busy or save-paused.'};busy=true;
+   try{const command=JSON.parse(json(request));let event,staged;
+    const outcome=await host.commitNative((snapshot,c)=>{
+     let next=snapshot.profile,raw=json(next);const run=snapshot.run,runRaw=json(run);
+     // Only detached staging hooks replace the original actor's legacy writer.
+     const actor=create({...host,commitNative:undefined,get:()=>({...host.get(),profile:next,run,level:next.progression.level}),read:key=>key==='profile'?raw:run===null?null:runRaw,write:(key,value)=>{check(key==='profile','Strict Poker stages its whole PROFILE only.');raw=json(value);return true},applyProfile:value=>{next=value;return true},now:()=>c.at,render:value=>{event=value},notify:()=>{},pause:()=>{}});
+     staged=actor.action(command);check(staged.ok,staged.reason||'The original Strict Poker source was refused.');check(event,'The original Strict Poker source did not finish its detached projection.');return {profile:next,run,summaries:event.xpResult?[event.xpResult]:[]};
+    },()=>{writable();gate(host.get());});
+    check(outcome.committed===true,'The original Strict Poker source was not confirmed.');const after=P.publicState(outcome.profile[KEY]);event={...event,after,nativeRewardsPresented:true};try{host.render(event)}catch(_){announce('Strict Poker is saved. Reopen the table if its display has not refreshed.');}return {...staged,state:after};
+   }catch(error){const uncertainSave=error.attempted===true||error.reloadRequired===true;if(uncertainSave)uncertain(error.message);else announce(error.message);return {ok:false,uncertain:uncertainSave,reason:error.message};}finally{busy=false;}
+  }
   function action(request){
+   if(typeof host.commitNative==='function')return nativeAction(request);
    if(busy||paused||destroyed)return {ok:false,reason:'Strict Poker is busy or save-paused.'};busy=true;let attempted=false,applied=false;
    try{
     const descriptor=record(request)?Object.getOwnPropertyDescriptor(request,'action'):null;check(descriptor&&own(descriptor,'value'),'Choose a plain Strict Poker action.');const kind=descriptor.value;

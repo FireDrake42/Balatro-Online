@@ -41,7 +41,7 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    try{const parsed=JSON.parse(raw);if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('Invalid saved state');return model.normalize(parsed)}
    catch(error){throw tagged('invalid-storage','Daily Tasks save needs attention. Its stored data has not been overwritten. The combined Medal bank is unavailable; your check-in bank is unchanged. Export a backup before changing browser data.');}
   }
-  function accept(state){const next=JSON.stringify(state);if(next===signature)return;committed=copy(state);signature=next;try{api.mirror?.(copy(committed))}catch(error){/* Export mirrors are subordinate to canonical storage. */}}
+  function accept(state,sourceRecord){const next=JSON.stringify(state);if(next===signature)return;committed=copy(state);signature=next;try{api.mirror?.(copy(committed),sourceRecord)}catch(error){/* Export mirrors are subordinate to canonical storage. */}}
   function info(){if(!model||!committed||blocked())return null;try{return model.info(committed,clock())}catch(error){return null}}
   function dayAt(at){return model.info(model.create(),at).day}
   function status(){return {pending,blocked:blocked()||!info(),code:errorCode,warning,pendingCount:queue.length}}
@@ -53,18 +53,18 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   function capture(run){return run&&model?.capture?model.capture(run):null}
   function sameCounters(a,b){return counters.every(key=>a?.[key]===b?.[key])}
   function canMerge(previous,next){return !!previous&&previous.runId===next.runId&&dayAt(previous.at)===dayAt(next.at)&&sameCounters(previous.after,next.before)}
-  function append(observation){
-   const serialized=JSON.stringify(observation);if(queue.some(item=>JSON.stringify(item)===serialized))return true;
-   const previous=queue.at(-1);
+  function append(observation,target=queue){
+   const serialized=JSON.stringify(observation);if(target.some(item=>JSON.stringify(item)===serialized))return true;
+   const previous=target.at(-1);
    if(canMerge(previous,observation)){
     // Scores are non-monotonic. Only genuine new hands may contribute a score;
     // stale lastResult values carried by Tarot/income actions never qualify.
     const scoreA=previous.after.handsPlayed>previous.before.handsPlayed?previous.after.handScore:0;
     const scoreB=observation.after.handsPlayed>observation.before.handsPlayed?observation.after.handScore:0;
-    queue[queue.length-1]={runId:previous.runId,at:observation.at,before:previous.before,after:{...observation.after,handScore:Math.max(scoreA||0,scoreB||0)}};return true;
+    target[target.length-1]={runId:previous.runId,at:observation.at,before:previous.before,after:{...observation.after,handScore:Math.max(scoreA||0,scoreB||0)}};return true;
    }
-   if(queue.length>=MAX_PENDING)throw tagged('pending-capacity','Daily Tasks have 256 pending action groups. No pending progress was dropped. Free browser storage and retry saving before taking another action.');
-   queue.push(observation);return true;
+   if(target.length>=MAX_PENDING)throw tagged('pending-capacity','Daily Tasks have 256 pending action groups. No pending progress was dropped. Free browser storage and retry saving before taking another action.');
+   target.push(observation);return true;
   }
   // This hook runs BEFORE the app's normal SAVE write. Pending receipts follow
   // the next run as well, rather than disappearing when an origin run is replaced.
@@ -96,12 +96,25 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    if(observation.after.handsPlayed<=observation.before.handsPlayed)observation.after.handScore=0;
    try{append(observation);return true}catch(error){fail(error);throw error}
   }
+  // A primary game command may prepare its pending receipt without mutating
+  // this private queue. Only the whole owner's post-readback publication can
+  // consume the opaque stage and install the exact accepted queue.
+  const stages=new WeakMap();
+  function stage(before,after,at=clock()){
+   const token=Object.freeze({}),record={epoch,before:queue.slice(),next:queue.slice()};
+   if(before&&after&&before.runId===after.runId&&counters.some(key=>after.metrics[key]>before.metrics[key])){const observation={runId:before.runId,at,before:copy(before.metrics),after:copy(after.metrics)};if(observation.after.handsPlayed<=observation.before.handsPlayed)observation.after.handScore=0;append(observation,record.next);}
+   stages.set(token,record);return token;
+  }
+  function assertStageRecord(record){if(!record||record.epoch!==epoch||record.before.length!==queue.length||record.before.some((item,index)=>item!==queue[index]))throw tagged('pending-stage','The original pending task stage changed. No detached source was published.');return record;}
+  function assertStage(token){assertStageRecord(stages.get(token));return true;}
+  function prepareStage(run,token){const record=assertStageRecord(stages.get(token));if(!run)return;if(record.next.length)run._dailyTaskPending=copy(record.next);else delete run._dailyTaskPending;}
+  function publishStage(token){const record=stages.get(token);stages.delete(token);assertStageRecord(record);queue=record.next;}
   function commit(requestEpoch){
    if(requestEpoch!==epoch)return {ok:false,code:'cancelled',state:copy(committed),newlyCompleted:[],awardedHalf:0};
    if(!queue.length)return {ok:true,code:'idle',state:copy(committed),newlyCompleted:[],awardedHalf:0};
    const batch=queue.slice();let fresh,next,awardedHalf=0,newlyCompleted=[],expired=0;
    try{
-    api.assertWritable?.();fresh=readCanonical();next=fresh;
+    api.assertWritable?.();if(root.localStorage.getItem('danis-table.tutorial-journal.v1')!==null)throw tagged('source-recovery','A complete native save needs recovery. Reload before claiming.');fresh=readCanonical();next=fresh;
     for(const observation of batch){const result=model.observe(next,observation,clock());if(!result.ok&&result.code==='stale-observation'){expired++;continue}if(!result.ok)throw tagged(result.code||'invalid-observation','Pending Daily Tasks progress could not be saved ('+(result.code||'invalid observation')+'). No Medals were awarded. Pending actions are retained.');next=result.state;awardedHalf+=result.awardedHalf;newlyCompleted.push(...result.newlyCompleted)}
    }catch(error){return fail(error)}
    // One fresh canonical read, pure reductions, one durable write. Neither the
@@ -116,10 +129,23 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    if(awardedHalf)try{api.notify?.('Daily Tasks complete · +'+number(awardedHalf/2)+' Medals automatically banked.')}catch(error){/* The reward is already durable. */}
    return {ok:true,code:'saved',state:copy(committed),newlyCompleted,awardedHalf};
   }
+  async function coupledCommit(owner,requestEpoch){
+   let batch,published=false;const assertCurrent=()=>{if(requestEpoch!==epoch)throw tagged('cancelled','This pending task batch belongs to an older page state.');};
+   const response=await api.commitSource({owner,assertCurrent,getBatch(){assertCurrent();batch=queue.slice();return copy(batch);},onCommitted(result){
+    assertCurrent();if(!batch||published||!result?.ok)throw tagged('source-publication','The complete task save could not be published safely. Reload before retrying.');published=true;
+    // The same accepted whole image already cleared RUN pending. Clear ONLY
+    // this captured private batch now, before another enabled input can save it.
+    queue=queue.filter(item=>!batch.includes(item));warning=result.expired?'Old pending Daily Tasks actions expired after 90 calendar days and were discarded without rewards. All banked Medals are safe; new actions still count.':'';errorCode='';accept(result.state,{coupled:true});lastDay=info()?.day??null;
+   }});
+   assertCurrent();if(!response?.committed||!response.result?.ok||!published)throw tagged('source-publication','The complete task save could not be confirmed. Reload before retrying.');publish();
+   if(response.result.awardedHalf)try{api.notify?.('Daily Tasks complete · +'+number(response.result.awardedHalf/2)+' Medals automatically banked.')}catch(error){/* The whole source receipt is already confirmed. */}return response.result;
+  }
   function retry(){
    if(pending)return inflight;if(!queue.length)return Promise.resolve({ok:true,code:'idle',state:copy(committed),newlyCompleted:[],awardedHalf:0});
+   const coupled=['commitSource','captureSource'].some(key=>typeof api[key]==='function');let owner;
+   try{if(coupled){if(typeof api.commitSource!=='function'||typeof api.captureSource!=='function')throw tagged('source-unavailable','Daily Tasks need their complete save owner. Pending actions are retained. Reload before retrying.');owner=api.captureSource();}}catch(error){return Promise.resolve(fail(error))}
    const requestEpoch=epoch;pending=true;publish();
-   inflight=Promise.resolve().then(()=>root.navigator?.locks?.request?root.navigator.locks.request(STORAGE_KEY,{mode:'exclusive'},()=>commit(requestEpoch)):commit(requestEpoch))
+   inflight=Promise.resolve().then(()=>coupled?coupledCommit(owner,requestEpoch):(root.navigator?.locks?.request?root.navigator.locks.request(STORAGE_KEY,{mode:'exclusive'},()=>commit(requestEpoch)):commit(requestEpoch)))
     .catch(error=>requestEpoch===epoch?fail(error,'storage-lock'):{ok:false,code:'cancelled',state:copy(committed),newlyCompleted:[],awardedHalf:0})
     .finally(()=>{if(requestEpoch===epoch){pending=false;inflight=null;publish()}});
    return inflight;
@@ -138,13 +164,13 @@ function _auxTaskLabel(task,attribute=false){const key=task.id==='hand-score'?'a
     (queue.length?'<div class="daily-tasks-pending"><span>'+queue.length+_auxInline("aux.daily.tasks.ui.9b0c15341959"," pending action ")+(queue.length===1?_auxInline("aux.daily.tasks.ui.ad936fcbed63","group"):_auxInline("aux.daily.tasks.ui.4ed379d418bb","groups"))+' · '+(pending?_auxInline("aux.daily.tasks.ui.8553a43a25e5","saving safely…"):_auxInline("aux.daily.tasks.ui.eb51ab7d63e7","not yet banked"))+'</span><button class="btn ghost small" data-tasks-action="retry" '+(pending?'disabled':'')+'>'+(pending?_auxInline("aux.surveys.ui.23e39291d613","Saving…"):_auxInline("aux.daily.tasks.ui.6dfe69dc79b1","Retry saving progress"))+'</button></div>':'')+
     ("<p class=\"daily-tasks-note\""+" data-i18n=\"aux.daily.tasks.ui.b4e6a5cc8218\""+">"+_auxEsc(_auxValue("aux.daily.tasks.ui.b4e6a5cc8218","Progress resets at midnight in Tenerife (Atlantic/Canary). Keep every banked Medal across days and new runs. Only actual new actions count: one-hand score, played cards (not retriggers), gross game income, Blind wins (not skips), and Tarot uses. No bonus cash, coins or XP."))+"</p></section>"));
   }
-  function onClick(event){const button=event.target.closest('button[data-tasks-action="retry"]');if(!button||button.disabled)return;event.preventDefault();event.stopImmediatePropagation();refresh();void retry()}
+  function onClick(event){const button=event.target.closest('button[data-tasks-action="retry"]');if(!button||button.disabled)return;event.preventDefault();event.stopImmediatePropagation();const command=()=>{refresh();return retry();};return root.BONativePlayerXP?root.BONativePlayerXP.handle(event,command,{owner:'daily-tasks-ui'}):command();}
   function onStorage(event){if(event.key===STORAGE_KEY||event.key===null)refresh()}
   function onVisible(){if(!document.hidden){refresh();void retry()}}
   function heartbeat(){if(!document.hidden&&model&&dayAt(clock())!==lastDay)refresh()}
   document.addEventListener('click',onClick,{capture:true});root.addEventListener('storage',onStorage);root.addEventListener('focus',onVisible);document.addEventListener('visibilitychange',onVisible);
   const timer=root.setInterval(heartbeat,1000);refresh();recover();
-  return {capture,enqueue,prepare,recover,ensureCapacity,retry,refresh,info,status,render,reset,getState:()=>copy(committed),heartbeat,destroy:()=>{epoch++;root.clearInterval(timer);document.removeEventListener('click',onClick,{capture:true});root.removeEventListener('storage',onStorage);root.removeEventListener('focus',onVisible);document.removeEventListener('visibilitychange',onVisible)}};
+  return {capture,stage,assertStage,prepareStage,publishStage,enqueue,prepare,recover,ensureCapacity,retry,refresh,info,status,render,reset,getState:()=>copy(committed),heartbeat,destroy:()=>{epoch++;root.clearInterval(timer);document.removeEventListener('click',onClick,{capture:true});root.removeEventListener('storage',onStorage);root.removeEventListener('focus',onVisible);document.removeEventListener('visibilitychange',onVisible)}};
  }
  root.BODailyTasksUI={STORAGE_KEY,MAX_PENDING,mount,createController:mount};
 })(window);

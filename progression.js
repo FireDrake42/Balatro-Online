@@ -1,7 +1,7 @@
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./potions'), require('./emerald-poker-events'), require('./late-level-rules'));
-  else root.BOProgress = factory(root.BOPotions, root.BOEmeraldPokerEvents, root.BOLateLevels);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (POT, EVENTS, LL) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./potions'), require('./emerald-poker-events'), require('./late-level-rules'), require('./xp-cost-policy'), require('./emerald-slots'));
+  else root.BOProgress = factory(root.BOPotions, root.BOEmeraldPokerEvents, root.BOLateLevels, root.BOXPCostPolicy, root.BOEmeraldSlots);
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (POT, EVENTS, LL, XP, SL) {
   'use strict';
 
   // Profile-only arithmetic. Callers provide ordered gameplay receipts and time.
@@ -166,9 +166,14 @@
     table.baseCosts = baseCosts;
     // Only the Joker multiplier is contextual; never snapshot the XP bank here.
     table.jokerXpMultiplier = jokerXpMultiplier(config);
+    table.costContext = record(config) && own(config, 'costContext') ? optionalData(config, 'costContext') : null;
+    table.sourceKind = record(config) && typeof config.sourceKind === 'string' ? config.sourceKind : 'other';
+    table.sourceAt = record(config) && own(config, 'now') ? config.now : 0;
     return table;
   }
   function cost(level, config) { validLevel(level); return playerCosts(config)[level - 1]; }
+  // Read-only roadmap quote against the ACTUAL current policy, never a fake Player level.
+  function costForProfile(p, level, config) { requireProfile(p); var quoted = cost(level, config), policy = XP.read(p); return quoted === null ? null : XP.price(level, quoted, quoted, policy); }
   function jokerXpMultiplier(config) {
     var m=record(config)&&own(config,'jokerXpMultiplier')?config.jokerXpMultiplier:1;
     if(!nonnegative(m)||m<1||m>MAX_SAFE)throw new TypeError('Joker XP multiplier must be finite, at least one and safe.');
@@ -180,7 +185,8 @@
     return 1;
   }
   function currentCost(p, table) {
-    return {required: table[p.level - 1], interestCostMultiplier: 1};
+    var potion = table[p.level - 1], policy = record(p.xpDiscountSavings) ? p.xpDiscountSavings : null;
+    return {required: potion === null ? null : XP.price(p.level, table.baseCosts[p.level - 1], potion, policy), interestCostMultiplier: 1};
   }
   function manualXpMultiplier(level,config) {return level>=22&&(!record(config)||config.xpSource!=='passive')?1.2:1;}
   // An absent/other source is deliberately NOT Balatro: surveys, passive XP,
@@ -309,23 +315,31 @@
     }
     return 1;
   }
-  function settleXp(p, table) {
+  function settleXp(p, table, source) {
     p.cap = capFor(p);
+    if (source && !record(p.xpDiscountSavings) && p.level >= 60 && XP.activate(p, source.snapshot, source, source.legacyTransitions)) table.costActivated = true;
     while (p.level < p.cap && p.level < MAX_PLAYER_LEVEL) {
       var required = currentCost(p, table).required;
       if (required === null || p.xp < required) break;
-      // Only the potion's real extra reduction earns savings; no interest penalty.
+      var policy = record(p.xpDiscountSavings) ? p.xpDiscountSavings : null;
       var saving = table.baseCosts[p.level - 1] - table[p.level - 1];
-      if (saving > 0) {
-        var savings = (p.xpDiscountSavings || 0) + saving;
-        if (!integer(savings, 0, MAX_SAFE)) throw new RangeError('Discounted XP cost savings overflow.');
-        p.xpDiscountSavings = savings;
+      if (policy) {
+        if (!source) break; // Reads/zero/duplicate cannot release discount-only levels.
+        XP.append(policy, XP.transition(p.level, table.baseCosts[p.level - 1], table[p.level - 1], required, source, p.xp, p.totalXp));
+      } else {
+        if (source) source.legacyTransitions.push(XP.transition(p.level, table.baseCosts[p.level - 1], table[p.level - 1], required, source, p.xp, p.totalXp));
+        if (saving > 0) {
+          var savings = (p.xpDiscountSavings || 0) + saving;
+          if (!integer(savings, 0, MAX_SAFE)) throw new RangeError('Discounted XP cost savings overflow.');
+          p.xpDiscountSavings = savings;
+        }
       }
       p.xp -= required; p.level++;
+      if (source && !record(p.xpDiscountSavings) && p.level === 60 && XP.activate(p, source.snapshot, source, source.legacyTransitions)) table.costActivated = true;
     }
     p.cap = capFor(p);
   }
-  function normalizeWithCosts(existing, table) {
+  function normalizeWithCosts(existing, table, deferSettlement) {
     var p = create();
     if (!record(existing)) return p;
     // Only freshly created profiles explicitly know their entire income history.
@@ -346,8 +360,15 @@
     if (nonnegative(existing.xp)) p.xp = existing.xp;
     if (nonnegative(existing.totalXp)) p.totalXp = existing.totalXp;
     if (own(existing, 'xpDiscountSavings')) {
-      if (!integer(existing.xpDiscountSavings, 0, MAX_SAFE)) throw new RangeError('Invalid saved discounted XP cost savings.');
-      p.xpDiscountSavings = existing.xpDiscountSavings;
+      var discount = optionalData(existing, 'xpDiscountSavings');
+      if (record(discount)) {
+        // Typed lifetime data is authoritative; NEVER take legacy recovery here.
+        if (!nonnegative(existing.totalXp) || Object.is(existing.totalXp, -0)) throw new RangeError('Typed cost policy requires a finite saved lifetime totalXp.');
+        XP.validate(discount, existing); p.xpDiscountSavings = XP.clone(discount);
+      } else {
+        if (!integer(discount, 0, MAX_SAFE)) throw new RangeError('Invalid saved discounted XP cost savings.');
+        p.xpDiscountSavings = discount;
+      }
     }
     if (integer(existing.highestAnteDefeated, 0, MAX_SAFE)) p.highestAnteDefeated = existing.highestAnteDefeated;
     if (integer(existing.bossesWon, 0, MAX_SAFE)) p.bossesWon = existing.bossesWon;
@@ -420,7 +441,7 @@
     if (Array.isArray(existing.unlockedJokers)) existing.unlockedJokers.forEach(function (id) {
       if (identifier(id) && p.unlockedJokers.indexOf(id) === -1) p.unlockedJokers.push(id);
     });
-    settleXp(p, table);
+    if (!deferSettlement && !record(p.xpDiscountSavings)) settleXp(p, table);
     // A finite nonnegative STORED lifetime total (including zero) is authoritative.
     // Repricing/settlement/replays are not income; never reconstruct its history
     // from either old or current costs. Only genuine awards may increase it.
@@ -472,6 +493,56 @@
     return {awardedXp: awardedXp, fromLevel: fromLevel, toLevel: p.level, levelsGained: p.level - fromLevel,
       cap: p.cap, banked: v.banked, heldXp: v.heldXp, maxLevel: v.maxLevel, configurationMissing: v.configurationMissing};
   }
+  function capturedCostContext(p, config, table, normalized) {
+    var c = table.costContext;
+    if (!record(c)) return null;
+    XP.data(c);
+    var result = {slot: XP.clone(c.slot), at: c.at, snapshot: null};
+    if (record(p.xpDiscountSavings)) {
+      XP.validate(p.xpDiscountSavings, p);
+      if (own(c, 'snapshot') && c.snapshot !== null) throw new Error('Existing cost policy cannot reanchor a source snapshot.');
+      if (!own(c, 'snapshot')) {
+        var typedBefore = c.beforeProfile;
+        if (!record(typedBefore) || !record(typedBefore.progression)) throw new TypeError('Typed cost source needs its actual original whole PROFILE.');
+        ['level','cap','xp','totalXp'].forEach(function(k){if(typedBefore.progression[k]!==p[k])throw new Error('Typed cost source Player beforeimage changed: '+k);});
+        if (!XP.equal(typedBefore.progression.xpDiscountSavings,p.xpDiscountSavings)) throw new Error('Typed cost source original policy beforeimage changed.');
+        XP.validateProfile(typedBefore);
+      }
+      return result;
+    }
+    if (own(c, 'snapshot')) {
+      XP.validateSnapshot(c.snapshot, p, table.baseCosts, normalized.totalXp); result.snapshot = XP.clone(c.snapshot); return result;
+    }
+    var before = c.beforeProfile;
+    if (!record(before) || !record(before.progression)) throw new TypeError('Cost activation needs the original whole pre-award PROFILE.');
+    ['level','cap','xp'].forEach(function(k){if (before.progression[k] !== p[k]) throw new Error('Cost source Player beforeimage changed: '+k);});
+    if (own(before, 'emeraldSlots') && !SL.validate(before.emeraldSlots)) throw new Error('Cost source has an invalid native Slots beforeimage.');
+    if (nonnegative(before.progression.totalXp) && before.progression.totalXp !== p.totalXp) throw new Error('Cost source lifetime total beforeimage changed.');
+    if (!nonnegative(before.progression.totalXp)) { before = Object.assign({}, before, {progression:Object.assign({}, before.progression)}); delete before.progression.totalXp; }
+    result.snapshot = XP.capture(before, table.baseCosts, normalized.totalXp);
+    XP.validateSnapshot(result.snapshot, p, table.baseCosts, normalized.totalXp);
+    return result;
+  }
+  function captureCostContext(p, config) {
+    requireProfile(p); var table = playerCosts(config);
+    return capturedCostContext(p, config, table, normalizeWithCosts(p, table, true));
+  }
+  function awardSource(p, table, amount, eventId, normalized, kind) {
+    if (!(amount > 0)) return null;
+    var c = capturedCostContext(p, null, table, normalized);
+    if (!c && !record(p.xpDiscountSavings)) return null;
+    var sourceKind = kind || table.sourceKind, id = eventId === undefined ? table.costContext?.id : eventId;
+    if (id === undefined) id = sourceKind === 'faucet' ? 'faucet:'+(p.faucet.totalClaims+1) : 'award:'+p.totalXp+':'+amount;
+    return {kind:sourceKind,id:id,at:c?c.at:table.sourceAt,slot:c?.slot,amount:amount,snapshot:c?.snapshot||null,legacyTransitions:[]};
+  }
+  function prepareAward(p, table, baseXp, eventId, kind) {
+    table.costActivated = false;
+    var contextual = baseXp > 0 && (record(table.costContext) || record(p.xpDiscountSavings));
+    var draft = normalizeWithCosts(p, table, contextual), source = awardSource(p, table, baseXp, eventId, draft, kind);
+    table.costSource = source;
+    if (contextual && source) settleXp(draft, table, source);
+    return draft;
+  }
   function validateXp(baseXp) {
     if (!nonnegative(baseXp)) throw new RangeError('Base XP must be a finite non-negative number.');
   }
@@ -482,14 +553,19 @@
     }
     p.xp += earned;
     if (earned > 0) p.totalXp += earned;
-    settleXp(p, table);
+    if (earned > 0) settleXp(p, table, table.costSource);
+    else if (!record(p.xpDiscountSavings)) settleXp(p, table);
+    if (table.costActivated) p.xpDiscountSavings.activation.amount = earned;
+    if (record(p.xpDiscountSavings)) XP.validate(p.xpDiscountSavings, p);
     return earned;
   }
   function addXpWithPolicy(p, baseXp, eventId, config, fixedAward) {
     requireProfile(p); validateXp(baseXp);
     if (eventId !== undefined && !identifier(eventId)) throw new TypeError('XP event ID must be a non-empty string.');
-    var table = playerCosts(config), fromLevel = savedLevel(p), draft = normalizeWithCosts(p, table);
-    var duplicate = eventId !== undefined && draft.receipts && own(draft.receipts, eventId);
+    var table = playerCosts(config), fromLevel = savedLevel(p);
+    // Eligibility is checked on the actual saved receipt BEFORE any cost activation.
+    var duplicate = eventId !== undefined && p.receipts && own(p.receipts, eventId);
+    var draft = duplicate ? normalizeWithCosts(p, table) : prepareAward(p, table, baseXp, eventId);
     if (duplicate) {
       // A newly confirmed cost can release old XP, never re-award this receipt.
       commit(p, draft);
@@ -560,7 +636,8 @@
     if (!Array.isArray(events)) throw new TypeError('Progression events must be an array.');
     var ordered = events.map(validateEvent).sort(function (a, b) { return a.seq - b.seq; });
     var clock = now === undefined ? null : faucetDay(now);
-    var table = playerCosts(config), fromLevel = savedLevel(p), draft = normalizeWithCosts(p, table);
+    var table = playerCosts(config), fromLevel = savedLevel(p), originalCostContext = table.costContext;
+    var draft = normalizeWithCosts(p, table, !!originalCostContext);
     var active = clock ? dailyClock(draft.faucet, clock) : null;
     if (active) draft.faucet.daily = active.daily;
     var cursor = own(draft.cursors, runId) ? draft.cursors[runId] : 0;
@@ -572,6 +649,13 @@
         duplicates++; return;
       }
       if (event.seq !== cursor + 1) throw new RangeError('Missing progression event sequence ' + (cursor + 1) + '; no events applied.');
+      // Each accepted run receipt owns its real pre-award candidate; the other
+      // domains remain the original whole native beforeimage, never a projection.
+      table.costActivated = false;
+      if (originalCostContext && own(originalCostContext, 'beforeProfile')) table.costContext = Object.assign({}, originalCostContext, {beforeProfile:Object.assign({}, originalCostContext.beforeProfile, {progression:XP.clone(draft)})});
+      table.costSource = awardSource(draft, table, event.baseXp, 'balatro:'+runId+':'+event.seq, draft, 'balatro');
+      if (table.costSource) settleXp(draft, table, table.costSource);
+      else if (!record(draft.xpDiscountSavings)) settleXp(draft, table);
       // Capture this BEFORE the current Boss receipt can release banked XP.
       var multiplier = (draft.level >= 15 ? 2 : 1) * (own(event, 'potionXpMultiplier') ? event.potionXpMultiplier : 1) * jokerXpMultiplier(event) * manualXpMultiplier(draft.level) * balatroXpMultiplier(draft.level,{xpSource:'balatro'}) * earnedXpMultiplier(draft.level) * pokerXpMultiplier(event) * extraRewardMultiplier(Object.assign({},config,{sourceKind:'balatro'}));
       // A Small WIN that reaches cap through its own XP is not after-cap proof.
@@ -594,8 +678,12 @@
         rememberQualification(draft.faucet, runId, event.seq, null);
       }
       cursor = event.seq; processed++;
+      // Still only a local draft: the next actual event must see this accepted
+      // native cursor, including a just-admitted ALL3 activation, before replay.
+      if (originalCostContext) put(draft.cursors, runId, cursor);
     });
     if (processed) put(draft.cursors, runId, cursor);
+    if (!processed && !record(draft.xpDiscountSavings)) settleXp(draft, table);
     // Even an empty/replayed batch can settle a newly configured cost, without
     // moving the cursor or replaying any XP/counter award.
     commit(p, draft);
@@ -856,7 +944,10 @@
       return claimFailure('overflow', 'The coin ledger, XP, earnings, claim counter or timestamp would overflow.');
     }
     var fromLevel = savedLevel(p), earnedXp;
-    try { earnedXp = award(draft, 10, info.awardedXp/10, settings.playerTable); } catch (error) { return claimFailure('overflow', error.message); }
+    try {
+      draft = prepareAward(p, settings.playerTable, info.awardedXp, 'faucet:'+(draft.faucet.totalClaims+1), 'faucet'); f = draft.faucet;
+      earnedXp = award(draft, 10, info.awardedXp/10, settings.playerTable);
+    } catch (error) { return claimFailure('overflow', error.message); }
     draft.coinsHalf += creditedHalf; f.coinRemainderHundredths = carryTotal % 50;
     f.daily = {dayKey: info.dayKey, claims: info.claimsToday + 1, earnedHundredths: info.earnedTodayHundredths + reward};
     f.lifetimeEarningsKnown = info.lifetimeEarningsKnown; f.earnedLifetimeHundredths = earnedLifetime;
@@ -968,8 +1059,37 @@
       coinRemainderHundredths: coinCarry(draft.faucet), pendingCoinHundredths: coinCarry(draft.faucet)};
   }
 
-  return {MAX_PLAYER_LEVEL: MAX_PLAYER_LEVEL, MAX_FAUCET_LEVEL: MAX_FAUCET_LEVEL, CAP_THRESHOLDS: CAP_THRESHOLDS,
-    create: create, normalize: normalize, buffs: buffs, extraRewardMultiplier:extraRewardMultiplier, coinSourceMultiplier:coinSourceMultiplier, jokerXpMultiplier:jokerXpMultiplier, interestCostMultiplier: interestCostMultiplier, cost: cost, addXp: addXp, addAwardedXp: addAwardedXp, addEarnedXp: addEarnedXp, earnedXpMultiplier: earnedXpMultiplier,
+  // Optional Emerald Faucet Skill is a separate cumulative receipt, never native Faucet history.
+  var FSK_TARGETS = Object.freeze([10,20,31,42,55,70,100,125,200,366,500,750,1000,1100,1200,1380,1587,1826,2100,2415,2778,3195,3675,4227]);
+  function validateFaucetSkill(s, nativeTotalClaims) {
+    if (s === undefined) return true;
+    var keys = ['version','xp','revision','lastClaimOrdinal','lastJobId'];
+    if (!record(s) || Object.keys(s).length !== keys.length || !keys.every(function(k){return own(s,k);}) ||
+        s.version !== 1 || !Number.isSafeInteger(s.xp) || s.xp < 1 || s.revision !== s.xp ||
+        !Number.isSafeInteger(s.lastClaimOrdinal) || s.lastClaimOrdinal < s.xp ||
+        typeof s.lastJobId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(s.lastJobId)) throw new TypeError('Invalid whole Faucet Skill receipt. Keep the original save.');
+    if (arguments.length > 1 && (!Number.isSafeInteger(nativeTotalClaims) || nativeTotalClaims < s.lastClaimOrdinal)) throw new TypeError('Faucet Skill exceeds its native claim ordinal.');
+    return true;
+  }
+  function faucetSkillInfo(s) {
+    validateFaucetSkill(s);
+    var xp = s === undefined ? 0 : s.xp, level = 1;
+    while (level < 25 && xp >= FSK_TARGETS[level-1]) level++;
+    var target = level === 25 ? null : FSK_TARGETS[level-1], factor = 100-2*(level-1);
+    return {visible:s !== undefined,level:level,xp:xp,revision:s === undefined ? 0 : s.revision,remaining:target === null ? 0 : target-xp,target:target,percent:target === null ? 100 : Math.min(100,xp/target*100),solveMs:50000*factor/100,returnMs:10000*factor/100};
+  }
+  function grantFaucetSkill(s, receipt) {
+    validateFaucetSkill(s);
+    var revision = s === undefined ? 0 : s.revision;
+    if (!record(receipt) || receipt.expectedRevision !== revision || !Number.isSafeInteger(receipt.claimOrdinal) || receipt.claimOrdinal < 1 ||
+        receipt.claimOrdinal !== receipt.expectedOrdinal || revision >= MAX_SAFE ||
+        s !== undefined && (receipt.claimOrdinal <= s.lastClaimOrdinal || receipt.jobId === s.lastJobId)) throw new TypeError('Stale or duplicate Faucet Skill claim receipt.');
+    var next = {version:1,xp:revision+1,revision:revision+1,lastClaimOrdinal:receipt.claimOrdinal,lastJobId:receipt.jobId};
+    validateFaucetSkill(next);return {ok:true,state:next,view:faucetSkillInfo(next)};
+  }
+
+  return {validateFaucetSkill:validateFaucetSkill,faucetSkillInfo:faucetSkillInfo,grantFaucetSkill:grantFaucetSkill,MAX_PLAYER_LEVEL: MAX_PLAYER_LEVEL, MAX_FAUCET_LEVEL: MAX_FAUCET_LEVEL, CAP_THRESHOLDS: CAP_THRESHOLDS,
+    create: create, normalize: normalize, captureCostContext:captureCostContext, discountSavings:XP.savings, costPolicy:XP.read, validateCostMirror:XP.validateMirror, buffs: buffs, extraRewardMultiplier:extraRewardMultiplier, coinSourceMultiplier:coinSourceMultiplier, jokerXpMultiplier:jokerXpMultiplier, interestCostMultiplier: interestCostMultiplier, cost: cost, costForProfile:costForProfile, addXp: addXp, addAwardedXp: addAwardedXp, addEarnedXp: addEarnedXp, earnedXpMultiplier: earnedXpMultiplier,
     applyEvents: applyEvents, setGateMode: setGateMode, progress: progress, format: format, applyCooldownPotion: applyCooldownPotion,
     faucetCosts: faucetCosts, faucetDay: faucetDay, faucetInfo: faucetInfo, claimFaucet: claimFaucet, creditPokerClaims:creditPokerClaims, pokerEffects:pokerEffects, pokerCooldownDuration:pokerCooldownDuration, pokerXpMultiplier:pokerXpMultiplier, unlockJoker: unlockJoker};
 }));

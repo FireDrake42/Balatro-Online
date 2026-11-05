@@ -301,6 +301,9 @@
       stopped: stopped, status: view(p, s, now, state, xpConfig)};
   }
   function settle(p, s, now, xpConfig, fromLevel, state) {
+    // Validate the original whole/source context once, before any paid cursor
+    // advances. Native PG outputs are authoritative, not cosmetic thousandths.
+    var nativeCostContext = record(xpConfig) && record(xpConfig.costContext) && PG.captureCostContext(p, xpConfig) !== null;
     var ticks = 0, baseUnits = 0, units = 0, paidMs = 0, stopped = false;
     captureJoker(s,now,PG.jokerXpMultiplier(xpConfig));
     if (hasSession(s) && !s.completionCounted) {
@@ -316,13 +319,28 @@
         var tickConfig = xpConfigAt(xpConfig, state, tickTime);tickConfig.jokerXpMultiplier=historicalJoker(s,tickTime);
         if(s.pokerTick&&s.pokerTick.at===tickTime)tickConfig.pokerXpMultiplier=s.pokerTick.multiplier;
         var excluded = powerExcluded(s, tickTime);
+        // Only an eligible positive native tick may stage a fresh cost source.
+        // Keep the original whole domain headers; only locally paid Player/cursor
+        // state advances within this still-detached, single-bank transaction.
+        if (!excluded && (effects.knowledgeXpPerSecond === 1 || base > 0) && own(tickConfig, 'costContext')) {
+          var originalWhole = tickConfig.costContext.beforeProfile;
+          if (!record(originalWhole) || !record(originalWhole.progression)) throw new RangeError('Passive costs need the original whole PROFILE.');
+          var cursorBefore = Object.assign({}, s, {totalTicks:s.totalTicks+ticks, totalCreditedMs:s.totalCreditedMs+paidMs, totalXp:cleanXp(s.totalXp+units/XP_UNITS)});
+          tickConfig.costContext = Object.assign({}, tickConfig.costContext, {
+            beforeProfile: Object.assign({}, originalWhole, {progression:p, passiveXp:cursorBefore}),
+            at: Math.floor(tickTime), id: 'passive:' + s.startedAt + ':' + (cursorBefore.totalTicks + 1)
+          });
+          tickConfig.sourceKind = 'passive';
+        }
         // Recorded power-off seconds consume the existing paid-time cursor with
         // zero new XP, just like ordinary zero-base ticks at actual level20+.
         var result = excluded ? PG.addXp(p, 0, undefined, tickConfig) : effects.knowledgeXpPerSecond === 1 ? PG.addEarnedXp(p, PG.jokerXpMultiplier(tickConfig), undefined, tickConfig) : PG.addXp(p, base, undefined, tickConfig);
         baseUnits += Math.round((excluded ? 0 : base) * XP_UNITS); units += result.awardedXp * XP_UNITS;
-        p.xp = cleanXp(p.xp); p.totalXp = cleanXp(p.totalXp);
-        PG.addXp(p, 0, undefined, tickConfig);
-        p.xp = cleanXp(p.xp); p.totalXp = cleanXp(p.totalXp);
+        if (!nativeCostContext) { p.xp = cleanXp(p.xp); p.totalXp = cleanXp(p.totalXp); }
+        var zeroConfig = tickConfig;
+        if (own(tickConfig, 'costContext')) { zeroConfig = Object.assign({}, tickConfig); delete zeroConfig.costContext; }
+        PG.addXp(p, 0, undefined, zeroConfig);
+        if (!nativeCostContext) { p.xp = cleanXp(p.xp); p.totalXp = cleanXp(p.totalXp); }
         s.creditedMs += interval; paidMs += interval; s.creditedTicks++; ticks++;delete s.pokerTick;
         // Future payouts use the current level's rate from this paid-time cursor.
         // Legacy 10s payout counts and paid milliseconds are never reset/replayed.

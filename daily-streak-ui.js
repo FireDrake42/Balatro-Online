@@ -25,13 +25,13 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
 
  const STORAGE_KEY='danis-table.daily-streak.v1';
  const escape=value=>value&&typeof value==='object'&&_auxDisplayValues.has(value)?_auxValueHTML(value):String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const amount=half=>(half/2).toLocaleString('en-US',{maximumFractionDigits:1});
+ const amount=half=>root.BOI18nAuthored?.number(half/2,{maximumFractionDigits:1})??(half/2).toLocaleString('en-US',{maximumFractionDigits:1});
  const reward=half=>amount(half)+' '+(half===2?_auxValue("aux.daily.streak.ui.e191eb56478e","Medal"):_auxValue("aux.surveys.ui.deee9f584857","Medals"));
  function _streakCount(kind,half){const amountValue=amount(half),singular=half===2,units=singular?'Medal':'Medals',prefix={nextReward:'Next check-in: ',homeNext:'Next: ',checkedReward:'Today’s check-in: +',checkIn:'Check In · +'}[kind],suffix=kind==='checkedReward'?'. Next check-in opens at midnight.':'';return _auxValue('aux.dailyStreak.'+kind+'.'+(singular?'one':'many'),prefix+'{amount} '+units+suffix,{amount:amountValue});}
  const copy=state=>state?{...state}:null;
  function mount(api={}){
   const model=root.BODailyStreak,clock=()=>api.now?api.now():Date.now();
-  let committed=null,signature='',warning='',errorCode='',pending=false,lastToday=null,epoch=0;
+  let committed=null,signature='',warning='',errorCode='',pending=false,lastToday=null,epoch=0,publication=Promise.resolve();
   const blocked=()=>['invalid-storage','storage-read','model-unavailable','invalid-state'].includes(errorCode);
   function tagged(code,message){return Object.assign(new Error(message),{code})}
   function readCanonical(){
@@ -46,11 +46,11 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
     return model.normalize(parsed);
    }catch(error){throw tagged('invalid-storage','Daily Streak save needs attention. Its stored data has not been overwritten. No Medals were awarded. Export a backup from Settings before changing browser data.')}
   }
-  function accept(state){
+  function accept(state,sourceRecord){
    const nextSignature=JSON.stringify(state);if(nextSignature===signature)return;
    committed=copy(state);signature=nextSignature;
    // Optional statistics/export mirrors cannot undo a durable canonical commit.
-   try{api.mirror?.(copy(committed))}catch(error){/* Canonical storage remains authoritative. */}
+   try{publication=Promise.resolve(api.mirror?.(copy(committed),sourceRecord)).catch(()=>undefined)}catch(error){/* Canonical storage remains authoritative. */}
   }
   function info(){
    if(!model||!committed||blocked())return null;
@@ -96,10 +96,17 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
    try{const fresh=readCanonical();warning='';errorCode='';accept(fresh)}catch(error){fail(error)}
    lastToday=todayKey();paint();return info();
   }
-  function open(){refresh();api.openModal?.(_auxValue("nav.streak","Daily Streak"),_auxMarkup(modalHTML()))}
+  function open(){refresh();api.openModal?.(_auxValue("nav.streak","Daily Streak"),_auxMarkup(modalHTML()));return publication;}
+  async function coupledCommit(owner,requestEpoch){
+   let published=false;const assertCurrent=()=>{if(requestEpoch!==epoch)throw tagged('cancelled','This check-in belongs to an older page state. No new check-in was accepted.');};
+   const response=await api.commitSource({owner,assertCurrent,onCommitted(result){assertCurrent();if(published||!result?.ok)throw tagged('source-publication','The complete check-in could not be published safely. Reload before retrying.');published=true;warning='';errorCode='';accept(result.state,{coupled:true});lastToday=todayKey();paint();api.notify?.('Day '+result.day+' checked in · +'+reward(result.rewardHalf)+'.');}});
+   assertCurrent();const result=response?.result;if(!result||typeof result.ok!=='boolean'||(result.ok&&(!response.committed||!published)))throw tagged('source-publication','The complete check-in could not be confirmed. Reload before retrying.');
+   if(!result.ok){warning='';errorCode='';accept(result.state,{coupled:true});lastToday=todayKey();paint();api.notify?.(result.code==='already-claimed'?'You already checked in today. Come back after midnight in Tenerife.':'Your device clock moved backwards. Correct it before checking in.');}
+   await publication;return result;
+  }
   function commit(){
-   let fresh,result;
-   try{api.assertWritable?.();fresh=readCanonical();result=model.checkIn(fresh,clock())}catch(error){return fail(error)}
+   let fresh,result,at;
+   try{api.assertWritable?.();if(root.localStorage.getItem('danis-table.tutorial-journal.v1')!==null)throw tagged('source-recovery','A complete native save needs recovery. Reload before claiming.');fresh=readCanonical();at=clock();result=model.checkIn(fresh,at)}catch(error){return fail(error)}
    if(!result.ok){warning='';errorCode='';accept(fresh);lastToday=todayKey();paint();api.notify?.(result.code==='already-claimed'?'You already checked in today. Come back after midnight in Tenerife.':'Your device clock moved backwards. Correct it before checking in.');return result}
    // No await between this fresh read and the write. Neither cached profile/run
    // data nor their save outcomes are allowed to participate in this receipt.
@@ -111,15 +118,22 @@ function _auxSetAttribute(element,attribute,key,fallback,params){const text=_aux
   function reset(){epoch++;pending=false;refresh()}
   async function checkIn(){
    if(pending||api.busy?.())return {ok:false,code:'busy',state:copy(committed),day:info()?.day??0,rewardHalf:0};
+   const coupled=['commitSource','captureSource','prepareSource'].some(key=>typeof api[key]==='function');let owner;
+   try{if(coupled){if(typeof api.commitSource!=='function'||typeof api.captureSource!=='function')throw tagged('source-unavailable','Daily Streak needs its complete save owner. Reload before checking in. No Medals were awarded.');owner=api.captureSource();}}catch(error){return fail(error)}
    const requestEpoch=epoch,cancelled=()=>({ok:false,code:'cancelled',state:copy(committed),day:info()?.day??0,rewardHalf:0}),lockedCommit=()=>requestEpoch===epoch?commit():cancelled();
    pending=true;paint();
    try{
+    if(coupled)return await coupledCommit(owner,requestEpoch);
+    // Legacy standalone/no-new-XP callers retain their independent receipt.
     // Web Locks serialize same-origin tabs. Read and timestamp happen INSIDE
     // the acquired lock, including when a queued request crosses midnight.
-    return root.navigator?.locks?.request?await root.navigator.locks.request(STORAGE_KEY,{mode:'exclusive'},lockedCommit):lockedCommit();
+    const result=root.navigator?.locks?.request?await root.navigator.locks.request(STORAGE_KEY,{mode:'exclusive'},lockedCommit):lockedCommit();
+     // The optional whole-owner publication must finish OUTSIDE this canonical
+     // lock. Native PROFILE/RUN confirmation takes the real four-lock scope.
+     await publication;return result;
    }catch(error){return requestEpoch===epoch?fail(error,'storage-lock'):cancelled()}finally{if(requestEpoch===epoch){pending=false;paint()}}
   }
-  function onClick(event){const button=event.target.closest('button[data-streak-action]');if(!button||button.disabled||api.busy?.())return;event.preventDefault();event.stopImmediatePropagation();if(button.dataset.streakAction==='open')open();else if(button.dataset.streakAction==='check-in')void checkIn()}
+  function onClick(event){const button=event.target.closest('button[data-streak-action]');if(!button||button.disabled||api.busy?.())return;const action=button.dataset.streakAction;if(!['open','check-in'].includes(action))return;event.preventDefault();event.stopImmediatePropagation();const command=()=>action==='open'?open():checkIn();return root.BONativePlayerXP?root.BONativePlayerXP.handle(event,command,{owner:'daily-streak-ui'}):command();}
   function onStorage(event){if(event.key===STORAGE_KEY||event.key===null)refresh()}
   function onVisible(){if(!document.hidden)refresh()}
   function heartbeat(){if(!document.hidden&&todayKey()!==lastToday)refresh()}

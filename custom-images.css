@@ -23,6 +23,8 @@
    [class] raises this flagged rule to match the Level 20 theme rule's specificity;
    this later stylesheet wins for classic/missing theme as well as every other theme. */
 body.custom-images-background[class]{background-image:linear-gradient(rgba(4,12,18,.82),rgba(4,12,18,.82)),var(--bo-custom-background-image);background-position:center;background-size:cover;background-repeat:no-repeat;background-attachment:scroll}
+/* A selected photo also outranks Blackjack's existing important body-image theme. */
+body.custom-images-background.blackjack-table-open{background-image:linear-gradient(rgba(4,12,18,.82),rgba(4,12,18,.82)),var(--bo-custom-background-image)!important}
 /* Never target faces or change border, outline, shadow, selection, size or card identity. */
 body.custom-images-card-back .playing-card.card-back{background-image:linear-gradient(#00000012,#00000012),var(--bo-custom-card-back-image);background-position:center;background-size:cover;background-repeat:no-repeat}
 body.custom-images-card-back .playing-card.card-back .card-back-glyph{visibility:hidden}

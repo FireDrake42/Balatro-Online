@@ -43,7 +43,7 @@ function create(hooks,options={}){
  let provider=options.provider||nativeProvider(),now=options.now||Date.now,epoch=0,opened=false,liveQuote=null,quoteError='',graphError='',stake=1,quoteBusy=false,graphBusy=false,settleBusy=false,predictBusy=false,graphRetryAt=0,settleRetryAt=0,quoteRetryAt=0;
  const state=()=>hooks.getState(),current=t=>enabled()&&t.epoch===epoch&&hooks.isCurrent(t.context)&&(!guarded||enabled()),capture=()=>({epoch,context:hooks.capture()}),changed=()=>{if(enabled())hooks.changed?.()};
  function quoteFresh(){try{return !!liveQuote&&M.validateFreshQuote(liveQuote,now())}catch(e){return false}}
- function transact(s,delta,token){if(!current(token)||guarded&&(!hooks.canTransact()||!current(token)))return false;return hooks.commit(s,delta,token.context)!==false&&(!guarded||current(token))}
+ async function transact(s,delta,token){if(!current(token)||guarded&&(!hooks.canTransact()||!current(token)))return false;const committed=await hooks.commit(s,delta,token.context);return committed!==false&&(!guarded||current(token))}
  function canPredict(){if(!enabled())return false;const r=hooks.getRun();return hooks.getLevel()>=21&&r&&r._uiId&&!state().blockedReason&&!state().active&&Number.isInteger(stake)&&stake>=1&&stake<=M.maxStake(hooks.getLevel())&&Number.isFinite(r.money)&&r.money>=stake&&quoteFresh()&&!predictBusy&&!quoteBusy&&hooks.canTransact()}
  async function refreshQuote(){
   if(!enabled()||quoteBusy||predictBusy||hooks.getLevel()<21)return false;const t=capture();quoteBusy=true;quoteError='';changed();
@@ -53,21 +53,21 @@ function create(hooks,options={}){
   if(!enabled()||guarded&&(!hooks.canTransact()||!enabled()))return false;
   const bosses=hooks.getBosses();if(graphBusy||hooks.getLevel()<21||!M.graphEligible(state(),bosses)||!forceRetry&&now()<graphRetryAt)return false;
   const t=capture();graphBusy=true;graphError='';changed();
-  try{if(guarded&&(!current(t)||!hooks.canTransact()||!current(t)))return false;const graph=await provider.graph();if(!current(t)||!M.graphEligible(state(),bosses))return false;return transact(M.recordGraph(state(),graph,bosses),0,t)}catch(e){if(current(t)){graphError=e.message||'Binance chart unavailable.';graphRetryAt=now()+15000}return false}finally{if(t.epoch===epoch){graphBusy=false;changed()}}
+  try{if(guarded&&(!current(t)||!hooks.canTransact()||!current(t)))return false;const graph=await provider.graph();if(!current(t)||!M.graphEligible(state(),bosses))return false;return await transact(M.recordGraph(state(),graph,bosses),0,t)}catch(e){if(current(t)){graphError=e.message||'Binance chart unavailable.';graphRetryAt=now()+15000}return false}finally{if(t.epoch===epoch){graphBusy=false;changed()}}
  }
  async function predict(direction){
   if(!enabled()||predictBusy||quoteBusy)return false;const t=capture(),origin=hooks.getRun(),chosenStake=stake;
   try{if(guarded&&!current(t))return false;if(!hooks.canTransact())throw new Error('Wait until the current game action finishes.');if(guarded&&!current(t))return false;const id=globalThis.crypto?.randomUUID?'prediction-'+globalThis.crypto.randomUUID():'prediction-'+now()+'-'+state().revision;M.start(state(),origin,{id,stake:chosenStake,direction,quote:liveQuote,now:now(),level:hooks.getLevel()});predictBusy=true;quoteError='';changed();
    if(guarded&&(!current(t)||!hooks.canTransact()||!current(t)))return false;const q=await provider.freshQuote();if(!current(t)||!hooks.canTransact())return false;M.validateFreshQuote(q,now());const result=M.start(state(),origin,{id,stake:chosenStake,direction,quote:q,now:now(),level:hooks.getLevel()});
-   if(!transact(result.state,result.balanceDelta,t))return false;liveQuote=q;hooks.notify?.('Prediction saved: '+money(chosenStake)+' staked for 10 real minutes.');return true;
+   if(!await transact(result.state,result.balanceDelta,t))return false;liveQuote=q;hooks.notify?.('Prediction saved: '+money(chosenStake)+' staked for 10 real minutes.');return true;
   }catch(e){if(current(t)){quoteError=e.message||'Prediction unavailable.';if(predictBusy)liveQuote=null;hooks.notify?.(quoteError)}return false}finally{if(t.epoch===epoch){predictBusy=false;changed()}}
  }
  async function settle(){
   if(!enabled())return false;
   const a=state().active,r=hooks.getRun();if(!a||state().blockedReason||a.runId!==r?._uiId||now()<a.deadlineAt||settleBusy||now()<settleRetryAt||!hooks.canTransact())return false;
   const t=capture();settleBusy=true;
-  try{if(guarded&&(!current(t)||!hooks.canTransact()||!current(t)))return false;const q=await provider.historicalQuote(a.serverDeadlineAt);if(!current(t)||state().active?.id!==a.id||!hooks.canTransact())return false;const result=M.settle(state(),r,{id:a.id,quote:q,now:now()});if(!transact(result.state,result.balanceDelta,t))return false;hooks.notify?.(result.receipt.status==='won'?'Correct prediction: '+money(result.balanceDelta)+' gross returned.':result.receipt.status==='tie'?'Tie: '+money(result.balanceDelta)+' stake refunded.':'Wrong direction: fictional stake lost.');return true;
-  }catch(e){if(current(t)&&state().active?.id===a.id){settleRetryAt=now()+15000;try{transact(M.awaitData(state(),a.id,e.message,now()),0,t)}catch(storageError){if(enabled())hooks.notify?.(storageError.message)}}return false}finally{if(t.epoch===epoch){settleBusy=false;changed()}}
+  try{if(guarded&&(!current(t)||!hooks.canTransact()||!current(t)))return false;const q=await provider.historicalQuote(a.serverDeadlineAt);if(!current(t)||state().active?.id!==a.id||!hooks.canTransact())return false;const result=M.settle(state(),r,{id:a.id,quote:q,now:now()});if(!await transact(result.state,result.balanceDelta,t))return false;hooks.notify?.(result.receipt.status==='won'?'Correct prediction: '+money(result.balanceDelta)+' gross returned.':result.receipt.status==='tie'?'Tie: '+money(result.balanceDelta)+' stake refunded.':'Wrong direction: fictional stake lost.');return true;
+  }catch(e){if(current(t)&&state().active?.id===a.id){settleRetryAt=now()+15000;try{if(e.attempted!==true&&e.reloadRequired!==true)await transact(M.awaitData(state(),a.id,e.message,now()),0,t)}catch(storageError){if(enabled())hooks.notify?.(storageError.message)}}return false}finally{if(t.epoch===epoch){settleBusy=false;changed()}}
  }
  function paintClock(){
   if(!enabled())return;

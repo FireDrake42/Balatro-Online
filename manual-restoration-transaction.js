@@ -6,6 +6,7 @@
  function check(v,s){if(!v)throw Error('Manual recovery: '+s)}
  function freshProfile(){return {...Object.fromEntries(COUNTERS.map(k=>[k,0])),handCounts:{},deckWins:{},deckStakeWins:{},originalDeckStakeWins:{},jokerStakeWins:{},challengeWins:{},achievements:[],progression:PG.create()}}
  function assertEmptyProfile(p){
+   const policy=Object.getOwnPropertyDescriptor(p.progression||{},'xpDiscountSavings');check(!(policy&&policy.value&&typeof policy.value==='object')&&p.pokerLevelRewards?.version!==2&&p.emeraldSlots?.version!==3,'this legacy-only declaration cannot preserve ALL3 native cost anchors; use a supported whole-profile restore instead.');
   check(!own(p,'manualRestoration'),'this target already has a manual restoration.');
   check(COUNTERS.every(k=>p[k]===0)&&p.achievements.length===0&&['handCounts','deckWins','deckStakeWins','originalDeckStakeWins','jokerStakeWins','challengeWins'].every(k=>!p[k]||Object.values(p[k]).every(v=>v===0)),'nonempty target gameplay/history needs separate explicit authorization; choose a truly empty slot.');
   const g=PG.normalize(p.progression,CONFIG),f=g.faucet;
