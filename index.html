@@ -14,11 +14,11 @@
 <section id="fictional-battery-dock" hidden aria-label="Fictional game battery"></section><div id="fictional-battery-shade" hidden aria-hidden="true"></div><main id="app" tabindex="-1"><p class="loading">Preparing your table…</p></main><div id="toast" role="status" aria-live="polite"></div>
 <div class="overlay" id="overlay" hidden><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1"><header class="sheet-head"><h2 id="dialog-title"></h2><button id="close-dialog" class="icon-button" aria-label="Close dialog">×</button></header><div id="dialog-body"></div></section></div>
 <footer class="site-footer">POKER TABLE <span>Original browser implementation · Unofficial fan project · No real-money gambling</span><button id="coverage">Build notes</button><a href="manual-recovery.html">Read-only recovery / backup</a></footer>
-<!--R3:I:HUD--><aside id="bo-r3-hud" data-r3-static="3" data-r3-active="0" aria-live="off" aria-label="Startup observer only; normal game may autosave" style="position:fixed;left:12px;bottom:12px;z-index:2147483647;pointer-events:none;max-width:calc(100vw - 24px);padding:8px 12px;background:rgba(0,0,0,.94);color:#efff90;font:20px/1.25 monospace;white-space:pre-wrap;overflow-wrap:anywhere"><span id="bo-r3-title" style="display:block">TRACE NOT STARTED | NORMAL GAME MAY AUTOSAVE</span><span id="bo-r3-app" style="display:block">APP -</span><span id="bo-r3-script" style="display:block">SCRIPT -</span><span id="bo-r3-js" style="display:block">JS -</span><span id="bo-r3-resource" style="display:block">RESOURCE -</span><span id="bo-r3-reject" style="display:block">REJECT -</span><span id="bo-r3-note" style="display:block">Entered-not-left is not proof of deadlock.</span></aside>
-<script id="bo-r3-observer">(function(w){
+<!--R3:I:HUD--><aside id="bo-r4-hud" data-r4-static="4" data-r4-active="0" aria-live="off" aria-label="Startup observer only; normal game may autosave" style="position:fixed;left:12px;bottom:12px;z-index:2147483647;pointer-events:none;max-width:calc(100vw - 24px);padding:8px 12px;background:rgba(0,0,0,.94);color:#efff90;font:20px/1.25 monospace;white-space:pre-wrap;overflow-wrap:anywhere"><span id="bo-r4-title" style="display:block">TRACE NOT STARTED | GAME MAY AUTOSAVE</span><span id="bo-r4-app" style="display:block">APP -</span><span id="bo-r4-script" style="display:block">SCRIPT -</span><span id="bo-r4-js" style="display:block">JS -</span><span id="bo-r4-resource" style="display:block">RESOURCE -</span><span id="bo-r4-reject" style="display:block">REJECT -</span><span id="bo-r4-note" style="display:block">Marker is not proof of deadlock.</span><span id="bo-r4-writer" style="display:block">WRITER W000</span></aside>
+<script id="bo-r4-observer">(function(w){
 'use strict';
 try {
- var NS='__BO_STARTUP_TRACE_R3__',RID='bo-r3-hud';
+ var NS='__BO_STARTUP_TRACE_R4__',RID='bo-r4-hud';
  var owner=w,depth=0,names,j;
  for(;owner&&depth<8;owner=Object.getPrototypeOf(owner),depth++){
   names=Object.getOwnPropertyNames(owner);
@@ -26,7 +26,7 @@ try {
   for(j=0;j<names.length;j++)if(names[j]===NS)return;
  }
  if(owner)return;
- /*R3_CONFIG_BEGIN*/
+ /*R4_CONFIG_BEGIN*/
  var C = {
  "files": [
   null,
@@ -589,12 +589,114 @@ try {
   123,
   124,
   125
+ ],
+ "writerColumns": [
+  [
+   49,
+   46,
+   2172
+  ],
+  [
+   62,
+   40,
+   72
+  ],
+  [
+   62,
+   138,
+   81
+  ],
+  [
+   62,
+   289,
+   87
+  ],
+  [
+   63,
+   73,
+   78
+  ],
+  [
+   63,
+   185,
+   78
+  ],
+  [
+   63,
+   273,
+   75
+  ],
+  [
+   63,
+   370,
+   84
+  ],
+  [
+   63,
+   559,
+   102
+  ],
+  [
+   65,
+   26,
+   69
+  ],
+  [
+   67,
+   27,
+   72
+  ],
+  [
+   71,
+   4,
+   66
+  ],
+  [
+   71,
+   187,
+   90
+  ],
+  [
+   71,
+   304,
+   99
+  ],
+  [
+   72,
+   4,
+   69
+  ],
+  [
+   72,
+   163,
+   66
+  ],
+  [
+   72,
+   272,
+   75
+  ],
+  [
+   72,
+   347,
+   93
+  ]
+ ],
+ "slotCaps": [
+  42,
+  32,
+  80,
+  96,
+  80,
+  80,
+  38,
+  64
  ]
 };
- /*R3_CONFIG_END*/
- var d=w.document,root=d.getElementById(RID),ids=['bo-r3-title','bo-r3-app','bo-r3-script','bo-r3-js','bo-r3-resource','bo-r3-reject','bo-r3-note'];
- var cells=[],i,token={},bad=[],jsSeen=false,resourceSeen=false,rejectSeen=false,lastBoundary=0;
- if(!root||root.getAttribute('data-r3-static')!=='3'||root.getAttribute('data-r3-active')!=='0')return;
+ /*R4_CONFIG_END*/
+ var d=w.document,root=d.getElementById(RID),ids=['bo-r4-title','bo-r4-app','bo-r4-script','bo-r4-js','bo-r4-resource','bo-r4-reject','bo-r4-note','bo-r4-writer'];
+ var cells=[],i,token=Object.freeze({}),bad=[],jsSeen=false,resourceSeen=false,rejectSeen=false,lastBoundary=0;
+ if(!root||root.getAttribute('data-r4-static')!=='4'||root.getAttribute('data-r4-active')!=='0')return;
  if(d.querySelectorAll('[id="'+RID+'"]').length!==1||Object.getOwnPropertyDescriptor(root,NS))return;
  for(i=0;i<ids.length;i++){
   cells[i]=d.getElementById(ids[i]);
@@ -604,7 +706,7 @@ try {
  var origin=typeof w.location.origin==='string'?w.location.origin:'';
  function live(){
   var a=Object.getOwnPropertyDescriptor(w,NS),b=Object.getOwnPropertyDescriptor(root,NS),j;
-  if(!a||!b||a.value!==token||b.value!==token||d.getElementById(RID)!==root||root.getAttribute('data-r3-active')!=='1')return false;
+  if(!a||!b||a.value!==token||b.value!==token||d.getElementById(RID)!==root||root.getAttribute('data-r4-active')!=='1')return false;
   for(j=0;j<ids.length;j++)if(d.getElementById(ids[j])!==cells[j])return false;
   return true;
  }
@@ -640,21 +742,16 @@ try {
  }
  function integer(n){return typeof n==='number'&&n>=1&&n<=1000000&&n%1===0;}
  function locationText(id,line,col){
-  var old=col,j,r;
-  if(!id||!integer(line)||!integer(col))return 'unknown I?:? O?';
-  if(fileName(id)!=='app.js')return fileName(id)+' O'+line+':'+col;
-  for(j=0;j<C.columns.length;j++){
-   r=C.columns[j];
-   if(r[0]===line){
-    if(col>=r[1]&&col<r[1]+r[2])return 'app.js I'+line+':'+col+' O?';
-    if(col>=r[1]+r[2])old-=r[2];
-   }
-  }
-  return 'app.js I'+line+':'+col+' O'+line+':'+old;
+  var old=col,j,r,file,columns;
+  if(!id||!integer(line)||!integer(col))return "unknown I?:? O?";
+  file=fileName(id);
+  if(file==="app.js")columns=C.columns;else if(file==="exp-interest.js")columns=C.writerColumns;else return file+" O"+line+":"+col;
+  for(j=0;j<columns.length;j++){r=columns[j];if(r[0]===line){if(col>=r[1]&&col<r[1]+r[2])return file+" I"+line+":"+col+" O?";if(col>=r[1]+r[2])old-=r[2];}}
+  return file+" I"+line+":"+col+" O"+line+":"+old;
  }
  function boundary(id){
   lastBoundary=id;
-  cells[2].setAttribute('data-r3-failed',bad[id-1]?''+id:'');
+  cells[2].setAttribute('data-r4-failed',bad[id-1]?''+id:'');
   put(2,'SCRIPT S'+lastBoundary+' '+fileName(id)+(bad[id-1]?' failed boundary':' load boundary (not async done)'),80);
  }
  function onLoad(event){try{if(!live())return;var id=scriptId(event.target);if(id)boundary(id);}catch(ignored){}}
@@ -665,14 +762,14 @@ try {
    if(target&&target.tagName==='SCRIPT'){
     id=scriptId(target);
     if(id){bad[id-1]=true;boundary(id);}
-    if(!resourceSeen){resourceSeen=true;put(4,'RESOURCE ResourceError '+fileName(id)+' @'+phase(),92);}
+    if(!resourceSeen){resourceSeen=true;put(4,'RESOURCE ResourceError '+fileName(id)+' @'+phase(),80);}
     return;
    }
    if(target&&target!==w&&target.tagName)return;
    id=sourceId(event.filename);
    if(id){bad[id-1]=true;boundary(id);}
    try{error=event.error;}catch(ignoredError){}
-   if(!jsSeen){jsSeen=true;put(3,'JS '+errorName(error)+' '+locationText(id,event.lineno,event.colno)+' @'+phase(),108);}
+   if(!jsSeen){jsSeen=true;put(3,'JS '+errorName(error)+' '+locationText(id,event.lineno,event.colno)+' @'+phase(),96);}
   }catch(ignored){}
  }
  function onReject(event){
@@ -681,7 +778,7 @@ try {
    var reason=null;
    try{reason=event.reason;}catch(ignoredReason){}
    rejectSeen=true;
-   put(5,'REJECT '+errorName(reason)+' unknown @'+phase(),92);
+   put(5,'REJECT '+errorName(reason)+' unknown @'+phase(),80);
   }catch(ignored){}
  }
  Object.defineProperty(root,NS,{value:token});
@@ -690,14 +787,15 @@ try {
  w.addEventListener('error',onError,true);
  w.addEventListener('load',onLoad,true);
  w.addEventListener('unhandledrejection',onReject,true);
- root.setAttribute('data-r3-active','1');
- put(0,'TRACE R3 | NORMAL GAME MAY AUTOSAVE',42);
+ root.setAttribute('data-r4-active','1');
+ put(0,'TRACE R4 | NORMAL GAME MAY AUTOSAVE',42);
  put(1,'APP A000',32);
  put(2,'SCRIPT - (boundary only)',80);
- put(6,'Markers crossed only; chooser may wait.',44);
+ put(6,'Marker is not proof of deadlock.',38);
+ put(7,'WRITER W000',64);
 }catch(ignoredBootstrap){}
 })(window);</script>
-<script id="bo-r3-s-2-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S2 before (not completion)";}catch(ignored){}})();</script><!--R3:E:HUD--><script src="manual-restoration-model.js"></script><!--R3:I:S_A2--><script id="bo-r3-s-2-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S2 "+(c.getAttribute("data-r3-failed")==="2"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A2--><script src="i18n-en-US.js"></script><script src="i18n-es.js"></script><script src="i18n-fr.js"></script><script src="i18n-bindings.js"></script><script src="i18n.js"></script><script src="i18n-authored.js?i18nc=0e98b723ccf3f725" integrity="sha256-Dpi3I8zz9yVP4nEr0FM1rDo6IcuAgqMbh9W5ZG5DQGc=" crossorigin="anonymous" data-sha256="0e98b723ccf3f7254fe2712bd05335ac3a3a21cb8082a31b87d5b9646e434067"></script><script src="emerald-typewriter.js"></script><script src="emerald-text-quirks.js"></script><script src="effect-text.js"></script><script src="emerald-poker.js"></script><script src="emerald-poker-events.js"></script><script src="emerald-friendship.js"></script><script src="poker-levels.js"></script><script src="emerald-strict-poker.js"></script><script src="xp-cost-policy.js?all3=9930127b95f7817d" integrity="sha256-mTASe5X3gX1S7yNGyhIhAMGlGOoW4c1bXQnSYonUbew=" crossorigin="anonymous" data-sha256="9930127b95f7817d52ef2346ca122100c1a518ea16e1cd5b5d09d26289d46dec"></script>
+<script id="bo-r4-s-2-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S2 before (not completion)";}catch(ignored){}})();</script><!--R3:E:HUD--><script src="manual-restoration-model.js"></script><!--R3:I:S_A2--><script id="bo-r4-s-2-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S2 "+(c.getAttribute("data-r4-failed")==="2"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A2--><script src="i18n-en-US.js"></script><script src="i18n-es.js"></script><script src="i18n-fr.js"></script><script src="i18n-bindings.js"></script><script src="i18n.js"></script><script src="i18n-authored.js?i18nc=0e98b723ccf3f725" integrity="sha256-Dpi3I8zz9yVP4nEr0FM1rDo6IcuAgqMbh9W5ZG5DQGc=" crossorigin="anonymous" data-sha256="0e98b723ccf3f7254fe2712bd05335ac3a3a21cb8082a31b87d5b9646e434067"></script><script src="emerald-typewriter.js"></script><script src="emerald-text-quirks.js"></script><script src="effect-text.js"></script><script src="emerald-poker.js"></script><script src="emerald-poker-events.js"></script><script src="emerald-friendship.js"></script><script src="poker-levels.js"></script><script src="emerald-strict-poker.js"></script><script src="xp-cost-policy.js?all3=9930127b95f7817d" integrity="sha256-mTASe5X3gX1S7yNGyhIhAMGlGOoW4c1bXQnSYonUbew=" crossorigin="anonymous" data-sha256="9930127b95f7817d52ef2346ca122100c1a518ea16e1cd5b5d09d26289d46dec"></script>
 <script src="emerald-slots.js"></script><script src="originalgames/game-engine.js"></script><script src="arcade-cycle-data.js"></script><script src="game-offers.js"></script><script src="expansion-rewards.js"></script><script src="expansion-profile.js"></script><script src="emerald-poker-profile.js"></script><script src="potions.js"></script><script src="feature-power.js"></script><script src="battery-display.js"></script><script src="battery.js"></script><script src="battery-controller.js"></script><script src="battery-ui.js"></script><script src="passive-money.js"></script><script src="passive-money-controller.js"></script><script src="run-wallet.js"></script><script src="frenzy.js"></script><script src="food-catalog.js"></script><script src="food-effects.js"></script><script src="food-bar.js"></script><script src="tutorial-native-policy.js"></script><script src="engine.js"></script><script src="achievements-data.js"></script><script src="late-level-costs.js"></script><script src="late-level-rules.js"></script><script src="progression.js"></script><script src="passive-xp.js"></script><script src="interest-settings.js"></script><script src="power-boundary.js"></script><script src="power-settings-ui.js"></script><script src="interest-legacy.js"></script><script src="compound-interest-proof.js"></script><script src="exp-interest.js"></script><script src="faucet-graph.js"></script><script src="levels-enhancements.js"></script>
-<script src="levels-ui.js"></script><script src="collection-tracking.js"></script><!--R3:I:S_B55--><script id="bo-r3-s-55-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S55 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B55--><script src="music-assets.js"></script><!--R3:I:S_A55--><script id="bo-r3-s-55-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S55 "+(c.getAttribute("data-r3-failed")==="55"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A55--><script src="late-music-data.js"></script><script src="music-data.js"></script><script src="game-audio-data.js"></script><script src="audio.js"></script><script src="motion.js"></script><script src="stats.js"></script><script src="stock-market.js"></script><script src="stock-market-data.js"></script><script src="stock-market-ui.js"></script><script src="potions-ui.js"></script><script src="daily-streak.js"></script><script src="daily-tasks.js"></script><script src="daily-tasks-ui.js"></script><script src="daily-streak-ui.js"></script><script src="surveys.js"></script><script src="survey-videos.js"></script><script src="player-identity.js"></script><script src="survey-runner.js"></script><script src="surveys-ui.js"></script><script src="custom-images.js"></script><script src="moving-panels.js"></script><script src="text-customization.js"></script><script src="emerald-progress.js"></script><script src="emerald-blackjack.js"></script><script src="emerald-roadmap.js"></script><script src="emerald-workshop.js"></script><script src="emerald-runtime.js"></script><!--R3:I:S_B83--><script id="bo-r3-s-83-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S83 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B83--><script src="native-feature-transaction.js"></script><!--R3:I:S_A83--><script id="bo-r3-s-83-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S83 "+(c.getAttribute("data-r3-failed")==="83"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A83--><script src="tutorial-native-model.js"></script><script src="native-quiet-story.js"></script><script src="native-tutorial-ui.js"></script><script src="emerald-actions.js"></script><script src="emerald-blackjack-actions.js"></script><script src="emerald-cardgame-dialogue.js"></script><script src="emerald-blackjack-ui.js"></script><script src="emerald-chill-games.js"></script><script src="emerald-chill-actions.js"></script><script src="emerald-chill-ui.js"></script><script src="darts-501.js"></script><script src="darts-native.js"></script><script src="darts-ui.js"></script><script src="native-speech.js?three=47923d657b1aa91b" integrity="sha256-R5I9ZXsaqRsVL1hwjLcL8/vtGQH0v7VKaSjMk/R/F2k=" crossorigin="anonymous" data-sha256="47923d657b1aa91b152f58708cb70bf3fbed1901f4bfb54a6928cc93f47f1769"></script>
-<script src="cloud-save.js"></script><script src="save-slots.js"></script><script src="native-ending-recovery.js"></script><script src="native-quiet-story-ui.js"></script><script src="joker-art.js"></script><script src="emerald-asset.js"></script><script src="emerald-adviser.js"></script><script src="emerald-conduct.js"></script><script src="emerald-chat.js"></script><script src="emerald-attentive.js"></script><script src="emerald-card-frames.js"></script><script src="emerald-ui.js"></script><script src="emerald-survey.js"></script><script src="emerald-poker-actions.js"></script><script src="emerald-poker-ui.js"></script><script src="emerald-strict-poker-actions.js"></script><script src="emerald-strict-poker-ui.js"></script><script src="emerald-slots-actions.js"></script><script src="emerald-slots-ui.js"></script><script src="game-offers-ui.js"></script><script src="emerald-slots-lock-audio.js"></script><script src="expansion-host.js"></script><script src="level100-choice.js"></script><script src="native-player-xp.js" integrity="sha384-5PTKMX97EbQom9iLHesVQlqEm0WribAyX+GaaV20OKpwSzu40SZeQtnYdS/ZdpFi" crossorigin="anonymous"></script><script src="achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script><!--R3:I:S_B123--><script id="bo-r3-s-123-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S123 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B123--><script src="native-profile-host.js" integrity="sha384-6zTnUMG5frLGMbzCdiq30EKAU1Fj/EayN1ocy97sY37jsNzy79Ibyzfy8I3MV/J4" crossorigin="anonymous"></script><!--R3:I:S_A123--><script id="bo-r3-s-123-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S123 "+(c.getAttribute("data-r3-failed")==="123"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r3-s-124-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S124 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A123--><script src="app.js"></script><!--R3:I:S_A124--><script id="bo-r3-s-124-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S124 "+(c.getAttribute("data-r3-failed")==="124"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r3-s-125-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S125 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A124--><script src="pwa.js"></script><!--R3:I:S_A125--><script id="bo-r3-s-125-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S125 "+(c.getAttribute("data-r3-failed")==="125"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A125--></body></html>
+<script src="levels-ui.js"></script><script src="collection-tracking.js"></script><!--R3:I:S_B55--><script id="bo-r4-s-55-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S55 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B55--><script src="music-assets.js"></script><!--R3:I:S_A55--><script id="bo-r4-s-55-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S55 "+(c.getAttribute("data-r4-failed")==="55"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A55--><script src="late-music-data.js"></script><script src="music-data.js"></script><script src="game-audio-data.js"></script><script src="audio.js"></script><script src="motion.js"></script><script src="stats.js"></script><script src="stock-market.js"></script><script src="stock-market-data.js"></script><script src="stock-market-ui.js"></script><script src="potions-ui.js"></script><script src="daily-streak.js"></script><script src="daily-tasks.js"></script><script src="daily-tasks-ui.js"></script><script src="daily-streak-ui.js"></script><script src="surveys.js"></script><script src="survey-videos.js"></script><script src="player-identity.js"></script><script src="survey-runner.js"></script><script src="surveys-ui.js"></script><script src="custom-images.js"></script><script src="moving-panels.js"></script><script src="text-customization.js"></script><script src="emerald-progress.js"></script><script src="emerald-blackjack.js"></script><script src="emerald-roadmap.js"></script><script src="emerald-workshop.js"></script><script src="emerald-runtime.js"></script><!--R3:I:S_B83--><script id="bo-r4-s-83-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S83 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B83--><script src="native-feature-transaction.js"></script><!--R3:I:S_A83--><script id="bo-r4-s-83-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S83 "+(c.getAttribute("data-r4-failed")==="83"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A83--><script src="tutorial-native-model.js"></script><script src="native-quiet-story.js"></script><script src="native-tutorial-ui.js"></script><script src="emerald-actions.js"></script><script src="emerald-blackjack-actions.js"></script><script src="emerald-cardgame-dialogue.js"></script><script src="emerald-blackjack-ui.js"></script><script src="emerald-chill-games.js"></script><script src="emerald-chill-actions.js"></script><script src="emerald-chill-ui.js"></script><script src="darts-501.js"></script><script src="darts-native.js"></script><script src="darts-ui.js"></script><script src="native-speech.js?three=47923d657b1aa91b" integrity="sha256-R5I9ZXsaqRsVL1hwjLcL8/vtGQH0v7VKaSjMk/R/F2k=" crossorigin="anonymous" data-sha256="47923d657b1aa91b152f58708cb70bf3fbed1901f4bfb54a6928cc93f47f1769"></script>
+<script src="cloud-save.js"></script><script src="save-slots.js"></script><script src="native-ending-recovery.js"></script><script src="native-quiet-story-ui.js"></script><script src="joker-art.js"></script><script src="emerald-asset.js"></script><script src="emerald-adviser.js"></script><script src="emerald-conduct.js"></script><script src="emerald-chat.js"></script><script src="emerald-attentive.js"></script><script src="emerald-card-frames.js"></script><script src="emerald-ui.js"></script><script src="emerald-survey.js"></script><script src="emerald-poker-actions.js"></script><script src="emerald-poker-ui.js"></script><script src="emerald-strict-poker-actions.js"></script><script src="emerald-strict-poker-ui.js"></script><script src="emerald-slots-actions.js"></script><script src="emerald-slots-ui.js"></script><script src="game-offers-ui.js"></script><script src="emerald-slots-lock-audio.js"></script><script src="expansion-host.js"></script><script src="level100-choice.js"></script><script src="native-player-xp.js" integrity="sha384-5PTKMX97EbQom9iLHesVQlqEm0WribAyX+GaaV20OKpwSzu40SZeQtnYdS/ZdpFi" crossorigin="anonymous"></script><script src="achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script><!--R3:I:S_B123--><script id="bo-r4-s-123-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B123--><script src="native-profile-host.js" integrity="sha384-6zTnUMG5frLGMbzCdiq30EKAU1Fj/EayN1ocy97sY37jsNzy79Ibyzfy8I3MV/J4" crossorigin="anonymous"></script><!--R3:I:S_A123--><script id="bo-r4-s-123-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 "+(c.getAttribute("data-r4-failed")==="123"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-124-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A123--><script src="app.js"></script><!--R3:I:S_A124--><script id="bo-r4-s-124-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 "+(c.getAttribute("data-r4-failed")==="124"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-125-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A124--><script src="pwa.js"></script><!--R3:I:S_A125--><script id="bo-r4-s-125-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 "+(c.getAttribute("data-r4-failed")==="125"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A125--></body></html>
