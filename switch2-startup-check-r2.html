@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; img-src data:; media-src 'none'; font-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="data:,">
+<title>Switch startup check R2 - diagnostic only</title>
+<style>
+html{background:#102128;color:#f1f6f8;font:20px/1.35 Arial,sans-serif}
+body{max-width:1100px;margin:0 auto;padding:18px}
+h1{font-size:28px;margin:0 0 10px;color:#ffe5a1}
+p{margin:9px 0}
+button{font:inherit;font-weight:bold;min-height:60px;padding:12px 24px;border:2px solid #d4e5ed;border-radius:8px;background:#285466;color:white;cursor:pointer}
+button:focus{outline:3px solid #ffd57a;outline-offset:4px}
+button:disabled{background:#34474f;color:#d4e3e9;cursor:default}
+#status{font-weight:bold;color:#ffe5a1}
+pre{font:19px/1.4 monospace;white-space:pre-wrap;word-wrap:break-word;margin:14px 0;padding:12px;border:1px solid #7995a1;border-radius:8px;background:#182e37}
+.note{font-size:18px;color:#d4e3e9}
+@media(max-width:600px){body{padding:12px}h1{font-size:25px}pre{font-size:18px}}
+</style>
+</head>
+<body>
+<h1>Switch startup check R2</h1>
+<p id="status" role="status">NOT RUN - no getter or storage checks have run.</p>
+<p>Use the left stick to select the button, then press A. One attempt only.</p>
+<button type="button" id="run">Run startup checks</button>
+<pre id="results" aria-live="polite">Waiting for your button click.</pre>
+<p id="safety" class="note">DIAGNOSTIC ONLY. Does not run the game or test writing, saving durability, locks, memory, 32MB music, or loading phases. PASS is NOT proof the game is fixed or saving works.</p>
+<p class="note">Only a missing OWN descriptor matches the app1970 direct .get throw shape; reaching that stage is UNCONFIRMED. A non-getter or a throwing getter is different. No result forces game admission.</p>
+<p class="note">One non-bank read only; its value is discarded. No writes, save-key reads, requests, accounts or background work. Results stay on this screen.</p>
+<script id="startup-check-r2">
+(function(root){
+ 'use strict';
+ var doc=root.document;
+ var button=doc.getElementById('run');
+ var status=doc.getElementById('status');
+ var results=doc.getElementById('results');
+ var ran=false;
+ function errorName(error){
+  var name;
+  try{name=error&&error.name;}catch(ignore){return 'UnknownError';}
+  return typeof name==='string'&&/^[A-Za-z][A-Za-z0-9]{0,47}$/.test(name)?name:'UnknownError';
+ }
+ function describeGetter(label,constructorName,member,event,kind,lines){
+  var constructor,proto,descriptor,getter,value;
+  try{constructor=root[constructorName];}
+  catch(error){lines.push(label+': CONSTRUCTOR ACCESS ERROR '+errorName(error));return;}
+  if(typeof constructor!=='function'){
+   lines.push(label+': CONSTRUCTOR MISSING/NONFUNCTION');return;
+  }
+  try{proto=constructor.prototype;}
+  catch(error){lines.push(label+': PROTOTYPE ACCESS ERROR '+errorName(error));return;}
+  if(proto===null||(typeof proto!=='object'&&typeof proto!=='function')){
+   lines.push(label+': PROTOTYPE MISSING');return;
+  }
+  try{
+   if(typeof Object.getOwnPropertyDescriptor!=='function'){
+    lines.push(label+': DESCRIPTOR API MISSING');return;
+   }
+   descriptor=Object.getOwnPropertyDescriptor(proto,member);
+  }catch(error){lines.push(label+': DESCRIPTOR LOOKUP ERROR '+errorName(error));return;}
+  if(!descriptor){
+   lines.push(label+': OWN DESCRIPTOR MISSING (app1970 risk; stage UNCONFIRMED)');return;
+  }
+  getter=descriptor.get;
+  if(typeof getter!=='function'){
+   lines.push(label+': OWN descriptor; typeof get='+typeof getter+' (NON-GETTER, not missing; stage UNCONFIRMED)');return;
+  }
+  try{value=getter.call(event);}
+  catch(error){
+   lines.push(label+': OWN getter function; CALL ERROR '+errorName(error)+' (typeof get=function)');return;
+  }
+  if(kind==='type'){
+   lines.push(label+': OWN getter function; '+(value==='click'?'MATCH click':'value is not click')+' (typeof get=function)');
+  }else{
+   lines.push(label+': OWN getter function; '+(typeof value==='number'&&isFinite(value)?'MATCH finite number':'value is not a finite number')+' (typeof get=function)');
+  }
+ }
+ function storageCheck(lines){
+  var store,reader;
+  try{store=root.localStorage;}
+  catch(error){lines.push('localStorage getter: ERROR '+errorName(error));return;}
+  if(store===null){lines.push('localStorage getter: NULL');return;}
+  if(typeof store==='undefined'){lines.push('localStorage getter: MISSING');return;}
+  if(typeof store!=='object'&&typeof store!=='function'){
+   lines.push('localStorage getter: NONOBJECT');return;
+  }
+  lines.push('localStorage getter: SUCCESS');
+  try{reader=store.getItem;}
+  catch(error){lines.push('getItem access: ERROR '+errorName(error));return;}
+  if(typeof reader!=='function'){lines.push('getItem method: MISSING/NONCALLABLE');return;}
+  try{
+   reader.call(store,'__balatro_switch2_readonly_probe_r2__');
+   lines.push('getItem call: SUCCESS (value discarded)');
+  }catch(error){lines.push('getItem call: ERROR '+errorName(error));}
+ }
+ function run(event){
+  if(ran)return;
+  ran=true;
+  button.disabled=true;
+  status.textContent='RUNNING - one attempt only.';
+  var lines=[],trusted;
+  try{
+   trusted=event&&event.isTrusted;
+   lines.push('Event.isTrusted: '+(trusted===true?'true':trusted===false?'false':'unknown')+' (observation only)');
+  }catch(error){lines.push('Event.isTrusted: unknown ('+errorName(error)+'; observation only)');}
+  describeGetter('Event.type','Event','type',event,'type',lines);
+  describeGetter('MouseEvent.clientX','MouseEvent','clientX',event,'number',lines);
+  storageCheck(lines);
+  results.textContent=lines.join('\n');
+  status.textContent='CHECK COMPLETE - diagnostic only, NOT game proof.';
+ }
+ button.addEventListener('click',run,false);
+})(window);
+</script>
+</body>
+</html>
