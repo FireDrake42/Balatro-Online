@@ -14,7 +14,690 @@
 <section id="fictional-battery-dock" hidden aria-label="Fictional game battery"></section><div id="fictional-battery-shade" hidden aria-hidden="true"></div><main id="app" tabindex="-1"><p class="loading">Preparing your table…</p></main><div id="toast" role="status" aria-live="polite"></div>
 <div class="overlay" id="overlay" hidden><section class="sheet" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1"><header class="sheet-head"><h2 id="dialog-title"></h2><button id="close-dialog" class="icon-button" aria-label="Close dialog">×</button></header><div id="dialog-body"></div></section></div>
 <footer class="site-footer">POKER TABLE <span>Original browser implementation · Unofficial fan project · No real-money gambling</span><button id="coverage">Build notes</button><a href="manual-recovery.html">Read-only recovery / backup</a></footer>
-<script src="manual-restoration-model.js"></script><script src="i18n-en-US.js"></script><script src="i18n-es.js"></script><script src="i18n-fr.js"></script><script src="i18n-bindings.js"></script><script src="i18n.js"></script><script src="i18n-authored.js?i18nc=0e98b723ccf3f725" integrity="sha256-Dpi3I8zz9yVP4nEr0FM1rDo6IcuAgqMbh9W5ZG5DQGc=" crossorigin="anonymous" data-sha256="0e98b723ccf3f7254fe2712bd05335ac3a3a21cb8082a31b87d5b9646e434067"></script><script src="emerald-typewriter.js"></script><script src="emerald-text-quirks.js"></script><script src="effect-text.js"></script><script src="emerald-poker.js"></script><script src="emerald-poker-events.js"></script><script src="emerald-friendship.js"></script><script src="poker-levels.js"></script><script src="emerald-strict-poker.js"></script><script src="xp-cost-policy.js?all3=9930127b95f7817d" integrity="sha256-mTASe5X3gX1S7yNGyhIhAMGlGOoW4c1bXQnSYonUbew=" crossorigin="anonymous" data-sha256="9930127b95f7817d52ef2346ca122100c1a518ea16e1cd5b5d09d26289d46dec"></script>
+<!--R3:I:HUD--><aside id="bo-r3-hud" data-r3-static="3" data-r3-active="0" aria-live="off" aria-label="Startup observer only; normal game may autosave" style="position:fixed;left:12px;bottom:12px;z-index:2147483647;pointer-events:none;max-width:calc(100vw - 24px);padding:8px 12px;background:rgba(0,0,0,.94);color:#efff90;font:20px/1.25 monospace;white-space:pre-wrap;overflow-wrap:anywhere"><span id="bo-r3-title" style="display:block">TRACE NOT STARTED | NORMAL GAME MAY AUTOSAVE</span><span id="bo-r3-app" style="display:block">APP -</span><span id="bo-r3-script" style="display:block">SCRIPT -</span><span id="bo-r3-js" style="display:block">JS -</span><span id="bo-r3-resource" style="display:block">RESOURCE -</span><span id="bo-r3-reject" style="display:block">REJECT -</span><span id="bo-r3-note" style="display:block">Entered-not-left is not proof of deadlock.</span></aside>
+<script id="bo-r3-observer">(function(w){
+'use strict';
+try {
+ var NS='__BO_STARTUP_TRACE_R3__',RID='bo-r3-hud';
+ var owner=w,depth=0,names,j;
+ for(;owner&&depth<8;owner=Object.getPrototypeOf(owner),depth++){
+  names=Object.getOwnPropertyNames(owner);
+  if(names.length>4096)return;
+  for(j=0;j<names.length;j++)if(names[j]===NS)return;
+ }
+ if(owner)return;
+ /*R3_CONFIG_BEGIN*/
+ var C = {
+ "files": [
+  null,
+  "manual-restoration-model.js",
+  "i18n-en-US.js",
+  "i18n-es.js",
+  "i18n-fr.js",
+  "i18n-bindings.js",
+  "i18n.js",
+  "i18n-authored.js?i18nc=0e98b723ccf3f725",
+  "emerald-typewriter.js",
+  "emerald-text-quirks.js",
+  "effect-text.js",
+  "emerald-poker.js",
+  "emerald-poker-events.js",
+  "emerald-friendship.js",
+  "poker-levels.js",
+  "emerald-strict-poker.js",
+  "xp-cost-policy.js?all3=9930127b95f7817d",
+  "emerald-slots.js",
+  "originalgames/game-engine.js",
+  "arcade-cycle-data.js",
+  "game-offers.js",
+  "expansion-rewards.js",
+  "expansion-profile.js",
+  "emerald-poker-profile.js",
+  "potions.js",
+  "feature-power.js",
+  "battery-display.js",
+  "battery.js",
+  "battery-controller.js",
+  "battery-ui.js",
+  "passive-money.js",
+  "passive-money-controller.js",
+  "run-wallet.js",
+  "frenzy.js",
+  "food-catalog.js",
+  "food-effects.js",
+  "food-bar.js",
+  "tutorial-native-policy.js",
+  "engine.js",
+  "achievements-data.js",
+  "late-level-costs.js",
+  "late-level-rules.js",
+  "progression.js",
+  "passive-xp.js",
+  "interest-settings.js",
+  "power-boundary.js",
+  "power-settings-ui.js",
+  "interest-legacy.js",
+  "compound-interest-proof.js",
+  "exp-interest.js",
+  "faucet-graph.js",
+  "levels-enhancements.js",
+  "levels-ui.js",
+  "collection-tracking.js",
+  "music-assets.js",
+  "late-music-data.js",
+  "music-data.js",
+  "game-audio-data.js",
+  "audio.js",
+  "motion.js",
+  "stats.js",
+  "stock-market.js",
+  "stock-market-data.js",
+  "stock-market-ui.js",
+  "potions-ui.js",
+  "daily-streak.js",
+  "daily-tasks.js",
+  "daily-tasks-ui.js",
+  "daily-streak-ui.js",
+  "surveys.js",
+  "survey-videos.js",
+  "player-identity.js",
+  "survey-runner.js",
+  "surveys-ui.js",
+  "custom-images.js",
+  "moving-panels.js",
+  "text-customization.js",
+  "emerald-progress.js",
+  "emerald-blackjack.js",
+  "emerald-roadmap.js",
+  "emerald-workshop.js",
+  "emerald-runtime.js",
+  "native-feature-transaction.js",
+  "tutorial-native-model.js",
+  "native-quiet-story.js",
+  "native-tutorial-ui.js",
+  "emerald-actions.js",
+  "emerald-blackjack-actions.js",
+  "emerald-cardgame-dialogue.js",
+  "emerald-blackjack-ui.js",
+  "emerald-chill-games.js",
+  "emerald-chill-actions.js",
+  "emerald-chill-ui.js",
+  "darts-501.js",
+  "darts-native.js",
+  "darts-ui.js",
+  "native-speech.js?three=47923d657b1aa91b",
+  "cloud-save.js",
+  "save-slots.js",
+  "native-ending-recovery.js",
+  "native-quiet-story-ui.js",
+  "joker-art.js",
+  "emerald-asset.js",
+  "emerald-adviser.js",
+  "emerald-conduct.js",
+  "emerald-chat.js",
+  "emerald-attentive.js",
+  "emerald-card-frames.js",
+  "emerald-ui.js",
+  "emerald-survey.js",
+  "emerald-poker-actions.js",
+  "emerald-poker-ui.js",
+  "emerald-strict-poker-actions.js",
+  "emerald-strict-poker-ui.js",
+  "emerald-slots-actions.js",
+  "emerald-slots-ui.js",
+  "game-offers-ui.js",
+  "emerald-slots-lock-audio.js",
+  "expansion-host.js",
+  "level100-choice.js",
+  "native-player-xp.js",
+  "achievement-xp.js",
+  "native-profile-host.js",
+  "app.js",
+  "pwa.js"
+ ],
+ "phases": [
+  "A000",
+  "A002_ENTER",
+  "A006_EXIT",
+  "A014_DONE",
+  "A014_ENTER",
+  "A051_DONE",
+  "A051_ENTER",
+  "A058_DONE",
+  "A058_ENTER",
+  "A059_EXIT",
+  "A063_EXIT",
+  "A068_EXIT",
+  "A125_DONE",
+  "A125_ENTER",
+  "A1933_DONE",
+  "A1933_ENTER",
+  "A1970_DONE",
+  "A1970_ENTER",
+  "A1996_DONE",
+  "A1996_SKIP",
+  "A1996_WAIT",
+  "A1997_DONE",
+  "A1997_SKIP",
+  "A1997_WAIT",
+  "A1998_DONE",
+  "A1998_ENTER",
+  "A2007_DONE",
+  "A573_CAUGHT",
+  "A573_EXIT",
+  "A574_EXIT",
+  "A575_EXIT",
+  "A576_DONE",
+  "A576_ENTER",
+  "A576_EXIT",
+  "A576_WAIT",
+  "A576_WITNESS_EXIT",
+  "A577_CAUGHT",
+  "A577_DONE",
+  "A577_ENTER",
+  "A577_LEFT",
+  "A577_WAIT",
+  "A584_CAUGHT",
+  "A584_DONE",
+  "A584_ENTER",
+  "A584_EXIT",
+  "A584_LEFT",
+  "A584_WAIT",
+  "A588_CAUGHT",
+  "A588_CAUGHT_EXIT",
+  "A588_CHOICE_BUSY",
+  "A588_CHOICE_CAUGHT",
+  "A588_CHOICE_PENDING",
+  "A588_CHOICE_RESUME",
+  "A588_CHOICE_SETTLED",
+  "A588_CHOICE_SETTLED_FALSE",
+  "A588_CHOICE_SWITCH",
+  "A588_CHOOSE_DONE",
+  "A588_CHOOSE_EXIT",
+  "A588_CHOOSE_WAIT",
+  "A588_FAILURE_HANDLER",
+  "A588_INIT",
+  "A588_INIT_DONE",
+  "A588_RECOVER_DONE",
+  "A588_RECOVER_WAIT",
+  "A590_DONE",
+  "A590_EXIT",
+  "A590_READ",
+  "A590_WAIT"
+ ],
+ "columns": [
+  [
+   2,
+   32,
+   929
+  ],
+  [
+   6,
+   281,
+   60
+  ],
+  [
+   14,
+   1,
+   63
+  ],
+  [
+   14,
+   224,
+   60
+  ],
+  [
+   51,
+   1,
+   63
+  ],
+  [
+   51,
+   269,
+   60
+  ],
+  [
+   58,
+   1,
+   63
+  ],
+  [
+   58,
+   207,
+   60
+  ],
+  [
+   59,
+   254,
+   60
+  ],
+  [
+   63,
+   22,
+   71
+  ],
+  [
+   63,
+   100,
+   49
+  ],
+  [
+   68,
+   220,
+   60
+  ],
+  [
+   125,
+   1,
+   63
+  ],
+  [
+   125,
+   2455,
+   60
+  ],
+  [
+   352,
+   78,
+   74
+  ],
+  [
+   352,
+   159,
+   51
+  ],
+  [
+   368,
+   82,
+   74
+  ],
+  [
+   368,
+   163,
+   51
+  ],
+  [
+   567,
+   90,
+   87
+  ],
+  [
+   568,
+   1,
+   90
+  ],
+  [
+   569,
+   131,
+   92
+  ],
+  [
+   569,
+   230,
+   63
+  ],
+  [
+   569,
+   441,
+   90
+  ],
+  [
+   569,
+   550,
+   88
+  ],
+  [
+   569,
+   657,
+   58
+  ],
+  [
+   569,
+   729,
+   87
+  ],
+  [
+   569,
+   835,
+   108
+  ],
+  [
+   573,
+   310,
+   66
+  ],
+  [
+   573,
+   395,
+   60
+  ],
+  [
+   574,
+   195,
+   60
+  ],
+  [
+   575,
+   45,
+   60
+  ],
+  [
+   576,
+   1,
+   63
+  ],
+  [
+   576,
+   197,
+   84
+  ],
+  [
+   576,
+   304,
+   60
+  ],
+  [
+   576,
+   404,
+   71
+  ],
+  [
+   576,
+   482,
+   73
+  ],
+  [
+   577,
+   1,
+   63
+  ],
+  [
+   577,
+   862,
+   60
+  ],
+  [
+   577,
+   957,
+   60
+  ],
+  [
+   577,
+   1027,
+   66
+  ],
+  [
+   577,
+   1110,
+   60
+  ],
+  [
+   584,
+   1,
+   63
+  ],
+  [
+   584,
+   209,
+   60
+  ],
+  [
+   584,
+   387,
+   60
+  ],
+  [
+   584,
+   462,
+   66
+  ],
+  [
+   584,
+   789,
+   60
+  ],
+  [
+   584,
+   857,
+   60
+  ],
+  [
+   588,
+   5,
+   60
+  ],
+  [
+   588,
+   635,
+   107
+  ],
+  [
+   588,
+   771,
+   84
+  ],
+  [
+   588,
+   889,
+   81
+  ],
+  [
+   588,
+   1002,
+   92
+  ],
+  [
+   588,
+   1101,
+   94
+  ],
+  [
+   588,
+   1209,
+   101
+  ],
+  [
+   588,
+   1329,
+   81
+  ],
+  [
+   590,
+   1,
+   60
+  ],
+  [
+   590,
+   113,
+   60
+  ],
+  [
+   590,
+   195,
+   71
+  ],
+  [
+   590,
+   273,
+   49
+  ],
+  [
+   590,
+   1257,
+   60
+  ],
+  [
+   1933,
+   1,
+   66
+  ],
+  [
+   1933,
+   2845,
+   63
+  ],
+  [
+   1970,
+   1,
+   66
+  ],
+  [
+   1970,
+   343,
+   63
+  ],
+  [
+   1996,
+   1,
+   63
+  ],
+  [
+   1996,
+   97,
+   63
+  ],
+  [
+   1997,
+   1,
+   63
+  ],
+  [
+   1997,
+   94,
+   63
+  ],
+  [
+   1998,
+   1,
+   66
+  ],
+  [
+   1998,
+   76,
+   63
+  ],
+  [
+   2007,
+   1,
+   63
+  ]
+ ],
+ "critical": [
+  2,
+  55,
+  83,
+  123,
+  124,
+  125
+ ]
+};
+ /*R3_CONFIG_END*/
+ var d=w.document,root=d.getElementById(RID),ids=['bo-r3-title','bo-r3-app','bo-r3-script','bo-r3-js','bo-r3-resource','bo-r3-reject','bo-r3-note'];
+ var cells=[],i,token={},bad=[],jsSeen=false,resourceSeen=false,rejectSeen=false,lastBoundary=0;
+ if(!root||root.getAttribute('data-r3-static')!=='3'||root.getAttribute('data-r3-active')!=='0')return;
+ if(d.querySelectorAll('[id="'+RID+'"]').length!==1||Object.getOwnPropertyDescriptor(root,NS))return;
+ for(i=0;i<ids.length;i++){
+  cells[i]=d.getElementById(ids[i]);
+  if(!cells[i]||!root.contains(cells[i])||d.querySelectorAll('[id="'+ids[i]+'"]').length!==1||Object.getOwnPropertyDescriptor(cells[i],NS))return;
+ }
+ for(i=0;i<C.files.length;i++)bad[i]=false;
+ var origin=typeof w.location.origin==='string'?w.location.origin:'';
+ function live(){
+  var a=Object.getOwnPropertyDescriptor(w,NS),b=Object.getOwnPropertyDescriptor(root,NS),j;
+  if(!a||!b||a.value!==token||b.value!==token||d.getElementById(RID)!==root||root.getAttribute('data-r3-active')!=='1')return false;
+  for(j=0;j<ids.length;j++)if(d.getElementById(ids[j])!==cells[j])return false;
+  return true;
+ }
+ function put(index,text,max){cells[index].textContent=text.slice(0,max);}
+ function phase(){
+  var text=cells[1].textContent,j;
+  for(j=0;j<C.phases.length;j++)if(text==='APP '+C.phases[j])return C.phases[j];
+  return 'A000';
+ }
+ function errorName(error){
+  var n='',names=['Error','TypeError','ReferenceError','SyntaxError','RangeError','URIError','EvalError','SecurityError','InvalidStateError','NotSupportedError','QuotaExceededError','AbortError'],j;
+  if(error===null||(typeof error!=='object'&&typeof error!=='function'))return 'UnknownError';
+  try{n=error.name;}catch(ignored){return 'UnknownError';}
+  if(typeof n!=='string')return 'UnknownError';
+  for(j=0;j<names.length;j++)if(n===names[j])return n;
+  return 'UnknownError';
+ }
+ function fileName(id){return id>0&&C.files[id-1]?C.files[id-1].split(/[?#]/)[0]:'unknown';}
+ function scriptId(target){
+  var raw,j;
+  if(!target||target.tagName!=='SCRIPT')return 0;
+  raw=target.getAttribute('src');
+  if(typeof raw!=='string')return 0;
+  for(j=0;j<C.files.length;j++)if(C.files[j]===raw)return j+1;
+  return 0;
+ }
+ function sourceId(filename){
+  var raw,j,prefix=origin+'/';
+  if(!origin||typeof filename!=='string'||filename.indexOf(prefix)!==0)return 0;
+  raw=filename.slice(prefix.length).split(/[?#]/)[0];
+  for(j=0;j<C.files.length;j++)if(C.files[j]&&fileName(j+1)===raw)return j+1;
+  return 0;
+ }
+ function integer(n){return typeof n==='number'&&n>=1&&n<=1000000&&n%1===0;}
+ function locationText(id,line,col){
+  var old=col,j,r;
+  if(!id||!integer(line)||!integer(col))return 'unknown I?:? O?';
+  if(fileName(id)!=='app.js')return fileName(id)+' O'+line+':'+col;
+  for(j=0;j<C.columns.length;j++){
+   r=C.columns[j];
+   if(r[0]===line){
+    if(col>=r[1]&&col<r[1]+r[2])return 'app.js I'+line+':'+col+' O?';
+    if(col>=r[1]+r[2])old-=r[2];
+   }
+  }
+  return 'app.js I'+line+':'+col+' O'+line+':'+old;
+ }
+ function boundary(id){
+  lastBoundary=id;
+  cells[2].setAttribute('data-r3-failed',bad[id-1]?''+id:'');
+  put(2,'SCRIPT S'+lastBoundary+' '+fileName(id)+(bad[id-1]?' failed boundary':' load boundary (not async done)'),80);
+ }
+ function onLoad(event){try{if(!live())return;var id=scriptId(event.target);if(id)boundary(id);}catch(ignored){}}
+ function onError(event){
+  try{
+   if(!live())return;
+   var target=event.target,id=0,error=null;
+   if(target&&target.tagName==='SCRIPT'){
+    id=scriptId(target);
+    if(id){bad[id-1]=true;boundary(id);}
+    if(!resourceSeen){resourceSeen=true;put(4,'RESOURCE ResourceError '+fileName(id)+' @'+phase(),92);}
+    return;
+   }
+   if(target&&target!==w&&target.tagName)return;
+   id=sourceId(event.filename);
+   if(id){bad[id-1]=true;boundary(id);}
+   try{error=event.error;}catch(ignoredError){}
+   if(!jsSeen){jsSeen=true;put(3,'JS '+errorName(error)+' '+locationText(id,event.lineno,event.colno)+' @'+phase(),108);}
+  }catch(ignored){}
+ }
+ function onReject(event){
+  try{
+   if(!live()||rejectSeen)return;
+   var reason=null;
+   try{reason=event.reason;}catch(ignoredReason){}
+   rejectSeen=true;
+   put(5,'REJECT '+errorName(reason)+' unknown @'+phase(),92);
+  }catch(ignored){}
+ }
+ Object.defineProperty(root,NS,{value:token});
+ for(i=0;i<cells.length;i++)Object.defineProperty(cells[i],NS,{value:token});
+ Object.defineProperty(w,NS,{value:token});
+ w.addEventListener('error',onError,true);
+ w.addEventListener('load',onLoad,true);
+ w.addEventListener('unhandledrejection',onReject,true);
+ root.setAttribute('data-r3-active','1');
+ put(0,'TRACE R3 | NORMAL GAME MAY AUTOSAVE',42);
+ put(1,'APP A000',32);
+ put(2,'SCRIPT - (boundary only)',80);
+ put(6,'Markers crossed only; chooser may wait.',44);
+}catch(ignoredBootstrap){}
+})(window);</script>
+<script id="bo-r3-s-2-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S2 before (not completion)";}catch(ignored){}})();</script><!--R3:E:HUD--><script src="manual-restoration-model.js"></script><!--R3:I:S_A2--><script id="bo-r3-s-2-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S2 "+(c.getAttribute("data-r3-failed")==="2"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A2--><script src="i18n-en-US.js"></script><script src="i18n-es.js"></script><script src="i18n-fr.js"></script><script src="i18n-bindings.js"></script><script src="i18n.js"></script><script src="i18n-authored.js?i18nc=0e98b723ccf3f725" integrity="sha256-Dpi3I8zz9yVP4nEr0FM1rDo6IcuAgqMbh9W5ZG5DQGc=" crossorigin="anonymous" data-sha256="0e98b723ccf3f7254fe2712bd05335ac3a3a21cb8082a31b87d5b9646e434067"></script><script src="emerald-typewriter.js"></script><script src="emerald-text-quirks.js"></script><script src="effect-text.js"></script><script src="emerald-poker.js"></script><script src="emerald-poker-events.js"></script><script src="emerald-friendship.js"></script><script src="poker-levels.js"></script><script src="emerald-strict-poker.js"></script><script src="xp-cost-policy.js?all3=9930127b95f7817d" integrity="sha256-mTASe5X3gX1S7yNGyhIhAMGlGOoW4c1bXQnSYonUbew=" crossorigin="anonymous" data-sha256="9930127b95f7817d52ef2346ca122100c1a518ea16e1cd5b5d09d26289d46dec"></script>
 <script src="emerald-slots.js"></script><script src="originalgames/game-engine.js"></script><script src="arcade-cycle-data.js"></script><script src="game-offers.js"></script><script src="expansion-rewards.js"></script><script src="expansion-profile.js"></script><script src="emerald-poker-profile.js"></script><script src="potions.js"></script><script src="feature-power.js"></script><script src="battery-display.js"></script><script src="battery.js"></script><script src="battery-controller.js"></script><script src="battery-ui.js"></script><script src="passive-money.js"></script><script src="passive-money-controller.js"></script><script src="run-wallet.js"></script><script src="frenzy.js"></script><script src="food-catalog.js"></script><script src="food-effects.js"></script><script src="food-bar.js"></script><script src="tutorial-native-policy.js"></script><script src="engine.js"></script><script src="achievements-data.js"></script><script src="late-level-costs.js"></script><script src="late-level-rules.js"></script><script src="progression.js"></script><script src="passive-xp.js"></script><script src="interest-settings.js"></script><script src="power-boundary.js"></script><script src="power-settings-ui.js"></script><script src="interest-legacy.js"></script><script src="compound-interest-proof.js"></script><script src="exp-interest.js"></script><script src="faucet-graph.js"></script><script src="levels-enhancements.js"></script>
-<script src="levels-ui.js"></script><script src="collection-tracking.js"></script><script src="music-assets.js"></script><script src="late-music-data.js"></script><script src="music-data.js"></script><script src="game-audio-data.js"></script><script src="audio.js"></script><script src="motion.js"></script><script src="stats.js"></script><script src="stock-market.js"></script><script src="stock-market-data.js"></script><script src="stock-market-ui.js"></script><script src="potions-ui.js"></script><script src="daily-streak.js"></script><script src="daily-tasks.js"></script><script src="daily-tasks-ui.js"></script><script src="daily-streak-ui.js"></script><script src="surveys.js"></script><script src="survey-videos.js"></script><script src="player-identity.js"></script><script src="survey-runner.js"></script><script src="surveys-ui.js"></script><script src="custom-images.js"></script><script src="moving-panels.js"></script><script src="text-customization.js"></script><script src="emerald-progress.js"></script><script src="emerald-blackjack.js"></script><script src="emerald-roadmap.js"></script><script src="emerald-workshop.js"></script><script src="emerald-runtime.js"></script><script src="native-feature-transaction.js"></script><script src="tutorial-native-model.js"></script><script src="native-quiet-story.js"></script><script src="native-tutorial-ui.js"></script><script src="emerald-actions.js"></script><script src="emerald-blackjack-actions.js"></script><script src="emerald-cardgame-dialogue.js"></script><script src="emerald-blackjack-ui.js"></script><script src="emerald-chill-games.js"></script><script src="emerald-chill-actions.js"></script><script src="emerald-chill-ui.js"></script><script src="darts-501.js"></script><script src="darts-native.js"></script><script src="darts-ui.js"></script><script src="native-speech.js?three=47923d657b1aa91b" integrity="sha256-R5I9ZXsaqRsVL1hwjLcL8/vtGQH0v7VKaSjMk/R/F2k=" crossorigin="anonymous" data-sha256="47923d657b1aa91b152f58708cb70bf3fbed1901f4bfb54a6928cc93f47f1769"></script>
-<script src="cloud-save.js"></script><script src="save-slots.js"></script><script src="native-ending-recovery.js"></script><script src="native-quiet-story-ui.js"></script><script src="joker-art.js"></script><script src="emerald-asset.js"></script><script src="emerald-adviser.js"></script><script src="emerald-conduct.js"></script><script src="emerald-chat.js"></script><script src="emerald-attentive.js"></script><script src="emerald-card-frames.js"></script><script src="emerald-ui.js"></script><script src="emerald-survey.js"></script><script src="emerald-poker-actions.js"></script><script src="emerald-poker-ui.js"></script><script src="emerald-strict-poker-actions.js"></script><script src="emerald-strict-poker-ui.js"></script><script src="emerald-slots-actions.js"></script><script src="emerald-slots-ui.js"></script><script src="game-offers-ui.js"></script><script src="emerald-slots-lock-audio.js"></script><script src="expansion-host.js"></script><script src="level100-choice.js"></script><script src="native-player-xp.js" integrity="sha384-5PTKMX97EbQom9iLHesVQlqEm0WribAyX+GaaV20OKpwSzu40SZeQtnYdS/ZdpFi" crossorigin="anonymous"></script><script src="achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script><script src="native-profile-host.js" integrity="sha384-6zTnUMG5frLGMbzCdiq30EKAU1Fj/EayN1ocy97sY37jsNzy79Ibyzfy8I3MV/J4" crossorigin="anonymous"></script><script src="app.js"></script><script src="pwa.js"></script></body></html>
+<script src="levels-ui.js"></script><script src="collection-tracking.js"></script><!--R3:I:S_B55--><script id="bo-r3-s-55-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S55 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B55--><script src="music-assets.js"></script><!--R3:I:S_A55--><script id="bo-r3-s-55-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S55 "+(c.getAttribute("data-r3-failed")==="55"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A55--><script src="late-music-data.js"></script><script src="music-data.js"></script><script src="game-audio-data.js"></script><script src="audio.js"></script><script src="motion.js"></script><script src="stats.js"></script><script src="stock-market.js"></script><script src="stock-market-data.js"></script><script src="stock-market-ui.js"></script><script src="potions-ui.js"></script><script src="daily-streak.js"></script><script src="daily-tasks.js"></script><script src="daily-tasks-ui.js"></script><script src="daily-streak-ui.js"></script><script src="surveys.js"></script><script src="survey-videos.js"></script><script src="player-identity.js"></script><script src="survey-runner.js"></script><script src="surveys-ui.js"></script><script src="custom-images.js"></script><script src="moving-panels.js"></script><script src="text-customization.js"></script><script src="emerald-progress.js"></script><script src="emerald-blackjack.js"></script><script src="emerald-roadmap.js"></script><script src="emerald-workshop.js"></script><script src="emerald-runtime.js"></script><!--R3:I:S_B83--><script id="bo-r3-s-83-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S83 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B83--><script src="native-feature-transaction.js"></script><!--R3:I:S_A83--><script id="bo-r3-s-83-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S83 "+(c.getAttribute("data-r3-failed")==="83"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A83--><script src="tutorial-native-model.js"></script><script src="native-quiet-story.js"></script><script src="native-tutorial-ui.js"></script><script src="emerald-actions.js"></script><script src="emerald-blackjack-actions.js"></script><script src="emerald-cardgame-dialogue.js"></script><script src="emerald-blackjack-ui.js"></script><script src="emerald-chill-games.js"></script><script src="emerald-chill-actions.js"></script><script src="emerald-chill-ui.js"></script><script src="darts-501.js"></script><script src="darts-native.js"></script><script src="darts-ui.js"></script><script src="native-speech.js?three=47923d657b1aa91b" integrity="sha256-R5I9ZXsaqRsVL1hwjLcL8/vtGQH0v7VKaSjMk/R/F2k=" crossorigin="anonymous" data-sha256="47923d657b1aa91b152f58708cb70bf3fbed1901f4bfb54a6928cc93f47f1769"></script>
+<script src="cloud-save.js"></script><script src="save-slots.js"></script><script src="native-ending-recovery.js"></script><script src="native-quiet-story-ui.js"></script><script src="joker-art.js"></script><script src="emerald-asset.js"></script><script src="emerald-adviser.js"></script><script src="emerald-conduct.js"></script><script src="emerald-chat.js"></script><script src="emerald-attentive.js"></script><script src="emerald-card-frames.js"></script><script src="emerald-ui.js"></script><script src="emerald-survey.js"></script><script src="emerald-poker-actions.js"></script><script src="emerald-poker-ui.js"></script><script src="emerald-strict-poker-actions.js"></script><script src="emerald-strict-poker-ui.js"></script><script src="emerald-slots-actions.js"></script><script src="emerald-slots-ui.js"></script><script src="game-offers-ui.js"></script><script src="emerald-slots-lock-audio.js"></script><script src="expansion-host.js"></script><script src="level100-choice.js"></script><script src="native-player-xp.js" integrity="sha384-5PTKMX97EbQom9iLHesVQlqEm0WribAyX+GaaV20OKpwSzu40SZeQtnYdS/ZdpFi" crossorigin="anonymous"></script><script src="achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script><!--R3:I:S_B123--><script id="bo-r3-s-123-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S123 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B123--><script src="native-profile-host.js" integrity="sha384-6zTnUMG5frLGMbzCdiq30EKAU1Fj/EayN1ocy97sY37jsNzy79Ibyzfy8I3MV/J4" crossorigin="anonymous"></script><!--R3:I:S_A123--><script id="bo-r3-s-123-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S123 "+(c.getAttribute("data-r3-failed")==="123"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r3-s-124-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S124 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A123--><script src="app.js"></script><!--R3:I:S_A124--><script id="bo-r3-s-124-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S124 "+(c.getAttribute("data-r3-failed")==="124"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r3-s-125-b">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S125 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A124--><script src="pwa.js"></script><!--R3:I:S_A125--><script id="bo-r3-s-125-a">(function(){try{var r=document.getElementById("bo-r3-hud"),c=document.getElementById("bo-r3-script");if(!r||!c||r.getAttribute("data-r3-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R3__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R3__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R3__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r3-active")==="1")c.textContent="SCRIPT S125 "+(c.getAttribute("data-r3-failed")==="125"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A125--></body></html>
