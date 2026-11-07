@@ -81,6 +81,25 @@
  }
  function createController(api,env=root){
   check(env&&api?.getProfile&&api.capture&&api.transact,'ticker host unavailable.');
+  const native=root?.BONativeObservedWork?.isNative(api.nativeObservedWork)?api.nativeObservedWork:null;
+  check(api.nativeObservedWork===undefined||native,'original private native work capability required');
+  // Optional original-controller bridge. Each payment receives the COMPLETE
+  // preceding native whole, including BOTH progression and its interest receipt.
+  // The public legacy payEligible and every rate/step/proof/cost/RNG rule stay exact.
+  function payNativePrefix(whole,elapsed,at){
+   check(native&&finite(elapsed)&&elapsed<=MAX_GAP_MS,'invalid private native drain');
+   let prefix=copy(whole),consumedMs=0,payments=0,awardedXp=0,baseAwardedXp=0,criticalAwardedXp=0,criticalPayments=0,last=null;
+   while(true){
+    const config=api.xpConfig(at,prefix),interval=intervalMs(prefix.progression.level,config);
+    if(elapsed-consumedMs<interval||!rate(prefix.progression,config))break;
+    check(record(config.costContext?.beforeProfile)&&JSON.stringify(config.costContext.beforeProfile)===JSON.stringify(prefix)&&config.costContext.at===at&&config.now===at,'complete native prefix and REAL cost source required');
+    const state=normalize(prefix.expInterest),receiptAt=state.revision?state.lastTickAt+interval:Math.max(interval,Math.floor(at));
+    const r=step(prefix.progression,prefix.expInterest,receiptAt,config);check(!r.unchanged,'original native payment did not advance');
+    prefix.progression=copy(r.progression);prefix.expInterest=copy(r.state);consumedMs+=interval;payments++;awardedXp+=r.awardedXp;baseAwardedXp+=r.baseAwardedXp;criticalAwardedXp+=r.criticalAwardedXp;criticalPayments+=r.critical?1:0;last=r;
+    check(finite(awardedXp)&&awardedXp<=Number.MAX_SAFE_INTEGER&&finite(baseAwardedXp)&&finite(criticalAwardedXp),'native batch overflow');
+   }
+   return {...(last||{}),ok:true,unchanged:payments===0,fromLevel:whole.progression.level,toLevel:prefix.progression.level,progression:prefix.progression,state:normalize(prefix.expInterest),payments,consumedMs,remainderMs:elapsed-consumedMs,awardedXp,baseAwardedXp,critical:criticalPayments>0,criticalPayments,criticalAwardedXp};
+  }
   let clock=api.now||(typeof env.__BO_EXP_INTEREST_CLOCK__==='function'?env.__BO_EXP_INTEREST_CLOCK__:()=>env.performance.now());
   let anchor=clock(),lastLevel=api.getProfile().progression.level,epoch=0,pending=null,timer=null,abort=null,error='',fenceName='',fenceRelease=null,destroyed=false,parked=false;
   let retainedMs=0,policyPaused=api.enabled?api.enabled()!==true:false,lastPolicyKey=null;
@@ -92,8 +111,8 @@
   function currentInterval(){const p=api.getProfile();return intervalMs(p.progression.level,api.xpConfig?.(wall(),p))}
   function powerAllowed(){return api.enabled?api.enabled()===true:true}
   function policyKey(){const p=api.getProfile(),choice=IS.read(api.xpConfig?.(wall(),p));return JSON.stringify([p.progression.level,choice?.index??null])}
-  function reanchorPolicy(now){anchor=now;retainedMs=0;lastLevel=api.getProfile().progression.level;lastPolicyKey=policyKey()}
-  function remaining(){const interval=currentInterval(),elapsed=mono()-anchor,budget=policyPaused?retainedMs:visible()&&elapsed>=0&&elapsed<=MAX_GAP_MS+retainedMs?elapsed:retainedMs;return Math.max(0,interval-budget)}
+  function reanchorPolicy(now){native?.reset();anchor=now;retainedMs=0;lastLevel=api.getProfile().progression.level;lastPolicyKey=policyKey()}
+  function remaining(){if(native)return Math.max(0,currentInterval()-native.amount());const interval=currentInterval(),elapsed=mono()-anchor,budget=policyPaused?retainedMs:visible()&&elapsed>=0&&elapsed<=MAX_GAP_MS+retainedMs?elapsed:retainedMs;return Math.max(0,interval-budget)}
   function status(){const save=api.saveStatus?.(),readonly=save?.writable===false,paused=policyPaused||!powerAllowed();return {rateXp:readonly||error||paused?0:currentRate(),intervalMs:currentInterval(),remainingMs:remaining(),paused,pending:!!pending,blocked:!!error||readonly,reason:error||(readonly?save.reason:''),anchor,active:visible()&&!paused&&!readonly&&!error,revision:api.getProfile().expInterest?.revision||0}}
   function clearLease(){try{const value=JSON.parse(env.localStorage.getItem(LEASE)||'null');if(value?.owner===owner)env.localStorage.removeItem(LEASE)}catch(_){}}
   function invalidate(){epoch++;abort?.abort();abort=null;for(const [id,resolve]of waiters){env.clearTimeout(id);resolve(false)}waiters.clear();clearLease()}
@@ -104,6 +123,8 @@
    if(!env.navigator?.locks?.query)return;
    const held=(await env.navigator.locks.query()).held,state=normalize(api.getProfile().expInterest);
    for(const lock of held){
+    // COMMITTED advertisements use SHARED locks; an exclusive grant blocker is not saved-state evidence.
+    if(native&&lock.name.startsWith(FENCE)&&lock.mode!=='shared')continue;
     const medalPrefix=PROFILE+'.committed.';if(lock.name.startsWith(medalPrefix)){let f;try{f=JSON.parse(lock.name.slice(medalPrefix.length))}catch(_){continue}const e=api.getProfile().economy;if(f[0]===context.reset&&(!e||f[1]!==e.generation||f[2]>e.revision))throw new Error('Another tab saved a newer Medal wallet. Reload before earning Exp Interest.');continue}
     if(!lock.name.startsWith(FENCE))continue;let f;try{f=JSON.parse(lock.name.slice(FENCE.length))}catch(_){continue}
     if(f[0]===context.reset&&(f[1]>state.revision||f[1]===state.revision&&(f[2]!==state.totalXp||f[3]!==state.lastTickAt)))throw new Error('Another tab saved newer Exp Interest. Reload before saving or earning.');
@@ -134,23 +155,25 @@
    if(!visible())return {ok:true,unchanged:true,code:'hidden'};
    const now=mono(),level=api.getProfile().progression.level;
    if(level!==lastLevel||lastPolicyKey!==policyKey()){const code=level!==lastLevel?'level-anchor':'choice-anchor';reanchorPolicy(now);return {ok:true,unchanged:true,code}}
-   if(!currentRate()){anchor=now;retainedMs=0;return {ok:true,unchanged:true,code:'zero'}}
-   const elapsed=now-anchor;
-   if(elapsed<0||elapsed>MAX_GAP_MS+retainedMs){anchor=now-retainedMs;return {ok:true,unchanged:true,code:'fresh-anchor'}}
+   if(!currentRate()){native?.reset();anchor=now;retainedMs=0;return {ok:true,unchanged:true,code:'zero'}}
+   if(native)try{native.observe()}catch(e){native.fail();error=e.message;return {ok:false,code:'stale',reason:error}}
+   const elapsed=native?native.amount():now-anchor;
+   if(!native&&(elapsed<0||elapsed>MAX_GAP_MS+retainedMs)){anchor=now-retainedMs;return {ok:true,unchanged:true,code:'fresh-anchor'}}
    if(elapsed<currentInterval())return {ok:true,unchanged:true,code:'not-due'};
-   if(api.busy?.()){anchor=now;retainedMs=0;return {ok:false,code:'busy'}}
+   if(api.busy?.()){native?.reset();anchor=now;retainedMs=0;return {ok:false,code:'busy'}}
    let context;try{context=api.capture()}catch(e){error=e.message;api.changed?.();return {ok:false,code:'stale',reason:error}}
-   const requestEpoch=epoch,tickAt=wall(),capturedPolicyKey=lastPolicyKey,payableElapsed=Math.min(elapsed,MAX_GAP_MS);abort=new env.AbortController();
+   const nativeLease=native?.lease();if(native&&!nativeLease)return {ok:true,unchanged:true,code:'fresh-native-anchor'};
+   const requestEpoch=epoch,tickAt=native?native.details(nativeLease).at:wall(),capturedPolicyKey=lastPolicyKey,payableElapsed=native?native.details(nativeLease).amount:Math.min(elapsed,MAX_GAP_MS);abort=new env.AbortController();
    const commit=()=>{
     if(requestEpoch!==epoch||!visible()||policyPaused||!powerAllowed())return {ok:false,code:'cancelled'};
     if(policyKey()!==capturedPolicyKey){reanchorPolicy(mono());return {ok:true,unchanged:true,code:'choice-anchor'}}
     if(api.busy?.())return {ok:false,code:'busy'};
-    if(mono()-now>MAX_GAP_MS){anchor=mono()-retainedMs;return {ok:true,unchanged:true,code:'fresh-anchor'}}
-    const at=tickAt,result=api.transact(next=>{const r=payEligible(next.progression,next.expInterest,payableElapsed,at,progression=>api.xpConfig?.(at,{...next,progression}));if(r.unchanged)return r;next.progression=r.progression;next.expInterest=r.state;return {...r,xpResult:r}},context);
+    if(mono()-now>MAX_GAP_MS){native?.reset();anchor=mono()-retainedMs;return {ok:true,unchanged:true,code:'fresh-anchor'}}
+    const at=tickAt,result=api.transact(next=>{if(native)native.assert(nativeLease);const r=native?payNativePrefix(next,payableElapsed,at):payEligible(next.progression,next.expInterest,payableElapsed,at,progression=>api.xpConfig?.(at,{...next,progression}));if(r.unchanged)return r;next.progression=r.progression;next.expInterest=r.state;return {...r,xpResult:r}},context);
     // Debit eligible time at the synchronous durable result, BEFORE awaiting a
     // shared fence grant. Visibility may invalidate this epoch while publication
     // waits, but must never resurrect time already spent by the saved PROFILE.
-    if(result?.ok){const consumed=result.consumedMs||0;anchor+=consumed;retainedMs=Math.max(0,elapsed-consumed);lastLevel=api.getProfile().progression.level;lastPolicyKey=policyKey()}
+    if(result?.ok){const consumed=result.consumedMs||0;if(native){native.consume(nativeLease,consumed);anchor=now;retainedMs=native.amount();}else{anchor+=consumed;retainedMs=Math.max(0,elapsed-consumed);}lastLevel=api.getProfile().progression.level;lastPolicyKey=policyKey()}
     return result;
    };
    const work=(async()=>{
@@ -158,7 +181,7 @@
      const locks=env.navigator?.locks,result=locks?.request?await locks.request(PROFILE,{mode:'exclusive',signal:abort.signal},async()=>{await checkFence(context);const r=commit();if(r?.ok&&!r.unchanged)try{await publishFence(context,requestEpoch)}catch(_){/* XP is already durable; never retry a saved second. */}return r}):await fallback(commit,requestEpoch);
      if(result?.ok&&requestEpoch===epoch&&!result.unchanged)api.changed?.(result);
      return result;
-    }catch(e){if(requestEpoch!==epoch||e.name==='AbortError')return {ok:false,code:'cancelled'};error=e.message||'Exp Interest could not be saved.';api.changed?.();return {ok:false,code:'save-failed',reason:error}}
+    }catch(e){if(requestEpoch!==epoch||e.name==='AbortError')return {ok:false,code:'cancelled'};native?.fail();error=e.message||'Exp Interest could not be saved.';api.changed?.();return {ok:false,code:'save-failed',reason:error}}
    })();pending=work;
    try{return await work}finally{if(pending===work)pending=null}
   }
@@ -171,11 +194,11 @@
    if(pending)return {ok:false,code:'busy',reason:'Interest payment is finishing; no power boundary changed.'};
    const want=value||!powerAllowed(),now=mono();if(lastPolicyKey!==policyKey())reanchorPolicy(now);
    if(want===policyPaused)return {ok:true,unchanged:true,paused:want};
-   if(want){const elapsed=now-anchor;if(visible()&&elapsed>=0&&elapsed<=MAX_GAP_MS+retainedMs)retainedMs=elapsed;policyPaused=true;stop();anchor=now}else{policyPaused=false;start()}
+   if(want){const elapsed=now-anchor;if(native)retainedMs=native.amount();else if(visible()&&elapsed>=0&&elapsed<=MAX_GAP_MS+retainedMs)retainedMs=elapsed;policyPaused=true;stop();anchor=now}else{policyPaused=false;start()}
    return {ok:true,paused:policyPaused};
   }
-  function stop(){if(timer!==null)env.clearInterval(timer);timer=null;invalidate();releaseFence()}
-  function start(){stop();if(lastPolicyKey!==policyKey())reanchorPolicy(mono());if(destroyed||error||policyPaused||parked||env.document.hidden)return;anchor=mono()-retainedMs;lastLevel=api.getProfile().progression.level;timer=env.setInterval(()=>{void heartbeat()},50)}
+  function stop(){native?.hold();if(timer!==null)env.clearInterval(timer);timer=null;invalidate();releaseFence()}
+  function start(){stop();if(lastPolicyKey!==policyKey())reanchorPolicy(mono());if(destroyed||error||policyPaused||parked||env.document.hidden)return;native?.resume();anchor=mono()-retainedMs;lastLevel=api.getProfile().progression.level;timer=env.setInterval(()=>{void heartbeat()},50)}
   function visibility(){if(env.document.hidden)stop();else start()}
   function hide(){parked=true;stop()}
   function show(){parked=false;start()}

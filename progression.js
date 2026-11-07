@@ -339,6 +339,22 @@
     }
     p.cap = capFor(p);
   }
+  // Optional confirmed foreground WAIT work. No clock, reward or native deadline
+  // is stored here; original native/Potion/Royal effects are still derived first.
+  function copyFaucetGameSpeedCooldown(source, f) {
+    var keys = ['version','revision','claimOrdinal','lastClaimAt','gameSpeedRevision','gameSpeedStartedAt','gameSpeedActiveUntil','windowObservedMs','totalObservedMs','lastObservedUntil'];
+    capDataKeys(source, keys);
+    var r = {}; keys.forEach(function (key) { r[key] = Object.getOwnPropertyDescriptor(source, key).value; });
+    if (r.version !== 1 || !integer(r.revision,1,MAX_SAFE) || !integer(r.claimOrdinal,1,MAX_SAFE) ||
+        r.claimOrdinal !== f.totalClaims || r.lastClaimAt !== f.lastClaimAt || !integer(r.lastClaimAt,0,MAX_SAFE) ||
+        !integer(r.gameSpeedRevision,1,MAX_SAFE) || !integer(r.gameSpeedStartedAt,0,MAX_SAFE) ||
+        !integer(r.gameSpeedActiveUntil,0,MAX_SAFE) || r.gameSpeedActiveUntil-r.gameSpeedStartedAt !== 60000 ||
+        !integer(r.windowObservedMs,1,60000) || !integer(r.totalObservedMs,r.windowObservedMs,MAX_SAFE) ||
+        !integer(r.lastObservedUntil,0,r.gameSpeedActiveUntil) ||
+        r.windowObservedMs > r.lastObservedUntil-Math.max(r.gameSpeedStartedAt,r.lastClaimAt) ||
+        r.totalObservedMs > r.lastObservedUntil-r.lastClaimAt) throw new RangeError('Invalid confirmed Faucet observed-WAIT receipt.');
+    return r;
+  }
   function normalizeWithCosts(existing, table, deferSettlement) {
     var p = create();
     if (!record(existing)) return p;
@@ -400,6 +416,7 @@
       combinedClaims(p.faucet);
       if (nonnegative(f.nextClaimAt) && f.nextClaimAt <= MAX_SAFE) p.faucet.nextClaimAt = f.nextClaimAt;
       if (nonnegative(f.lastClaimAt) && f.lastClaimAt <= MAX_SAFE) p.faucet.lastClaimAt = f.lastClaimAt;
+      if (own(f,'gameSpeedCooldown')) p.faucet.gameSpeedCooldown = copyFaucetGameSpeedCooldown(optionalData(f,'gameSpeedCooldown'),p.faucet);
       if (own(f, 'cooldownPotionReceipts')) p.faucet.cooldownPotionReceipts = copyCooldownReceipts(f.cooldownPotionReceipts);
       if (own(f, 'cooldownPotionApplied')) {
         if (typeof f.cooldownPotionApplied !== 'boolean') throw new RangeError('Invalid saved faucet cooldown potion flag.');
@@ -850,6 +867,11 @@
     // that same original claim anchor, so expiry restores the original wait.
     var committedCooldownMs=Math.max(0,f.nextClaimAt-f.lastClaimAt),effectiveNextClaimAt=f.nextClaimAt;
     if(settings.poker.cooldownMultiplier===0.5)effectiveNextClaimAt=f.nextClaimAt-committedCooldownMs+pokerCooldownDuration(committedCooldownMs,settings.playerConfig,now);
+    var observed = f.gameSpeedCooldown;
+    if (observed) {
+      if (now < observed.lastObservedUntil) throw new RangeError('The confirmed Faucet observation clock moved backwards.');
+      effectiveNextClaimAt -= Math.floor(observed.totalObservedMs/2);
+    }
     var remaining=Math.max(0,effectiveNextClaimAt-now);
     var maxLevel = f.level === MAX_FAUCET_LEVEL, configurationMissing = !maxLevel && required === null;
     // Legacy saves retain their per-tier counter for raw cloud compatibility.
@@ -951,6 +973,7 @@
     draft.coinsHalf += creditedHalf; f.coinRemainderHundredths = carryTotal % 50;
     f.daily = {dayKey: info.dayKey, claims: info.claimsToday + 1, earnedHundredths: info.earnedTodayHundredths + reward};
     f.lifetimeEarningsKnown = info.lifetimeEarningsKnown; f.earnedLifetimeHundredths = earnedLifetime;
+    delete f.gameSpeedCooldown;
     f.totalClaims++; f.claims = f.totalClaims; f.lastClaimAt = now; f.nextClaimAt = next;
     // Exactly one reduction per WAIT, not one reduction per replacement bottle.
     if (info.cooldownMultiplier === 0.5) f.cooldownPotionApplied = true;

@@ -39,6 +39,18 @@
   function invoke(command,intent){const old=current;current=intent;try{return command(intent)}finally{current=old}}
   function unavailable(error,command,adapter){if(error.reloadRequired)paused=true;options.unavailable?.(error,adapter);if(adapter.onUnavailable==='continue')return invoke(command,null);return {ok:false,reason:error.message};}
   function unpaid(command,adapter,intent){const result=tail.then(()=>{try{options.assertIntent(intent);}catch(error){return unavailable(error,command,adapter);}return invoke(command,intent);},error=>unavailable(error,command,adapter));tail=result.catch(()=>{});return result;}
+  function dispatch(ticket,command,adapter){
+   if(ticket.handlers.has(adapter.owner))return ticket.handlers.get(adapter.owner);ticket.pending++;
+   const result=tail.then(()=>ticket.accepted).then(intent=>{try{check(!paused,'native button XP is paused');options.assertIntent(intent);}catch(error){return unavailable(error,command,adapter);}return invoke(command,intent);},error=>unavailable(error,command,adapter)).finally(()=>{if(--ticket.pending===0&&ticket.paid)try{options.finished?.(ticket.intent);}catch(_){/* UI publication never undoes a confirmed source. */}});
+   ticket.handlers.set(adapter.owner,result);tail=result.catch(()=>{});return result;
+  }
+  function follow(event,command,adapter,origin,fresh){
+   const repeat=arguments.length===5,previous=seen.get(origin.event);
+   if(!previous)return unpaid(command,adapter,repeat?{...(fresh||origin),event,button:origin.button,sourceWindow:origin.sourceWindow}:origin);
+   const intent={...origin,event},observed=repeat?fresh:origin;
+   const ticket={handlers:new Map(),intent,pending:0,paid:false,accepted:tail.then(()=>previous.accepted).then(()=>{check(!paused,'native button XP is paused');options.assertIntent(origin);check(observed,'native repeat capture unavailable');options.assertIntent(observed);return intent;})};
+   seen.set(event,ticket);return dispatch(ticket,command,adapter);
+  }
   function handle(event,command,adapter={}){
    check(typeof command==='function'&&typeof adapter.owner==='string'&&adapter.owner.length>0,'real native handler owner required');let button;
    try{button=trustedControl(event,adapter.sourceWindow||root);}catch(error){if(adapter.onUnavailable==='continue'||event?.isTrusted!==true)return command();options.unavailable?.(error,adapter);return Promise.resolve({ok:false,reason:error.message});}
@@ -49,18 +61,18 @@
     // physical activation of the different semantic button.
     if(event.type==='click'&&event.detail===0&&key?.down&&key.button!==button)return command();
     const repeat=event.type==='keydown'&&event.repeat||event.type==='click'&&event.detail===0&&key?.key==='Enter'&&key.repeat&&key.button===button;
-    if(repeat){try{check(key?.intent,'auto-repeat has no accepted originating press');options.assertIntent(key.intent);const captured=options.capture(event,button,adapter);return unpaid(command,adapter,{...(captured||key.intent),event,button,sourceWindow:adapter.sourceWindow||root});}catch(error){return unavailable(error,command,adapter);}}
-    if(event.type==='click'&&event.detail===0&&key?.expectClick&&key.button===button){key.expectClick=false;return unpaid(command,adapter,key.intent);}
-    if(event.type==='click'&&pointer?.charged&&pointer.button===button&&(event.pointerId===pointer.id||event.pointerId===undefined&&event.detail>0)){input.pointer=null;return unpaid(command,adapter,pointer.intent);}
+    if(repeat){try{check(key?.intent,'auto-repeat has no accepted originating press');options.assertIntent(key.intent);const captured=options.capture(event,button,adapter);return follow(event,command,adapter,key.intent,captured);}catch(error){return unavailable(error,command,adapter);}}
+    if(event.type==='click'&&event.detail===0&&key?.expectClick&&key.button===button){key.expectClick=false;return follow(event,command,adapter,key.intent);}
+    if(event.type==='click'&&pointer?.charged&&pointer.button===button&&(event.pointerId===pointer.id||event.pointerId===undefined&&event.detail>0)){input.pointer=null;return follow(event,command,adapter,pointer.intent);}
     let captured;try{captured=options.capture(event,button,adapter);}catch(error){return unavailable(error,command,adapter);}if(!captured)return command();const origin={...captured,event,button,sourceWindow:adapter.sourceWindow||root};
-    if(event.type==='keydown'&&key){key.intent=origin;key.expectClick=!event.defaultPrevented;}else if(event.type==='click'&&event.detail===0&&key?.button===button)key.intent=origin;
-    if(event.type==='pointerdown'&&pointer?.event===event){pointer.charged=true;pointer.intent=origin;}if(captured.levelAtIntent<60)return unpaid(command,adapter,origin);
-    check(sequence<Number.MAX_SAFE_INTEGER,'native intent counter is full');const intent={...origin,session,sequence:++sequence};
-    ticket={handlers:new Map(),intent,pending:0,accepted:tail.then(async()=>{check(!paused,'native button XP is paused');options.assertIntent(intent);const reward=await options.award(intent);options.assertIntent(intent);return {...intent,reward};})};seen.set(event,ticket);
+    const identified=captured.levelAtIntent>=50;let intent=origin;
+    if(identified){check(sequence<Number.MAX_SAFE_INTEGER,'native intent counter is full');intent={...origin,session,sequence:++sequence};const paid=captured.levelAtIntent>=60;
+     ticket={handlers:new Map(),intent,pending:0,paid,accepted:tail.then(async()=>{check(!paused,'native button XP is paused');options.assertIntent(intent);if(!paid)return intent;const reward=await options.award(intent);options.assertIntent(intent);return {...intent,reward};})};seen.set(event,ticket);}
+    if(event.type==='keydown'&&key){key.intent=intent;key.expectClick=!event.defaultPrevented;}else if(event.type==='click'&&event.detail===0&&key?.button===button)key.intent=intent;
+    if(event.type==='pointerdown'&&pointer?.event===event){pointer.charged=true;pointer.intent=intent;}
+    if(!identified)return unpaid(command,adapter,intent);
    }
-   if(ticket.handlers.has(adapter.owner))return ticket.handlers.get(adapter.owner);ticket.pending++;
-   const result=tail.then(()=>ticket.accepted).then(intent=>{try{options.assertIntent(intent);}catch(error){return unavailable(error,command,adapter);}return invoke(command,intent);},error=>unavailable(error,command,adapter)).finally(()=>{if(--ticket.pending===0)try{options.finished?.(ticket.intent);}catch(_){/* UI publication never undoes a confirmed source. */}});
-   ticket.handlers.set(adapter.owner,result);tail=result.catch(()=>{});return result;
+   return dispatch(ticket,command,adapter);
   }
   return Object.freeze({handle,current:()=>current,settled:()=>tail,status:()=>({paused,sequence,session})});
  }

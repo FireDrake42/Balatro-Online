@@ -287,5 +287,188 @@
       earnedMs:folded.result.earnedMs + next.result.earnedMs};
     return next;
   }
-  return Object.freeze({VERSION,PAUSE_VERSION,UNLOCK_LEVEL,TICK_MS,MAX_TIME,PHASES,STATE_FIELDS,PAUSE_STATE_FIELDS,create:start,start,poll,setPaused,pollElapsed,startElapsed,setPausedElapsed,status,normalize,validate,tierForLevel,copyData});
+  // Distinct optional full-clock receipt. ALL original v1/v2 function bodies above
+  // remain exact. Only explicit version dispatch below can enter this namespace.
+  const BOOST_VERSION = 3, BOOST_FIELDS = Object.freeze(['version','sequence','base','lastAt','pausedAt','sessionPausedMs','cooldownPausedMs','sessionBonusMs','cooldownBonusMs','creditedCents','boostRevision']);
+  const finiteClock = n => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= MAX_TIME;
+  const isBoosted = s => !!s && typeof s === 'object' && Object.getOwnPropertyDescriptor(s,'version')?.value === BOOST_VERSION;
+  function boostLeft(s,at) {
+    // Cancel integer UTC anchors BEFORE fractional work. Absolute epoch-rounded
+    // derived S/K must never pay a final cent, change phase or unlock early.
+    return {session:s.base.endsAt-at+s.sessionPausedMs-s.sessionBonusMs,
+      cooldown:s.base.cooldownEndsAt-at+s.sessionPausedMs+s.cooldownPausedMs-(s.sessionBonusMs+s.cooldownBonusMs)};
+  }
+  function boostNumbers(s) {
+    const b=s.base, D=b.durationMs, C=b.cooldownMs, P=b.version===PAUSE_VERSION?b.pausedMs:0;
+    const U=Math.min(D,Math.max(0,b.lastAt-b.startedAt-P));
+    const S=b.endsAt+s.sessionPausedMs-s.sessionBonusMs, K=S+C+s.cooldownPausedMs-s.cooldownBonusMs;
+    const Q=boostLeft(s,s.lastAt).session<=0?D-U:Math.min(D-U,Math.max(0,s.lastAt-b.lastAt-s.sessionPausedMs)+s.sessionBonusMs);
+    return {D,C,U,S,K,W:b.visibleMs+Q};
+  }
+  function normalizeBoosted(existing) {
+    const keys=dataKeys(existing);
+    check(keys.length===BOOST_FIELDS.length&&keys.every(k=>BOOST_FIELDS.includes(k)),'invalid-state','Unexpected full-clock Passive Money fields.');
+    const s={};for(const k of keys)s[k]=Object.getOwnPropertyDescriptor(existing,k).value;
+    s.base=normalize(s.base);
+    check(s.version===BOOST_VERSION&&s.base&&count(s.sequence)&&s.sequence===s.base.sequence&&
+      (s.base.version!==PAUSE_VERSION||s.base.pausedAt===null),'invalid-state','Invalid original full-clock session base.');
+    check(clock(s.lastAt)&&s.lastAt>=s.base.lastAt&&count(s.sessionPausedMs)&&count(s.cooldownPausedMs)&&
+      (s.pausedAt===null||clock(s.pausedAt)&&s.pausedAt===s.lastAt),'invalid-state','Invalid full-clock UTC/pause cursor.');
+    // Type-check BEFORE arithmetic: invalid data cannot execute valueOf/getters.
+    check(finiteClock(s.sessionBonusMs)&&finiteClock(s.cooldownBonusMs)&&count(s.boostRevision)&&s.boostRevision>0,
+      'invalid-state','Invalid finite full-clock bonus fields.');
+    const unpaused=s.lastAt-s.base.lastAt-s.sessionPausedMs-s.cooldownPausedMs;
+    // Every admitted UTC bracket is >=1ms and REAL<=UTC+64ms. Summed across
+    // disjoint brackets, even that extremal density is <=(1+64)*0.5 per UTC.
+    // This is only a structural upper bound, NEVER an observation authority.
+    check(unpaused>0&&s.sessionBonusMs+s.cooldownBonusMs<=32.5*unpaused+1e-7,
+      'invalid-state','Noncausal aggregate full-clock pause/bonus budget.');
+    const n=boostNumbers(s), c0=Math.min(n.C,Math.max(0,s.base.lastAt-s.base.endsAt));
+    check(s.sessionBonusMs<=n.D-n.U&&s.cooldownBonusMs<=n.C-c0&&s.sessionBonusMs+s.cooldownBonusMs>0,
+      'invalid-state','Invalid finite full-clock bonus budget.');
+    check(finiteClock(n.S)&&finiteClock(n.K)&&n.K>=n.S&&
+      (n.U===n.D?s.sessionBonusMs===0:boostLeft(s,s.base.lastAt).session>=0)&&
+      (c0===n.C?s.cooldownBonusMs===0:boostLeft(s,s.base.lastAt).cooldown>=0)&&
+      (boostLeft(s,s.lastAt).session<=0||s.cooldownBonusMs===0&&s.cooldownPausedMs===0)&&
+      (s.pausedAt===null||boostLeft(s,s.lastAt).cooldown>0)&&s.lastAt>s.base.lastAt,
+      'invalid-state','Noncausal full-clock phase boundaries.');
+    check(count(s.creditedCents)&&s.creditedCents===Math.floor(n.W/TICK_MS)&&n.W>=s.base.visibleMs&&n.W<=n.D,
+      'invalid-state','Full-clock work and credited cents disagree.');
+    return s;
+  }
+  function normalizeAny(s) { return isBoosted(s)?normalizeBoosted(s):normalize(s); }
+  function validateAny(s) { try { normalizeAny(s);return true; } catch(_) {return false;} }
+  function inspectedAny(run) {
+    const r=copyData(run);dataKeys(r);
+    check(typeof r._uiId==='string'&&r._uiId.trim().length>0&&typeof r.phase==='string','invalid-run','An identified origin run is required.');
+    check(typeof r.money==='number'&&Number.isFinite(r.money),'invalid-bank','The current-run Bank needs attention.');dataKeys(r.stats);
+    check(typeof r.stats.moneyEarned==='number'&&Number.isFinite(r.stats.moneyEarned)&&r.stats.moneyEarned>=0,'invalid-bank','The run income statistic needs attention.');
+    return {run:r,state:normalizeAny(own(r,'passiveMoney')?r.passiveMoney:undefined)};
+  }
+  function viewBoosted(run,s,level,now,context) {
+    const tier=tierForLevel(level),effects=effectsAt(context,now),n=boostNumbers(s),paused=s.pausedAt!==null,rollback=now<s.lastAt;
+    const at=paused?s.pausedAt:rollback?s.lastAt:now,unlocked=level>=UNLOCK_LEVEL,eligibleRun=usable(run);
+    const left=boostLeft(s,at),threshold=cooldownDuration(n.C,context,now),cdWork=Math.min(n.C,Math.max(0,n.C-left.cooldown));
+    const expired=left.session<=0,sessionRemainingMs=Math.max(0,left.session),cooldownRemainingMs=expired?Math.max(0,threshold-cdWork):0;
+    // Royal's current zero remainder is NOT a saved historical completion time.
+    const cooldownEndsAt=effects.cooldownMultiplier===0.5&&expired?at+cooldownRemainingMs:n.K;
+    return {ok:true,unlocked,eligibleRun,active:unlocked&&eligibleRun&&!paused&&!rollback&&!expired,paused,hasSession:true,legacyClock:false,
+      sessionRemainingMs,ready:unlocked&&eligibleRun&&!paused&&!rollback&&expired&&cdWork>=threshold,
+      coolingDown:expired&&cdWork<threshold,zeroCooldowns:false,pokerCooldownMultiplier:effects.cooldownMultiplier,clockRollback:rollback,
+      expired,settled:boostLeft(s,s.lastAt).session<=0,sequence:s.sequence,startedAt:s.base.startedAt,endsAt:n.S,cooldownEndsAt,nativeCooldownEndsAt:n.K,
+      durationMs:n.D,cooldownMs:threshold,nativeCooldownMs:n.C,nextDurationMs:tier.durationMs,nextCooldownMs:cooldownDuration(tier.cooldownMs,context,now),
+      remainingMs:!expired?sessionRemainingMs:0,cooldownRemainingMs,visibleMs:n.W,creditedCents:s.creditedCents,maxCents:n.D/TICK_MS,centsPerSecond:1};
+  }
+  function statusAny(run,level,now,context) {
+    if(!isBoosted(Object.getOwnPropertyDescriptor(run||{},'passiveMoney')?.value))return status(run,level,now,context);
+    try {check(clock(now),'invalid-time','Supply a nonnegative safe-integer absolute timestamp.');const a=inspectedAny(run);return viewBoosted(a.run,a.state,level,now,context);}catch(e){return failure(e);}
+  }
+  function boostCommand(run,level,now,context,operation) {
+    try {
+      const tier=tierForLevel(level);check(clock(now),'invalid-time','Supply a nonnegative safe-integer absolute timestamp.');effectsAt(context,now);
+      const a=inspectedAny(run);check(level>=UNLOCK_LEVEL,'locked','Passive Money unlocks at actual player Level40.');
+      check(usable(a.run),'ineligible-run','Passive Money needs the active, non-abandoned origin run.');
+      check(!a.state||now>=a.state.lastAt,'clock-rollback','The absolute clock moved backwards. No time was forced forward.');
+      const result=operation(a.run,a.state,tier);result.status=statusAny(a.run,level,now,context);return {run:a.run,result};
+    }catch(e){return {run,result:failure(e)};}
+  }
+  function boostDraft(s) {
+    if(s.version===BOOST_VERSION)return copyData(s);
+    return {version:BOOST_VERSION,sequence:s.sequence,base:copyData(s),lastAt:s.lastAt,pausedAt:null,
+      sessionPausedMs:0,cooldownPausedMs:0,sessionBonusMs:0,cooldownBonusMs:0,creditedCents:s.creditedCents,boostRevision:0};
+  }
+  function boostProof(input,s,level,now) {
+    if(input===undefined)return null;
+    const p=copyData(input),keys=dataKeys(p);
+    check(keys.length===2&&keys.includes('receipt')&&keys.includes('slices')&&Array.isArray(p.slices),'invalid-observation','Supply one strict receipt and native observed slices.');
+    if(p.receipt===undefined||level<50)return null;
+    const r=p.receipt,rk=dataKeys(r),fields=['version','revision','startedAt','activeUntil','cooldownUntil'];
+    check(rk.length===fields.length&&rk.every(k=>fields.includes(k))&&r.version===1&&count(r.revision)&&r.revision>0&&
+      [r.startedAt,r.activeUntil,r.cooldownUntil].every(clock)&&r.activeUntil-r.startedAt===60000&&r.cooldownUntil-r.activeUntil===600000,
+      'invalid-observation','Invalid current native Game Speed receipt.');
+    if(s.version===BOOST_VERSION&&r.revision<s.boostRevision)return null;
+    let end=s.lastAt,total=0;
+    for(const slice of p.slices){const k=dataKeys(slice);
+      check(k.length===3&&k.every(x=>['fromAt','toAt','realMs'].includes(x))&&clock(slice.fromAt)&&clock(slice.toAt)&&slice.toAt>slice.fromAt&&
+        slice.fromAt>=end&&slice.toAt<=now&&finiteClock(slice.realMs)&&slice.realMs>0&&slice.realMs<=2500&&
+        Math.abs(slice.toAt-slice.fromAt-slice.realMs)<=64,'invalid-observation','An observed slice is stale, overlapping, unbounded or nonnative.');
+      end=slice.toAt;total+=slice.realMs;check(total<=2500,'invalid-observation','One native budget exceeds2500real milliseconds.');
+    }
+    return p;
+  }
+  function walkBoost(s,from,to,beta) {
+    let cursor=0,session=boostLeft(s,from).session>0;const total=to-from;
+    // Fractional offsets stay inside the ORIGINAL integer UTC bracket. Never
+    // feed epoch-rounded derived deadlines back into REAL bonus consumption.
+    for(let phase=0;cursor<total&&phase<2;phase++) {
+      const left=boostLeft(s,from),remaining=(session?left.session:left.cooldown)-cursor;
+      if(remaining<=0)return;
+      const required=remaining/(1+beta),span=Math.min(total-cursor,required),hit=required<=total-cursor;
+      if(beta>0){if(session)s.sessionBonusMs+=beta*span;else s.cooldownBonusMs+=beta*span;}
+      cursor+=span;
+      if(!hit||!session)return;
+      session=false;
+    }
+  }
+  function settleBoost(r,s,old,now,bonusMs) {
+    const oldW=old.version===BOOST_VERSION?boostNumbers(old).W:old.visibleMs;
+    s.lastAt=now;const n=boostNumbers(s);s.creditedCents=Math.floor(n.W/TICK_MS);
+    const awardedCents=s.creditedCents-old.creditedCents;
+    if(awardedCents>0){r.money=addCents(r.money,awardedCents);r.stats.moneyEarned=addCents(r.stats.moneyEarned,awardedCents);}
+    normalizeBoosted(s);r.passiveMoney=s;
+    return {ok:true,changed:serializedBoost(s)!==serializedBoost(old),awardedCents,earnedMs:n.W-oldW,bonusMs,
+      code:boostLeft(s,s.lastAt).session<=0?'settled':awardedCents?'earned':'accruing',sequence:s.sequence};
+  }
+  const serializedBoost=s=>JSON.stringify(s);
+  function advanceBoosted(run,level,now,observation,context) {
+    return boostCommand(run,level,now,context,(r,old)=>{
+      if(!old)return {ok:true,changed:false,awardedCents:0,earnedMs:0,bonusMs:0,code:'idle'};
+      if(old.version===BOOST_VERSION?old.pausedAt!==null:old.version===PAUSE_VERSION&&old.pausedAt!==null)
+        return {ok:true,changed:false,awardedCents:0,earnedMs:0,bonusMs:0,code:'paused'};
+      const proof=boostProof(observation,old,level,now),s=boostDraft(old),before=s.sessionBonusMs+s.cooldownBonusMs;
+      if(proof)for(const p of proof.slices){
+        const begin=Math.max(p.fromAt,proof.receipt.startedAt),end=Math.min(p.toAt,proof.receipt.activeUntil);
+        if(end>begin)walkBoost(s,begin,end,0.5*p.realMs/(p.toAt-p.fromAt));
+      }
+      const bonusMs=s.sessionBonusMs+s.cooldownBonusMs-before;
+      if(old.version!==BOOST_VERSION&&bonusMs===0){const p=pollElapsed(r,level,now,context);check(p.result.ok,p.result.code,p.result.reason);Object.assign(r,p.run);return {...p.result,bonusMs:0};}
+      if(bonusMs>0)s.boostRevision=proof.receipt.revision;
+      if(now===old.lastAt||old.version===BOOST_VERSION&&boostLeft(old,old.lastAt).cooldown<=0&&bonusMs===0)
+        return {ok:true,changed:false,awardedCents:0,earnedMs:0,bonusMs:0,code:'ready'};
+      return settleBoost(r,s,old,now,bonusMs);
+    });
+  }
+  function pollElapsedAny(run,level,now,context) {return isBoosted(Object.getOwnPropertyDescriptor(run||{},'passiveMoney')?.value)?advanceBoosted(run,level,now,undefined,context):pollElapsed(run,level,now,context);}
+  function setPausedElapsedAny(run,level,now,paused,context) {
+    if(!isBoosted(Object.getOwnPropertyDescriptor(run||{},'passiveMoney')?.value))return setPausedElapsed(run,level,now,paused,context);
+    return boostCommand(run,level,now,context,(r,old)=>{
+      check(typeof paused==='boolean','invalid-observation','Supply an explicit boolean pause.');
+      const was=old.pausedAt!==null;
+      if(was===paused)return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:was?'paused':'unchanged'};
+      if(was){const s=copyData(old),gap=now-s.pausedAt;
+        if(boostLeft(s,s.pausedAt).session>0)s.sessionPausedMs+=gap;else s.cooldownPausedMs+=gap;
+        s.pausedAt=null;s.lastAt=now;normalizeBoosted(s);r.passiveMoney=s;
+        return {ok:true,changed:true,awardedCents:0,earnedMs:0,code:'resumed',sequence:s.sequence};}
+      const folded=pollElapsedAny(r,level,now,context);check(folded.result.ok,folded.result.code,folded.result.reason);Object.assign(r,folded.run);
+      const s=normalizeBoosted(r.passiveMoney);if(boostLeft(s,now).cooldown<=0)return folded.result;
+      s.pausedAt=now;s.lastAt=now;normalizeBoosted(s);r.passiveMoney=s;return {...folded.result,changed:true,code:'paused'};
+    });
+  }
+  function startElapsedAny(run,level,now,options,context) {
+    if(!isBoosted(Object.getOwnPropertyDescriptor(run||{},'passiveMoney')?.value))return startElapsed(run,level,now,options,context);
+    const folded=pollElapsedAny(run,level,now,context);if(!folded.result.ok)return folded;
+    const out=boostCommand(folded.run,level,now,context,(r,s,tier)=>{
+      check(options===undefined||(dataKeys(options).length===1&&own(options,'pauseClock')&&typeof options.pauseClock==='boolean'),'invalid-options','Supply only an explicit boolean pauseClock option.');
+      const state=viewBoosted(r,s,level,now,context);check(state.ready,state.paused?'paused':state.active?'active':'cooldown','This session is active, paused or still cooling down.');
+      check(s.sequence<MAX_TIME,'sequence-overflow','Passive Money sequence cannot safely advance.');
+      check(now<=MAX_TIME-tier.durationMs-tier.cooldownMs,'clock-overflow','The captured session deadlines would overflow.');
+      r.passiveMoney={version:VERSION,sequence:s.sequence+1,startedAt:now,endsAt:now+tier.durationMs,durationMs:tier.durationMs,
+        cooldownMs:tier.cooldownMs,cooldownEndsAt:now+tier.durationMs+tier.cooldownMs,lastAt:now,visibleMs:0,creditedCents:0,settled:false};
+      if(options&&options.pauseClock)Object.assign(r.passiveMoney,{version:PAUSE_VERSION,pausedAt:null,pausedMs:0});
+      return {ok:true,changed:true,awardedCents:folded.result.awardedCents,earnedMs:folded.result.earnedMs,code:'started',sequence:s.sequence+1};
+    });
+    return out.result.ok?out:{run,result:out.result};
+  }
+  return Object.freeze({VERSION,PAUSE_VERSION,BOOST_VERSION,BOOST_FIELDS,UNLOCK_LEVEL,TICK_MS,MAX_TIME,PHASES,STATE_FIELDS,PAUSE_STATE_FIELDS,create:start,start,poll,setPaused,
+    pollElapsed:pollElapsedAny,startElapsed:startElapsedAny,setPausedElapsed:setPausedElapsedAny,status:statusAny,normalize:normalizeAny,validate:validateAny,advanceBoosted,tierForLevel,copyData});
 }));

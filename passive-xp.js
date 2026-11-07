@@ -1,7 +1,7 @@
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./progression'), require('./potions'));
-  else root.BOPassiveXP = factory(root.BOProgress, root.BOPotions);
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (PG, POT) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./progression'), require('./potions'), function () { return require('./game-speed'); });
+  else root.BOPassiveXP = factory(root.BOProgress, root.BOPotions, function () { return root.BOGameSpeed; });
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (PG, POT, gameSpeedModel) {
   'use strict';
 
   var UNLOCK_LEVEL = 9, TICK_MS = 1000, SESSION_MS = 600000, MAX_SESSION_MS = 3600000, COOLDOWN_MS = 300000, REDUCED_COOLDOWN_MS = 240000;
@@ -122,11 +122,20 @@
       creditedTicks: 0, creditedMs: 0, totalTicks: 0, totalCreditedMs: 0, totalXp: 0,
       sessionsStarted: 0, sessionsCompleted: 0, completionCounted: false};
   }
+  // Public accounting only; private observed work and its authority never serialize.
+  // A bonus is prepayment of this session's pinned native tail, across GS windows.
+  var BONUS_KEYS=['version','revision','sessionSequence','sessionStartedAt','sessionCapMs','gameSpeedRevision','gameSpeedStartedAt','gameSpeedActiveUntil','windowObservedMs','windowTicks','totalTicks','totalXp','lastObservedUntil'];
+  function copyBonus(value,s) {
+    pauseRecord(value,BONUS_KEYS);var out={};BONUS_KEYS.forEach(function(k){out[k]=pauseData(value,k);});
+    BONUS_KEYS.filter(function(k){return k!=='totalXp';}).forEach(function(k){if(!Number.isSafeInteger(out[k])||out[k]<0)throw new TypeError('Invalid Game Speed bonus counter.');});
+    if(out.version!==1||out.revision<1||out.sessionSequence!==s.sequence||out.sessionStartedAt!==s.startedAt||!hasSession(s)||out.sessionCapMs!==s.sessionDurationMs||out.sessionCapMs<1800000||out.sessionCapMs>MAX_SESSION_MS||out.sessionCapMs%600000!==0||out.gameSpeedRevision<1||out.gameSpeedStartedAt>MAX_TIMESTAMP-60000||out.gameSpeedActiveUntil!==out.gameSpeedStartedAt+60000||out.windowTicks<1||out.windowTicks>30||out.windowObservedMs!==out.windowTicks*2000||out.totalTicks<out.windowTicks||out.totalTicks*TICK_MS>out.sessionCapMs||!Number.isFinite(out.totalXp)||out.totalXp<=0||out.lastObservedUntil<Math.max(s.startedAt,out.gameSpeedStartedAt)+out.windowObservedMs||out.lastObservedUntil>Math.min(s.endsAt,out.gameSpeedActiveUntil))throw new RangeError('Game Speed bonus does not match its captured native session/window budget.');
+    return out;
+  }
   function normalize(existing) {
-    var s = create(), pause, pokerTick;
+    var s = create(), pause, pokerTick,bonusKnown=record(existing)&&own(existing,'gameSpeedBonus');
     if(record(existing)&&own(existing,'pokerTick')){pokerTick=pauseData(existing,'pokerTick');pauseRecord(pokerTick,['at','multiplier']);if(!safeTimestamp(pokerTick.at)||(pokerTick.multiplier!==1&&pokerTick.multiplier!==2))throw new RangeError('Invalid passive Poker tick snapshot.');pokerTick={at:pokerTick.at,multiplier:pokerTick.multiplier};}
     if (record(existing) && own(existing, 'powerPause')) pause = copyPowerPause(pauseData(existing, 'powerPause'));
-    if (!record(existing) || (existing.version !== 1 && existing.version !== 2 && existing.version !== 3)) {if(pokerTick)throw new RangeError('Poker tick needs a valid passive session.');return s;}
+    if (!record(existing) || (existing.version !== 1 && existing.version !== 2 && existing.version !== 3)) {if(pokerTick||bonusKnown)throw new RangeError('Known passive source receipts need their original valid native session.');return s;}
     if (pause) s.powerPause = pause;
     var version = existing.version, oldInterval = version === 1 ? 10000 : TICK_MS;
     if (own(existing, 'cooldownPotionReceipts')) s.cooldownPotionReceipts = copyReceipts(existing.cooldownPotionReceipts);
@@ -177,6 +186,7 @@
       }
     }
     if(pokerTick){if(!hasSession(s)||s.completionCounted||pokerTick.at!==s.startedAt+s.creditedMs||s.creditedMs>=s.sessionDurationMs)throw new RangeError('Poker tick must match the ONE pending passive left edge.');s.pokerTick=pokerTick;}
+    if(bonusKnown)s.gameSpeedBonus=copyBonus(pauseData(existing,'gameSpeedBonus'),s);
     return s;
   }
   function hasSession(s) { return s.sequence > 0 && s.sessionDurationMs > 0 && s.endsAt > s.startedAt; }
@@ -308,7 +318,7 @@
     captureJoker(s,now,PG.jokerXpMultiplier(xpConfig));
     if (hasSession(s) && !s.completionCounted) {
       // External level changes may extend a still-active session, never revive one.
-      if (needsDurationUpdate(p, s, now)) extend(s, durationForLevel(level(p)));
+      if (needsDurationUpdate(p, s, now)) {if(s.gameSpeedBonus)throw new RangeError('A published native bonus tail cannot move.');extend(s, durationForLevel(level(p)));}
       setRate(s, rateForLevel(level(p)));
       while (s.creditedMs + s.tickMs <= elapsedMs(s, now)) {
         var beforeDuration = durationForLevel(level(p)), interval = s.tickMs, base = level(p) >= 20 ? 0 : s.baseRateXp;
@@ -318,7 +328,11 @@
         var tickTime = s.startedAt + s.creditedMs, effects = effectsAt(state, tickTime);
         var tickConfig = xpConfigAt(xpConfig, state, tickTime);tickConfig.jokerXpMultiplier=historicalJoker(s,tickTime);
         if(s.pokerTick&&s.pokerTick.at===tickTime)tickConfig.pokerXpMultiplier=s.pokerTick.multiplier;
-        var excluded = powerExcluded(s, tickTime);
+        // BASE's real cursor still traverses prepaid work once, without earning it
+        // twice. PG's original zero-input frontier release remains intact. This
+        // reconciliation is independent of GS presence, eligibility and reload.
+        var prepaid = s.gameSpeedBonus && s.creditedMs >= s.gameSpeedBonus.sessionCapMs-s.gameSpeedBonus.totalTicks*TICK_MS;
+        var excluded = powerExcluded(s, tickTime) || prepaid;
         // Only an eligible positive native tick may stage a fresh cost source.
         // Keep the original whole domain headers; only locally paid Player/cursor
         // state advances within this still-detached, single-bank transaction.
@@ -471,6 +485,9 @@
         var duration = durationForLevel(level(p)), endsAt = now + duration;
         if (!Number.isFinite(endsAt) || endsAt <= now) throw new RangeError('Passive XP deadline overflow.');
         if (s.powerPause && s.completionCounted && s.creditedMs === s.sessionDurationMs) s.powerPause.exclusions = [];
+        // Only the original accepted native start may retire a settled session's
+        // prepayment. Observation/GS changes never clear or rebase this receipt.
+        delete s.gameSpeedBonus;
         s.sequence++; s.sessionsStarted++; s.startedAt = now; s.endsAt = endsAt; s.sessionDurationMs = duration;
         s.creditedTicks = 0; s.creditedMs = 0; s.completionCounted = false; setRate(s, rateForLevel(level(p)));
         delete s.pokerTick;delete s.jokerXpSegments;if(PG.jokerXpMultiplier(xpConfig)!==1)s.jokerXpSegments=[{at:now,multiplier:PG.jokerXpMultiplier(xpConfig)}];
@@ -519,7 +536,88 @@
     } catch (error) { return failure('overflow', error.message); }
   }
 
+  function createGameSpeedController(options) {
+    if(!record(options)||!['getProfile','owner','epoch','visible','enabled','writable','now','monotonic','xpConfig','confirmed'].every(function(k){return typeof options[k]==='function';}))throw new TypeError('Original private Passive XP owner callbacks are required.');
+    var tokens=new WeakMap(),queue=[],anchor=null,binding=null,paused=false,reason='',spent=0,quarantined=0,publicationOwner={};
+    function copy(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));}
+    function amount(){return queue.reduce(function(n,s){return n+s.to-s.from;},0);}
+    function read(flags){
+      var p=options.getProfile(),at=options.now(),mono=options.monotonic();if(!record(p)||!safeTimestamp(at)||!Number.isFinite(mono)||mono<0)throw new RangeError('Invalid original Passive XP observation.');
+      var s=normalize(p.passiveXp),gs=own(p,'gameSpeed')?pauseData(p,'gameSpeed'):undefined,G=gameSpeedModel();
+      if(gs!==undefined){pauseRecord(gs,['version','revision','startedAt','activeUntil','cooldownUntil']);if(!G||!G.validate(gs))throw new RangeError('Invalid original Game Speed receipt.');}
+      return {p:p,s:s,gs:gs,at:at,mono:mono,owner:options.owner(),epoch:options.epoch(),eligible:!paused&&options.visible()===true&&options.enabled()===true&&options.writable(flags)===true&&level(p.progression)>=50&&hasSession(s)&&!!gs};
+    }
+    function sameIdentity(a,b){return a.owner===b.owner&&a.epoch===b.epoch&&a.s.sequence===b.s.sequence&&a.s.startedAt===b.s.startedAt;}
+    function sameWindow(a,b){return !!a.gs&&!!b.gs&&JSON.stringify(a.gs)===JSON.stringify(b.gs);}
+    function remember(c){
+      if(binding&&!sameIdentity(binding,c)){paused=true;reason='The original Passive XP owner, epoch or session changed.';anchor=null;return false;}
+      if(binding&&!sameWindow(binding,c)){quarantined+=amount();queue=[];anchor=null;publicationOwner={};}
+      binding=c;return !paused;
+    }
+    function snapshot(c){var config=Object.assign({},options.xpConfig(c.at,c.p));delete config.costContext;delete config.interestContext;var native=copy(c.s);captureJoker(native,c.at,PG.jokerXpMultiplier(config));return {s:native,profile:{potions:copy(c.p.potions),...(own(c.p,'emeraldPokerEvents')?{emeraldPokerEvents:copy(c.p.emeraldPokerEvents)}:{})},config:copy(config)};}
+    function observe(){
+      var c=read();if(!remember(c)||!c.eligible){anchor=null;return false;}
+      var prev=anchor;anchor={c:c,fx:snapshot(c)};
+      if(!prev)return false;
+      var dt=c.mono-prev.c.mono,dw=c.at-prev.c.at;
+      // A wall jump, suspension or missed foreground sampling never funds bonus.
+      if(dt<=0||dw<=0||dt>2500||Math.abs(dt-dw)>50)return false;
+      var from=Math.max(prev.c.at,c.s.startedAt,c.gs.startedAt),to=Math.min(c.at,c.s.endsAt,c.gs.activeUntil);
+      if(to<=from||amount()>=60000)return false;
+      var edges=[from,to];[prev.fx.s,c.s].forEach(function(s){if(s.powerPause){if(s.powerPause.activeFrom!==null)edges.push(s.powerPause.activeFrom);s.powerPause.exclusions.forEach(function(x){edges.push(x.from,x.to);});}});
+      edges=edges.filter(function(t){return t>=from&&t<=to;}).sort(function(a,b){return a-b;});
+      for(var i=1;i<edges.length;i++){var left=edges[i-1],right=edges[i];if(right<=left||powerExcluded(prev.fx.s,left)||powerExcluded(c.s,left))continue;right=Math.min(right,left+60000-amount());if(right>left){if(queue.length>=4096){paused=true;reason='Private observed Passive XP work is full.';break;}queue.push({from:left,to:right,fx:prev.fx});}}
+      return true;
+    }
+    function prefixes(count){var out=[],need=2000,first=null;for(var i=0;i<queue.length&&out.length<count;i++){var s=queue[i],at=s.from;while(at<s.to&&out.length<count){if(need===2000)first={at:at,fx:s.fx};var n=Math.min(need,s.to-at);at+=n;need-=n;if(!need){out.push({at:first.at,fx:first.fx,until:at});need=2000;}}}return out;}
+    function stage(){var c=read();if(!remember(c)||!c.eligible||c.s.completionCounted)return null;var r=c.s.gameSpeedBonus,paid=r?r.totalTicks:0,windowTicks=r&&r.gameSpeedRevision===c.gs.revision?r.windowTicks:0;
+      if(c.s.creditedMs+paid*TICK_MS>=c.s.sessionDurationMs)return null;
+      var count=Math.min(30-windowTicks,Math.floor(amount()/2000));if(count<1)return null;
+      var token=Object.freeze({});tokens.set(token,{context:c,publicationOwner:publicationOwner,beforeJSON:JSON.stringify(c.p),prefixes:prefixes(count),phase:'staged',consumed:0});return token;
+    }
+    function assertStage(token,flags){var e=tokens.get(token);if(!e||e.publicationOwner!==publicationOwner||!['staged','prepared'].includes(e.phase))throw new Error('The original private Passive XP work token is required once.');var c=read(flags);if(!c.eligible||!sameIdentity(e.context,c)||!sameWindow(e.context,c)||c.p!==e.context.p||JSON.stringify(c.p)!==e.beforeJSON)throw new Error('The original Passive XP source changed. Work remains unspent.');return true;}
+    function prepareStage(token,source,context){
+      assertStage(token,{nativeTransaction:true});var e=tokens.get(token);if(e.phase!=='staged'||!record(source)||!record(source.profile)||JSON.stringify(source.profile)!==e.beforeJSON||!record(context)||!safeTimestamp(context.at)||!record(context.slot))throw new Error('The complete original native Passive XP beforeimage is required.');
+      var p=copy(source.profile),baseConfig=Object.assign({},options.xpConfig(context.at,p));baseConfig.sourceKind='passive';baseConfig.costContext={beforeProfile:copy(p),slot:copy(context.slot),at:context.at};var base=poll(p,context.at,baseConfig);if(!base.ok)throw new Error(base.reason||'The original BASE settlement was refused.');
+      var s=p.passiveXp,r=s.gameSpeedBonus,gs=e.context.gs,bonusXp=0,bonusTicks=0,times=[],used=0;
+      // At eligible 66+, native duration is already at its maximum tier (16).
+      // Captured legacy 40/50/60m durations are preserved. copyBonus pins D; a
+      // future unsupported extension refuses rather than moving the paid range.
+      var D=s.sessionDurationMs;if(D<durationForLevel(66))throw new RangeError('Native BASE must capture its eligible duration before bonus.');
+      for(var i=0;i<e.prefixes.length;i++){
+        var item=e.prefixes[i];if(item.until>context.at)throw new RangeError('Unobserved future Passive XP work is not payable.');
+        var T=r?r.totalTicks:0;if(D-s.creditedMs-T*TICK_MS<TICK_MS)break;
+        times.push(item.at);used+=2000;
+        var fx=item.fx,at=Math.floor(item.at),state=potionState(fx.profile),config=xpConfigAt(profileXpConfig(fx.profile,at,fx.config),state,at);config.jokerXpMultiplier=historicalJoker(fx.s,at);
+        if(effectsAt(state,at).knowledgeXpPerSecond!==1||powerExcluded(fx.s,at))continue;
+        config.sourceKind='passive';config.xpSource='passive';
+        var before=copy(p);config.costContext={beforeProfile:before,slot:copy(context.slot),at:at,id:'passive-gs:'+s.startedAt+':'+s.sequence+':'+gs.revision+':'+(T+1)};
+        // The genuine native earned branch applies Joker/earned/Poker exactly
+        // once. No fake session, reset cursor, Survey or flat raw XP grant.
+        var awarded=PG.addEarnedXp(p.progression,PG.jokerXpMultiplier(config),undefined,config);if(awarded.configurationMissing||!Number.isFinite(awarded.awardedXp)||awarded.awardedXp<0)throw new Error('The original Knowledge source was refused.');
+        if(!(awarded.awardedXp>0))continue;
+        bonusTicks++;bonusXp+=awarded.awardedXp;
+        var same=r&&r.gameSpeedRevision===gs.revision;if(r&&r.revision>=MAX_SAFE)throw new RangeError('Game Speed bonus revision overflow.');
+        r={version:1,revision:(r?r.revision:0)+1,sessionSequence:s.sequence,sessionStartedAt:s.startedAt,sessionCapMs:D,gameSpeedRevision:gs.revision,gameSpeedStartedAt:gs.startedAt,gameSpeedActiveUntil:gs.activeUntil,windowObservedMs:((same?r.windowTicks:0)+1)*2000,windowTicks:(same?r.windowTicks:0)+1,totalTicks:T+1,totalXp:(r?r.totalXp:0)+awarded.awardedXp,lastObservedUntil:item.until};
+        s.gameSpeedBonus=copyBonus(r,s);
+      }
+      // Revalidate the truthful accepted whole, including the original native
+      // cost activation. Never invent a BASE receipt to seed a bonus-only policy.
+      if(bonusTicks)PG.captureCostContext(p.progression,Object.assign({},baseConfig,{costContext:{beforeProfile:copy(p),slot:copy(context.slot),at:context.at}}));
+      var result=Object.assign({},base,{bonusTicks:bonusTicks,bonusXp:bonusXp,awardedXp:base.awardedXp+bonusXp,toLevel:p.progression.level,changed:JSON.stringify(p)!==e.beforeJSON});
+      var out={profile:p,run:copy(source.run),result:result,bonusTimes:times};e.phase='prepared';e.consumed=used;e.passiveJSON=JSON.stringify(p.passiveXp);e.prepared=out;return out;
+    }
+    function publishStage(token){
+      var e=tokens.get(token);if(!e||e.publicationOwner!==publicationOwner||e.phase!=='prepared'||options.confirmed(token)!==true||amount()<e.consumed)throw new Error('Original paired five-bank confirmation and the current private work lease are required before spending work.');
+      var c=read({nativeTransaction:true});if(!c.eligible||!sameIdentity(e.context,c)||!sameWindow(e.context,c)||c.p!==e.context.p||JSON.stringify(c.p.passiveXp)!==e.passiveJSON)throw new Error('Confirmed Passive XP publication lost its original owner/image.');
+      var left=e.consumed;while(left>0&&queue.length){var n=Math.min(left,queue[0].to-queue[0].from);queue[0].from+=n;left-=n;if(queue[0].from===queue[0].to)queue.shift();}if(left)throw new Error('Private observed work changed before publication.');
+      spent+=e.consumed;e.phase='published';publicationOwner={};return e.prepared.result;
+    }
+    function discardStage(token,error){var e=tokens.get(token);if(!e){if(error){paused=true;reason=error.message;anchor=null;}return;}if(e.phase==='published')return;e.phase='discarded';paused=true;reason=error?.message||'The original paired Passive XP source was not confirmed.';anchor=null;}
+    return Object.freeze({observe:observe,stage:stage,assertStage:assertStage,prepareStage:prepareStage,publishStage:publishStage,discardStage:discardStage,resetObservation:function(){anchor=null;},status:function(){return Object.freeze({spentObservedMs:spent,pendingObservedMs:amount()+quarantined,stageableObservedMs:amount(),paused:paused,reason:reason});}});
+  }
+
   return {UNLOCK_LEVEL: UNLOCK_LEVEL, BASE_XP: 0.01, TICK_MS: TICK_MS, SESSION_MS: SESSION_MS, COOLDOWN_MS: COOLDOWN_MS, REDUCED_COOLDOWN_MS: REDUCED_COOLDOWN_MS,
     MAX_SESSION_MS: MAX_SESSION_MS, SESSION_MAX_TICKS: SESSION_MAX_TICKS, durationForLevel: durationForLevel, rateForLevel: rateForLevel, cooldownForLevel: cooldownForLevel,
-    create: create, normalize: normalize, captureJokerMultiplier:captureJokerMultiplier, status: status, start: start, poll: poll, checkpointPokerEvents:checkpointPokerEvents, setPowerPaused: setPowerPaused, applyCooldownPotion: applyCooldownPotion};
+    create: create, normalize: normalize, createGameSpeedController:createGameSpeedController, captureJokerMultiplier:captureJokerMultiplier, status: status, start: start, poll: poll, checkpointPokerEvents:checkpointPokerEvents, setPowerPaused: setPowerPaused, applyCooldownPotion: applyCooldownPotion};
 }));

@@ -1,0 +1,4 @@
+/* Keep the existing native palette and passive-earnings stack. */
+.game-speed-button{min-height:2.4rem;width:100%;font:inherit;font-variant-numeric:tabular-nums;touch-action:manipulation}
+.game-speed-button[hidden]{display:none}
+.game-speed-button:disabled{cursor:default}

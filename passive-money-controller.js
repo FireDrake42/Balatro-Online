@@ -1,5 +1,6 @@
-/* Injected synchronous Passive Money commit controller; no listeners, timers,
- * startup writes, DOM, global clocks, audio or PROFILE writes. Parent wires its
+/* Synchronous Passive Money controller; no listeners, timers, startup writes,
+ * DOM, audio or PROFILE writes. Standalone clocks stay injected; OPTIONAL native
+ * Game Speed alone binds real Date/Mono and requires original paired staging. Parent wires its
  * existing heartbeat and calls resetObservation on lifecycle/cancellation.
  * DEFAULT clockMode:'elapsed' uses only the DURABLE RUN lastAt cursor, so other
  * app tabs, reload and closed time cannot discard unclaimed session fractions.
@@ -55,7 +56,7 @@
     check(M && typeof M.poll === 'function', 'missing-model', 'The pure Passive Money model is required.');
     for (const key of ['get','eligible','assertWritable','stamp','now','monotonic','read','ownRaw','write','pause','applyRun'])
       check(host && typeof host[key] === 'function', 'invalid-host', 'Missing synchronous Passive Money host.' + key);
-    for (const key of ['getFeatureEnabled','getPaused'])
+    for (const key of ['getFeatureEnabled','getPaused','gameSpeedSource'])
       check(host[key] === undefined || typeof host[key] === 'function', 'invalid-host', 'Invalid synchronous Passive Money host.' + key);
     check(host.clockMode === undefined || ['elapsed','observed'].includes(host.clockMode), 'invalid-host', 'Invalid Passive Money clockMode.');
     check(host.nativeSource === undefined || typeof host.nativeSource === 'boolean', 'invalid-host', 'Invalid native Passive Money source option.');
@@ -74,8 +75,98 @@
     // public success, durable cursor or private observation is published here.
     let staging = null;
     const nativeStages = new WeakMap();
+    // Optional NATIVE capability only. No public/injected elapsed clock can mint
+    // bonus. BASE keeps its original other-tab/closed-time cursor semantics.
+    const completeBoostModel=M.BOOST_VERSION===3&&['advanceBoosted','pollElapsed','startElapsed','setPausedElapsed','normalize','validate','status'].every(key=>typeof M[key]==='function');
+    const nativeGameSpeed=host.nativeSource===true&&elapsedClock&&typeof host.gameSpeedSource==='function'&&completeBoostModel&&typeof performance!=='undefined'&&typeof performance.now==='function';
+    const nativeWall=nativeGameSpeed?Date.now.bind(Date):null;
+    const nativeMono=nativeGameSpeed?performance.now.bind(performance):null;
+    const nativeBudgets=new WeakSet();let gameSpeedObservation=null,gameSpeedOrigin=null,gameSpeedLast=null,gameSpeedClockError='',gameSpeedSlice=0;
+    function discardGameSpeed(){gameSpeedObservation=null;}
+    function pauseNativeBudget(error){
+      if(!uncertain){uncertain=true;epoch++;observation=null;carry=null;discardGameSpeed();
+        try{host.pause('Passive Money native bonus acceptance is uncertain. Do not retry, reset or roll back; reload safely. '+error.message);}catch(_){/* latch is independent of reporting */}}
+    }
+    function requireCompatibleSavedClock(run){
+      const state=Object.getOwnPropertyDescriptor(run||{},'passiveMoney')?.value;
+      const version=Object.getOwnPropertyDescriptor(state||{},'version')?.value;
+      if(version!==3||elapsedClock&&completeBoostModel)return;
+      const error=Object.assign(Error('The saved optional Money clock requires the complete elapsed model. Keep the whole save; writes are paused.'),{code:'unsupported-saved-clock'});
+      pauseNativeBudget(error);throw error;
+    }
+    function nativeBudgetClock(t){
+      if(gameSpeedClockError)return false;
+      if(!gameSpeedOrigin)gameSpeedOrigin={now:t.now,mono:t.mono};
+      if(gameSpeedLast&&(t.now<gameSpeedLast.now||t.mono<gameSpeedLast.mono)||
+        Math.abs(t.now-gameSpeedOrigin.now-(t.mono-gameSpeedOrigin.mono))>64){
+        gameSpeedClockError='Native REAL clock changed; reload before new Game Speed bonus.';discardGameSpeed();return false;}
+      gameSpeedLast={now:t.now,mono:t.mono};return true;
+    }
+    function gameSpeedReceipt(c){
+      const p=JSON.parse(c.profileJSON),r=p.gameSpeed,fields=['version','revision','startedAt','activeUntil','cooldownUntil'];
+      return r&&Object.keys(r).length===5&&Object.keys(r).every(k=>fields.includes(k))&&r.version===1&&Number.isSafeInteger(r.revision)&&r.revision>0&&
+        [r.startedAt,r.activeUntil,r.cooldownUntil].every(n=>Number.isSafeInteger(n)&&n>=0&&n<=M.MAX_TIME)&&
+        r.activeUntil-r.startedAt===60000&&r.cooldownUntil-r.activeUntil===600000?r:null;
+    }
+    function sampleGameSpeed(c,t){
+      if(!nativeGameSpeed||destroyed||uncertain){discardGameSpeed();return false;}
+      const authority=host.gameSpeedSource(),s=M.normalize(c.source.passiveMoney),receipt=gameSpeedReceipt(c);
+      if(!authority?.owner||authority.visible!==true||authority.epoch===undefined||c.level<50||c.powerPaused||!s||!receipt||
+        s.version===M.BOOST_VERSION&&receipt.revision<s.boostRevision||
+        (s.version===M.PAUSE_VERSION||s.version===M.BOOST_VERSION)&&s.pausedAt!==null){discardGameSpeed();return false;}
+      if(t.now>=receipt.activeUntil&&(!gameSpeedObservation||gameSpeedObservation.bracket.now>=receipt.activeUntil)&&!gameSpeedObservation?.slices.length){discardGameSpeed();return false;}
+      if(!nativeBudgetClock(t)){discardGameSpeed();return false;}
+      const key=JSON.stringify([epoch,c.stamp,c.source._uiId,s.sequence,c.level,c.page,c.powerKey,authority.epoch,receipt]);
+      let o=gameSpeedObservation;
+      const anchor=()=>gameSpeedObservation={key,owner:authority.owner,authorityEpoch:authority.epoch,run:c.run,profile:c.profile,last:t,bracket:t,slices:[],receipt};
+      if(!o||o.key!==key||o.owner!==authority.owner||o.run!==c.run||o.profile!==c.profile){anchor();return false;}
+      if(t.mono-o.last.mono>2500||o.slices.length&&t.mono-o.slices[0].fromMono>2500){anchor();return false;}
+      o.last=t;
+      if(t.now>o.bracket.now){
+        const realMs=t.mono-o.bracket.mono,span=t.now-o.bracket.now;
+        if(realMs<=0||realMs>2500||Math.abs(span-realMs)>64){anchor();return false;}
+        if(t.now>receipt.startedAt&&o.bracket.now<receipt.activeUntil)o.slices.push({id:++gameSpeedSlice,fromAt:o.bracket.now,toAt:t.now,realMs,fromMono:o.bracket.mono});
+        o.bracket=t;
+      }
+      // Stale/overlapping whole pieces are discarded, NEVER interpolated into a
+      // fictional source time. Own accepted publication normally removes them.
+      o.slices=o.slices.filter(p=>p.fromAt>=s.lastAt);
+      if(o.slices.reduce((n,p)=>n+p.realMs,0)+(t.mono-o.bracket.mono)>2500){anchor();return false;}
+      return true;
+    }
+    function observeGameSpeed(){
+      check(arguments.length===0,'invalid-observation','Native observations take no public timestamp or budget.');
+      if(!nativeGameSpeed||destroyed||uncertain){discardGameSpeed();return false;}
+      try{const t=clocks();retentionGuard();const c={...liveContext(),stamp:host.stamp()};return sampleGameSpeed(c,t);}
+      catch(_){discardGameSpeed();return false;}
+    }
+    function takeGameSpeed(c,t){
+      if(!nativeGameSpeed||!staging)return undefined;
+      sampleGameSpeed(c,t);const o=gameSpeedObservation;if(!o?.slices.length)return undefined;
+      const pieces=o.slices.slice(),token={observation:o,epoch,owner:o.owner,authorityEpoch:o.authorityEpoch,key:o.key,ids:pieces.map(p=>p.id),fromMono:pieces[0].fromMono,consumed:false,receipt:stable(o.receipt)};
+      nativeBudgets.add(token);staging.boostToken=token;
+      return {receipt:M.copyData(o.receipt),slices:pieces.map(p=>({fromAt:p.fromAt,toAt:p.toAt,realMs:p.realMs}))};
+    }
+    function assertGameSpeed(token){
+      if(!token)return true;
+      check(nativeBudgets.has(token)&&!token.consumed&&token.epoch===epoch&&token.observation===gameSpeedObservation,
+        'native-budget-consumed','The private native observation was cancelled or already consumed.');
+      const t=clocks(),authority=host.gameSpeedSource({nativeTransaction:true}),v=host.get();
+      check(nativeBudgetClock(t)&&t.mono-token.fromMono>=0&&t.mono-token.fromMono<=2500&&authority?.owner===token.owner&&authority.epoch===token.authorityEpoch&&authority.visible===true&&
+        stable(Object.getOwnPropertyDescriptor(v.profile,'gameSpeed')?.value)===token.receipt,
+        'native-budget-stale','The private observed owner/clock/receipt changed before native acceptance.');
+      return true;
+    }
+    function finishGameSpeed(token,confirmed){
+      if(!token)return;
+      if(confirmed){assertGameSpeed(token);const ids=new Set(token.ids);
+        check(token.ids.every(id=>token.observation.slices.some(p=>p.id===id)),'native-budget-missing','The exact private observed pieces are unavailable.');
+        token.observation.slices=token.observation.slices.filter(p=>!ids.has(p.id));}
+      else if(token.observation===gameSpeedObservation)discardGameSpeed();
+      token.consumed=true;
+    }
     function resetObservation() {
-      epoch++;
+      discardGameSpeed();epoch++;
       // A reset inside a transaction is cancellation, never an earning pause.
       if (elapsedClock || busy || retaining || destroyed || uncertain) { observation = null; carry = null; return; }
       retainObserved(true);
@@ -102,6 +193,7 @@
     function liveContext() {
       const c = host.get();
       check(c && c.profile && c.run && (c.page === 'game' || c.page === 'home'), 'ineligible-run', 'An eligible current origin run is required.');
+      requireCompatibleSavedClock(c.run);
       check(Number.isInteger(c.level) && c.level >= 40 && c.level <= 100, 'locked', 'Passive Money unlocks at actual player Level 40.');
       const source = M.copyData(c.run), profileSource = M.copyData(c.profile), profileJSON = JSON.stringify(profileSource);
       const modelContext = eventContext(profileSource);
@@ -149,7 +241,7 @@
       sameContext(c); raws(c); sameContext(c); return c;
     }
     function clocks() {
-      const now = host.now(), mono = host.monotonic();
+      const now = nativeGameSpeed?nativeWall():host.now(), mono = nativeGameSpeed?nativeMono():host.monotonic();
       check(Number.isSafeInteger(now) && now >= 0 && now <= M.MAX_TIME, 'invalid-time', 'Invalid absolute clock.');
       check(typeof mono === 'number' && Number.isFinite(mono) && mono >= 0 && mono <= M.MAX_TIME, 'invalid-monotonic', 'Invalid observable monotonic clock.');
       if (staging) staging.clock = {now,mono};
@@ -291,8 +383,13 @@
     }
     function start() {
       return perform(() => {
-        const clock = clocks(), c = capture(), proposal = (elapsedClock ? M.startElapsed : M.start)(c.source, c.level, clock.now, pauseClock ? {pauseClock:true} : undefined, c.modelContext);
+        let clock = clocks();const c = capture();let source=c.source,folded=null;
+        if(nativeGameSpeed&&staging){clock=clocks();const proof=takeGameSpeed(c,clock);
+          if(proof){folded=M.advanceBoosted(c.source,c.level,clock.now,proof,c.modelContext);if(!folded.result.ok)return folded.result;source=folded.run;}}
+        const proposal = (elapsedClock ? M.startElapsed : M.start)(source, c.level, clock.now, pauseClock ? {pauseClock:true} : undefined, c.modelContext);
         if (!proposal.result.ok) return proposal.result;
+        if(folded)proposal.result={...proposal.result,awardedCents:proposal.result.awardedCents+folded.result.awardedCents,
+          earnedMs:proposal.result.earnedMs+folded.result.earnedMs,bonusMs:folded.result.bonusMs};
         return commitObserved(c, proposal, clock.now, clock.mono, 0);
       });
     }
@@ -301,8 +398,19 @@
         const clock = clocks(), c = capture(), s = M.normalize(c.source.passiveMoney);
         if (!s) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'idle',status:M.status(c.source,c.level,clock.now,c.modelContext)}; }
         if (clock.now < s.lastAt) { resetObservation(); return fail('clock-rollback','The absolute clock moved backwards. No time was forced forward.'); }
-        if (s.version === M.PAUSE_VERSION && s.pausedAt !== null)
+        if ((s.version === M.PAUSE_VERSION || s.version === M.BOOST_VERSION) && s.pausedAt !== null)
           return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'paused',status:M.status(c.source,c.level,clock.now,c.modelContext)};
+        // BEFORE the original settled return: full native cooldown also has a
+        // boost clock. Combined chronological BASE+bonus, never BASE-first.
+        if(elapsedClock&&(nativeGameSpeed||s.version===M.BOOST_VERSION)){
+          const late=clocks(),proof=takeGameSpeed(c,late),proposal=proof?M.advanceBoosted(c.source,c.level,late.now,proof,c.modelContext):M.pollElapsed(c.source,c.level,late.now,c.modelContext);
+          if(!proposal.result.ok)return proposal.result;
+          const after=M.status(proposal.run,c.level,late.now,c.modelContext),before=M.status(c.source,c.level,Math.min(late.now,s.lastAt),c.modelContext);
+          if(proposal.result.changed&&(proposal.result.awardedCents>0||proposal.result.bonusMs>0||after.settled&&!before.settled))
+            return commit(c,proposal,late.now,late.mono,0);
+          if(staging?.boostToken){finishGameSpeed(staging.boostToken,false);staging.boostToken=null;}
+          return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:after.expired?'settled':'accruing',status:M.status(c.source,c.level,late.now,c.modelContext)};
+        }
         if (s.settled) { observation = null; carry = null; return {ok:true,changed:false,awardedCents:0,earnedMs:0,code:'settled',status:M.status(c.source,c.level,clock.now,c.modelContext)}; }
         if (elapsedClock) {
           const proposal = M.pollElapsed(c.source, c.level, clock.now, c.modelContext);
@@ -360,7 +468,8 @@
           status:{...M.status(c.source,c.level,clock.now,c.modelContext),powerPaused:c.powerPaused}});
         if (!s) return unchanged('idle');
         check(clock.now >= s.lastAt, 'clock-rollback', 'The absolute clock moved backwards. No pause was forced forward.');
-        const wasPaused = s.version === M.PAUSE_VERSION && s.pausedAt !== null;
+        if(nativeGameSpeed&&c.powerPaused)discardGameSpeed();
+        const wasPaused = (s.version === M.PAUSE_VERSION || s.version === M.BOOST_VERSION) && s.pausedAt !== null;
         if (wasPaused === c.powerPaused) return unchanged(wasPaused ? 'paused' : 'unchanged');
         if (s.version === M.VERSION && !config.explicit) return unchanged('legacy-power-pending');
         if (elapsedClock) {
@@ -426,8 +535,9 @@
         // Never enumerate/copy live PROFILE here: Poker private RNG/seed/round
         // replay belongs to explicit action boundaries, not render/read paths.
         check(!destroyed && !uncertain, destroyed ? 'destroyed' : 'uncertain', 'Passive Money status is not writable.');
-        const now = host.now(), v = host.get();
+        const now = nativeGameSpeed?nativeWall():host.now(), v = host.get();
         check(v && v.profile && v.run && (v.page === 'game' || v.page === 'home'), 'ineligible-run', 'An eligible origin run is required.');
+        requireCompatibleSavedClock(v.run);
         check(Number.isInteger(v.level) && v.level >= 40 && v.level <= 100, 'locked', 'Passive Money unlocks at actual player Level 40.');
         const source = M.copyData(v.run), c = {profile:v.profile,run:v.run,level:v.level,page:v.page,
           source,runJSON:JSON.stringify(source),modelContext:statusEvents(v.profile),...power(),epoch,
@@ -443,7 +553,8 @@
         const result = M.status(source, c.level, now, c.modelContext), eligible = host.eligible() === true;
         statusFence(c);
         return {...result,powerPaused:c.powerPaused,powerKey:c.powerKey,eligible,
-          ready:result.ok === true && result.ready && eligible && !c.powerPaused,uncertain,destroyed};
+          ready:result.ok === true && result.ready && eligible && !c.powerPaused,uncertain,destroyed,
+          ...(nativeGameSpeed?{gameSpeedBonusPaused:!!gameSpeedClockError,gameSpeedBonusReason:gameSpeedClockError}:{})};
       } catch (error) { return {...fail(error.code || 'invalid-context', error.message),ready:false,uncertain,destroyed}; }
     }
     function stageCommand(kind, options) {
@@ -466,6 +577,7 @@
       const f = nativeStages.get(token);
       check(f && !f.consumed && !f.published && f.epoch === epoch && !destroyed && !uncertain, 'native-stage-consumed', 'This native source was cancelled, consumed or already published.');
       check(options === undefined || options && Object.keys(options).length === 1 && options.nativeTransaction === true, 'invalid-native-fence', 'Use only the native whole-transaction source fence.');
+      assertGameSpeed(f.boostToken);
       if (f.commit) {
         const c = f.commit.c;
         // prepareStage ALWAYS confirms original raws. Once inside the paired
@@ -493,20 +605,28 @@
     }
     function publishStage(token) {
       const f = nativeStages.get(token), p = f?.commit;
-      check(f && p && !f.consumed && !f.published && f.epoch === epoch && !destroyed && !uncertain, 'native-stage-consumed', 'This native source is not an unpublished committed stage.');
-      retentionGuard(); const c = p.c, next = liveContext(), r = next.source;
-      // The paired host may legitimately add Player XP/new200 and its strict
-      // whole mirrors. Preserve original run identities and exact source money,
-      // income and cursor; authenticate the WHOLE current readback, not old XP.
-      check(next.run === c.run && next.profile === c.profile && r._uiId === c.id && next.page === c.page &&
-        next.powerKey === c.powerKey && host.stamp() === c.stamp && f.epoch === epoch && !destroyed && !uncertain,
-        'native-committed-context', 'The confirmed native source no longer matches its original context.');
-      check(host.read('run') === next.runJSON && host.ownRaw('run') === next.runJSON &&
-        host.read('profile') === next.profileJSON && host.ownRaw('profile') === next.profileJSON &&
-        r.money === p.proposal.run.money && r.stats.moneyEarned === p.proposal.run.stats.moneyEarned &&
-        serialized(M.normalize(r.passiveMoney)) === serialized(M.normalize(p.proposal.run.passiveMoney)),
-        'native-committed-mismatch', 'The whole confirmed native readback does not match the original Passive Money source.');
-      f.published = true; observation = null; carry = null; return true;
+      try {
+        check(f && p && !f.consumed && !f.published && f.epoch === epoch && !destroyed && !uncertain, 'native-stage-consumed', 'This native source is not an unpublished committed stage.');
+        retentionGuard(); const c = p.c, next = liveContext(), r = next.source;
+        // The paired host may legitimately add Player XP/new200 and its strict
+        // whole mirrors. Preserve original run identities and exact source money,
+        // income and cursor; authenticate the WHOLE current readback, not old XP.
+        check(next.run === c.run && next.profile === c.profile && r._uiId === c.id && next.page === c.page &&
+          next.powerKey === c.powerKey && host.stamp() === c.stamp && f.epoch === epoch && !destroyed && !uncertain,
+          'native-committed-context', 'The confirmed native source no longer matches its original context.');
+        check(host.read('run') === next.runJSON && host.ownRaw('run') === next.runJSON &&
+          host.read('profile') === next.profileJSON && host.ownRaw('profile') === next.profileJSON &&
+          r.money === p.proposal.run.money && r.stats.moneyEarned === p.proposal.run.stats.moneyEarned &&
+          serialized(M.normalize(r.passiveMoney)) === serialized(M.normalize(p.proposal.run.passiveMoney)),
+          'native-committed-mismatch', 'The whole confirmed native readback does not match the original Passive Money source.');
+        // Earliest confirmed point: debit before ANY foreign publication/UI.
+        finishGameSpeed(f.boostToken,true);
+        f.published = true; observation = null; carry = null;
+        // Fresh actual readback is an eligible zero-work observation boundary.
+        // A new sequence/legitimate level-up anchors HERE, never from old tail.
+        if(nativeGameSpeed)observeGameSpeed();
+        return true;
+      }catch(error){if(f?.boostToken&&!f.published)pauseNativeBudget(error);throw error;}
     }
     function finishStage(token) {
       const f = nativeStages.get(token);
@@ -519,11 +639,13 @@
       const f = nativeStages.get(token);
       if (!f || f.consumed || f.published) return false;
       f.consumed = true;
-      if (error && (error.attempted === true || error.reloadRequired === true)) { uncertain = true; epoch++; observation = null; carry = null; }
+      if(error&&f.boostToken)pauseNativeBudget(error);
+      else if (error && (error.attempted === true || error.reloadRequired === true)) { uncertain = true; epoch++; observation = null; carry = null; discardGameSpeed(); }
+      finishGameSpeed(f.boostToken,false);
       return true;
     }
     function destroy() { destroyed = true; resetObservation(); }
-    return Object.freeze({status,start,tick,syncPower,resetObservation,destroy,stageCommand,assertStage,prepareStage,publishStage,finishStage,discardStage});
+    return Object.freeze({status,start,tick,syncPower,observeGameSpeed,resetObservation,destroy,stageCommand,assertStage,prepareStage,publishStage,finishStage,discardStage});
   }
   return Object.freeze({create});
 }));

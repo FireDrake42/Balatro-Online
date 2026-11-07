@@ -9,7 +9,7 @@
  const PLAYER_XP_CONFIG=Object.freeze({level25Cost:27500,exponentialBase:100000,exponentialFactor:1.15,costOverrides:Object.freeze({35:25000,36:27500,37:30000,38:33000,39:36000,40:45000,41:50000,42:55000,43:60000,44:65000,45:70000,46:80000,47:90000,48:95000,49:100000})});
  const KEYS=M.NFT?.KEYS||[],PROFILE=KEYS[0],RUN=KEYS[1],SETTINGS=KEYS[2];
  function mirror(profile,run,at){if(run===null)return null;const next=copy(run);check(!M.BO.isLabMarked(next),'Lab/practice is not an earning source');if(next.playerLevel!==profile.progression.level)M.BO.setPlayerLevel(next,profile.progression.level);
-  if(own(profile,'potions')){M.BO.setPotionState(next,profile.potions,at);next._potionProfile={revision:profile.potions.revision,progression:copy(profile.progression)};for(const k of ['passiveXp','expInterest','achievementXp'])if(own(profile,k))next._potionProfile[k]=copy(profile[k]);}
+  if(own(profile,'potions')){if(profile.progression.level>=12||own(next,'potions'))M.BO.setPotionState(next,profile.potions,at);next._potionProfile={revision:profile.potions.revision,progression:copy(profile.progression)};for(const k of ['passiveXp','expInterest','achievementXp'])if(own(profile,k))next._potionProfile[k]=copy(profile[k]);}
   else check(!own(next,'potions')&&!own(next,'_potionProfile'),'RUN Potion mirror is missing its whole PROFILE source');return next;
  }
  function create(options){

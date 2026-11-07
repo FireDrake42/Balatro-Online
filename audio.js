@@ -6,6 +6,8 @@
 (function (root) {
   'use strict';
   if (root.BOAudio) return;
+  const gameSpeed=()=>root.BOGameSpeedPresentation?.multiplier?.()===1.5?1.5:1;
+  let musicGameSpeed=1;
 
   const LEGACY_TRACKS = Object.freeze([Object.freeze({
     id: 'poker_lounge', name: 'Midnight Felt', bpm: 92, bars: 16,
@@ -228,6 +230,7 @@
     return gain;
   }
   function tone(graph, v, at, midi, length, level, shape, cutoff, attack, sustain) {
+    length/=gameSpeed();if(attack)attack/=gameSpeed();
     const ctx = graph.ctx, osc = ctx.createOscillator();
     osc.frequency.setValueAtTime(hz(midi), at);
     if (shape === 'piano') osc.setPeriodicWave(graph.pianoWave);
@@ -244,6 +247,7 @@
     return osc;
   }
   function noise(graph, v, at, duration, level, centre, q, highpass) {
+    duration/=gameSpeed();
     const ctx = graph.ctx, source = ctx.createBufferSource(), filter = v.own(ctx.createBiquadFilter());
     source.buffer = graph.noise; source.loop = true;
     filter.type = highpass ? 'highpass' : 'bandpass';
@@ -1222,7 +1226,7 @@
     },error=>{if(!job.expired)fail(error);}).then(finish,finish);
     return result;
   }
-  function recordingRate(scene) { return scene==='last_chance'?Math.pow(2,-5/12):scene==='final_boss'?Math.pow(2,-3/12):scene==='boss'?Math.pow(2,-2/12):1; }
+  function recordingRate(scene) { return (scene==='last_chance'?Math.pow(2,-5/12):scene==='final_boss'?Math.pow(2,-3/12):scene==='boss'?Math.pow(2,-2/12):1)*gameSpeed(); }
   function recordingVoice(target, buffer, at, position, scene, beat, endAt) {
     if(!recordingScene(scene)) return null;
     if(scene==='last_chance') return lastChanceRecording(target,buffer,at,position,beat,endAt);
@@ -1334,6 +1338,8 @@
   function tick() {
     timer = null;
     if (!musicAllowed()) { pauseMusic(); notifyStatus(); return; }
+    // Re-anchor only this music transport, preserving its musical position.
+    if(gameSpeed()!==musicGameSpeed){pauseMusic();startMusic();return;}
     const now = context.currentTime, horizon = now + LOOKAHEAD, track = activeComposition;
     try {
       if (track.score.length) {
@@ -1373,7 +1379,8 @@
     const recording=scene==='blackjack'||chillTableScene(scene)?null:bufferFor(prefs.track);
     if (isLicensed(prefs.track) && recording && activeTrackId !== prefs.track) musicPosition = 0;
     activeTrackId = chillTableScene(scene)?CHILL_TABLE_TRACKS[scene].id:scene==='blackjack'?BLACKJACK_ID:effectiveId(prefs.track,!!recording);
-    activeComposition = compositionFor(prefs.track,scene,!!recording,prefs.bossDrama);
+    musicGameSpeed=gameSpeed();const originalComposition=compositionFor(prefs.track,scene,!!recording,prefs.bossDrama);
+    activeComposition={...originalComposition,beat:originalComposition.beat/musicGameSpeed};
     baseBeat = musicPosition; baseTime = context.currentTime + 0.035;
     locate(baseBeat); playingMusic = true;
     if (recordingScene(scene) && isLicensed(prefs.track) && recording) assetVoice = recordingVoice(graph,recording,baseTime,baseBeat,scene,activeComposition.beat,baseTime+86400);

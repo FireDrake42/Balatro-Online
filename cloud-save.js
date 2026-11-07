@@ -19,8 +19,22 @@
  }
  function validatePassive(p){version(p,[1,2,3],'passive XP');for(const k of ['sequence','creditedTicks','totalTicks','sessionsStarted','sessionsCompleted'])check(count(p[k]),'Invalid passive XP cursor.');check(amount(p.totalXp),'Invalid passive XP total.');if(p.version===3)for(const k of ['creditedMs','totalCreditedMs'])check(count(p[k]),'Invalid passive XP elapsed time.');const n=requireModel('PX').normalize(p);if(p.version===3)subset(p,n,'passive XP');else {check(n.sequence===p.sequence&&n.totalXp===p.totalXp,'Malformed legacy passive XP.');if(p.sequence>0)check(n.startedAt===p.startedAt&&n.endsAt===p.endsAt&&n.creditedTicks===p.creditedTicks,'Malformed legacy passive session.');}}
  function hasAchievementReceipt(p){return Object.keys(p?.progression?.receipts||{}).some(id=>id.startsWith('achievement:'));}
+ function validateGameSpeed(profile){
+  check(record(profile),'A complete profile is required.');
+  const d=Object.getOwnPropertyDescriptor(profile,'gameSpeed');if(!d)return undefined;
+  check(d.enumerable===true&&own(d,'value'),'Game Speed needs an own enumerable data receipt.');
+  const s=d.value,keys=['version','revision','startedAt','activeUntil','cooldownUntil'];
+  check(record(s)&&Object.getPrototypeOf(s)===Object.prototype,'Incomplete or unsupported Game Speed receipt.');
+  const actual=Reflect.ownKeys(s);
+  check(actual.length===keys.length&&actual.every(k=>typeof k==='string'&&keys.includes(k)),'Unsupported Game Speed receipt fields.');
+  for(const key of keys){const value=Object.getOwnPropertyDescriptor(s,key);check(value&&value.enumerable===true&&own(value,'value'),'Game Speed receipt accessors are unsupported.');}
+  const model=root?.BOGameSpeed;
+  check(model&&typeof model.validate==='function'&&model.validate(s),'Incomplete or unsupported Game Speed receipt. Keep the whole native save.');
+  return s;
+ }
  function validateProfile(p){
-  const counters=['runs','wins','losses','hands','discards','cardsPlayed','cardsDiscarded','blinds','money','best','ante'];fields(p,counters.concat(['handCounts','deckWins','deckStakeWins','originalDeckStakeWins','jokerStakeWins','challengeWins','achievements','achievementXp','progression','advancedStats','passiveXp','stockMarket','potions','expInterest','economy','dailyStreak','dailyTasks','discovery','emerald','frenzy','emeraldFriendship','emeraldBlackjack','emeraldBaccarat','emeraldHighLow','emeraldPoker','emeraldPokerEvents','pokerLevelRewards','expansionCurrency','emeraldStrictPoker','emeraldSlots','emeraldDarts','gameOffers','gameOfferRewards','gameOfferAccess','battery','nativeTutorial','nativeQuietStory','nativeSpeech','manualRestoration','faucetSkill']),'profile');
+  validateGameSpeed(p);
+  const counters=['runs','wins','losses','hands','discards','cardsPlayed','cardsDiscarded','blinds','money','best','ante'];fields(p,counters.concat(['handCounts','deckWins','deckStakeWins','originalDeckStakeWins','jokerStakeWins','challengeWins','achievements','achievementXp','progression','advancedStats','passiveXp','stockMarket','potions','expInterest','economy','dailyStreak','dailyTasks','discovery','emerald','frenzy','emeraldFriendship','emeraldBlackjack','emeraldBaccarat','emeraldHighLow','emeraldPoker','emeraldPokerEvents','pokerLevelRewards','expansionCurrency','emeraldStrictPoker','emeraldSlots','emeraldDarts','gameOffers','gameOfferRewards','gameOfferAccess','battery','nativeTutorial','nativeQuietStory','nativeSpeech','manualRestoration','faucetSkill','gameSpeed']),'profile');
   for(const key of counters)check(amount(p[key]),'Invalid profile counter: '+key+'.');check(Array.isArray(p.achievements)&&p.achievements.every(x=>typeof x==='string'),'Invalid achievements.');for(const k of ['handCounts','deckWins','deckStakeWins','jokerStakeWins','challengeWins'])check(record(p[k]),'Invalid profile history.');for(const k of ['handCounts','deckWins'])check(Object.values(p[k]).every(count),'Invalid saved win or hand count.');for(const k of ['deckStakeWins','jokerStakeWins'])check(Object.values(p[k]).every(n=>Number.isInteger(n)&&n>=0&&n<=9),'Invalid saved Stake history.');check(Object.values(p.challengeWins).every(v=>v===true),'Invalid challenge win history.');
   if(own(p,'nativeTutorial'))check(requireModel('TN','validate').validate(p.nativeTutorial),'Invalid native Tutorial record.');if(own(p,'nativeQuietStory'))check(requireModel('NS','validate').validate(p.nativeQuietStory),'Invalid optional Quiet-story record.');
   if(own(p,'faucetSkill')){check(p.faucetSkill!==undefined,'Incomplete optional Faucet Skill receipt.');requireModel('PG','validateFaucetSkill').validateFaucetSkill(p.faucetSkill,p.progression?.faucet?.totalClaims);}
@@ -237,5 +251,5 @@ validateProgress(p.progression);if(M.AX||own(p,'achievementXp')||hasAchievementR
   const onStorage=e=>{if(e.key===SESSION_KEY||e.key===null)invalidate();};root?.addEventListener('storage',onStorage);
   return Object.freeze({status,login,signup,logout,resume,upload,download,requestPasswordReset,verifyRecovery,updatePassword,cancel:invalidate,destroy:()=>{invalidate();root?.removeEventListener('storage',onStorage)}});
  }
- return Object.freeze({URL_BASE,PUBLIC_KEY,REDIRECT_URL,KEYS,SESSION_PREFIX,SESSION_KEY,BACKUP_KEY,JOURNAL_KEY,RESET_KEY,MAX_BYTES,capture,validateBank,validateMirrors,prepareNativeCore,prepareNativeAux,validateAuxTransition,validateSnapshot,restore,recoverJournal,readBackup,createClient,cleanAuthCallback,captureAuthCallback});
+ return Object.freeze({URL_BASE,PUBLIC_KEY,REDIRECT_URL,KEYS,SESSION_PREFIX,SESSION_KEY,BACKUP_KEY,JOURNAL_KEY,RESET_KEY,MAX_BYTES,capture,validateBank,validateMirrors,validateGameSpeed,prepareNativeCore,prepareNativeAux,validateAuxTransition,validateSnapshot,restore,recoverJournal,readBackup,createClient,cleanAuthCallback,captureAuthCallback});
 });

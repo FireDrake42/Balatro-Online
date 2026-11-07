@@ -3,7 +3,7 @@
 let current=null;
 const reduced=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 function enabled(prefs){return !!prefs.motion&&!reduced()}
-function durationMultiplier(){return (root.BOApp?.getProgress?.().level>=22?.8:1)*(current?.scoringDurationMultiplier||1)}
+function durationMultiplier(){return (root.BOApp?.getProgress?.().level>=22?.8:1)*(current?.scoringDurationMultiplier||1)/(root.BOGameSpeedPresentation?.multiplier?.()||1)}
  function animate(el,frames,options){options={...options,duration:options.duration*durationMultiplier(),...(options.delay?{delay:options.delay*durationMultiplier()}: {})};if(!el||typeof el.animate!=='function')return null;try{return el.animate(frames,{fill:'both',...options})}catch(e){return null}}
 function skip(){window.BOAudio?.cancelEffects();if(!current)return;current.skipped=true;clearCritBursts(current);for(const resolve of [...current.waiters])resolve();for(const a of current.animations){try{a.finish()}catch(e){a.cancel()}}}
 function wait(session,ms){if(session.skipped)return Promise.resolve();return new Promise(resolve=>{let timer;const done=()=>{clearTimeout(timer);session.waiters.delete(done);resolve()};session.waiters.add(done);timer=setTimeout(done,ms*durationMultiplier()/session.speed)})}
