@@ -1,0 +1,625 @@
+{
+ "scope": "PHOTO2053_READONLY_SIZE_INSPECTOR",
+ "state": "PASS",
+ "qualifiedRAM": true,
+ "testCount": 92,
+ "passed": 92,
+ "failed": [],
+ "checks": [
+  [
+   "single-inline-script-and-style",
+   true
+  ],
+  [
+   "actual-fixed-allowlist-equals-pinned-source",
+   true
+  ],
+  [
+   "every-key-has-real-constant-proof",
+   true
+  ],
+  [
+   "all-source-hashes-pinned-to-P2-worker",
+   true
+  ],
+  [
+   "auth-owner-survey-and-dynamic-prefix-not-allowlisted",
+   true
+  ],
+  [
+   "exact-script-CSP-hash",
+   true
+  ],
+  [
+   "exact-style-CSP-hash",
+   true
+  ],
+  [
+   "privacy-CSP-connect-default-workers-none",
+   true
+  ],
+  [
+   "data-favicon-no-external-assets",
+   true
+  ],
+  [
+   "no-imports-network-or-storage-mutators",
+   true
+  ],
+  [
+   "no-bank-parse-enumeration-gameboot-or-owner-code",
+   true
+  ],
+  [
+   "safe-DOM-text-only",
+   true
+  ],
+  [
+   "read-only-mobile-wrapped-output",
+   true
+  ],
+  [
+   "coverage-never-claims-full-usage-or-capacity-fix",
+   true
+  ],
+  [
+   "inline-JS-compiles",
+   true
+  ],
+  [
+   "README-same-origin-new-tab-no-game-reload",
+   true
+  ],
+  [
+   "all-banks-models-three-slots-backups:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "all-banks-models-three-slots-backups:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "all-banks-models-three-slots-backups:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "baseline-each-whitelisted-key-read-exactly-once",
+   true
+  ],
+  [
+   "baseline-UTF16-estimates-and-partial-total",
+   true
+  ],
+  [
+   "missing-no-default-profile:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "missing-no-default-profile:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "missing-no-default-profile:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "missing-remains-missing-no-defaults",
+   true
+  ],
+  [
+   "empty-string-is-present:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "empty-string-is-present:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "empty-string-is-present:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "empty-bank-is-present-zero-value-code-units",
+   true
+  ],
+  [
+   "surrogate-pair-UTF16:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "surrogate-pair-UTF16:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "surrogate-pair-UTF16:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "UTF16-not-UTF8-byte-accounting",
+   true
+  ],
+  [
+   "getItem-quota-classified-read-error:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "getItem-quota-classified-read-error:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "getItem-quota-classified-read-error:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "read-error-is-not-missing-or-default",
+   true
+  ],
+  [
+   "sanitized-exception-name-and-message:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "sanitized-exception-name-and-message:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "sanitized-exception-name-and-message:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "unknown-error-name-sanitized",
+   true
+  ],
+  [
+   "exception-name-getter-throws:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "exception-name-getter-throws:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "exception-name-getter-throws:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "throwing-error-name-sanitized",
+   true
+  ],
+  [
+   "storage-getter-denied:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "storage-getter-denied:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "storage-getter-denied:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "storage-access-error-zero-bank-reads",
+   true
+  ],
+  [
+   "total-count-denied:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "total-count-denied:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "total-count-denied:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "key-count-error-does-not-invent-origin-usage",
+   true
+  ],
+  [
+   "non-string-storage-result:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "non-string-storage-result:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "non-string-storage-result:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "non-string-is-read-error-not-coerced-value",
+   true
+  ],
+  [
+   "non-atomic-key-count-change:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "non-atomic-key-count-change:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "non-atomic-key-count-change:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "non-atomic-count-not-negative-or-invented",
+   true
+  ],
+  [
+   "large-opaque-raw-profile-not-parsed:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "large-opaque-raw-profile-not-parsed:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "large-opaque-raw-profile-not-parsed:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "large-value-uses-length-only",
+   true
+  ],
+  [
+   "quota-before-write-method-denied:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "quota-before-write-method-denied:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "quota-before-write-method-denied:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "throw-after-write-wrapper-armed:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "throw-after-write-wrapper-armed:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "throw-after-write-wrapper-armed:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "both-armed-write-faults-never-invoked",
+   true
+  ],
+  [
+   "blocked-origin-null:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "blocked-origin-null:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "blocked-origin-null:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "origin-no-storage-access-null",
+   true
+  ],
+  [
+   "blocked-origin-http://balatro-online.vercel.app:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "blocked-origin-http://balatro-online.vercel.app:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "blocked-origin-http://balatro-online.vercel.app:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "origin-no-storage-access-http://balatro-online.vercel.app",
+   true
+  ],
+  [
+   "blocked-origin-https://example.invalid:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "blocked-origin-https://example.invalid:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "blocked-origin-https://example.invalid:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "origin-no-storage-access-https://example.invalid",
+   true
+  ],
+  [
+   "blocked-origin-https://balatro-online.vercel.app.evil.invalid:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "blocked-origin-https://balatro-online.vercel.app.evil.invalid:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "blocked-origin-https://balatro-online.vercel.app.evil.invalid:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "origin-no-storage-access-https://balatro-online.vercel.app.evil.invalid",
+   true
+  ],
+  [
+   "blocked-origin-https://balatro-online.vercel.app:444:all-raw-model-slot-backup-banks-byteidentical",
+   true
+  ],
+  [
+   "blocked-origin-https://balatro-online.vercel.app:444:no-write-claim-network-enumeration-or-unsafe-DOM",
+   true
+  ],
+  [
+   "blocked-origin-https://balatro-online.vercel.app:444:DOM-and-report-no-values-secret-names-or-errors",
+   true
+  ],
+  [
+   "origin-no-storage-access-https://balatro-online.vercel.app:444",
+   true
+  ]
+ ],
+ "cases": [
+  {
+   "name": "all-banks-models-three-slots-backups",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "missing-no-default-profile",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "empty-string-is-present",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "surrogate-pair-UTF16",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "getItem-quota-classified-read-error",
+   "state": "partial-read-error",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "sanitized-exception-name-and-message",
+   "state": "partial-read-error",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "exception-name-getter-throws",
+   "state": "partial-read-error",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "storage-getter-denied",
+   "state": "storage-access-error",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 0,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "total-count-denied",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "non-string-storage-result",
+   "state": "partial-read-error",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "non-atomic-key-count-change",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "large-opaque-raw-profile-not-parsed",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "quota-before-write-method-denied",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "throw-after-write-wrapper-armed",
+   "state": "fixed-allowlist-read",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 11,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "blocked-origin-null",
+   "state": "blocked-other-origin",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 0,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "blocked-origin-http://balatro-online.vercel.app",
+   "state": "blocked-other-origin",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 0,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "blocked-origin-https://example.invalid",
+   "state": "blocked-other-origin",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 0,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "blocked-origin-https://balatro-online.vercel.app.evil.invalid",
+   "state": "blocked-other-origin",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 0,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  },
+  {
+   "name": "blocked-origin-https://balatro-online.vercel.app:444",
+   "state": "blocked-other-origin",
+   "allRawBanksUnchanged": true,
+   "noSecretDOM": true,
+   "reads": 0,
+   "mutators": 0,
+   "ownerClaims": 0,
+   "forbiddenAPIs": 0,
+   "unknownKeyReads": 0
+  }
+ ],
+ "fixtureCoverage": {
+  "fixedBanks": 11,
+  "syntheticOpaqueModelBlocks": 61,
+  "slots": 3,
+  "knownBackupAndJournalBanks": true,
+  "unknownAuthenticationAndDynamicBackupCanaries": true,
+  "notGameEngineBoot": true
+ },
+ "invariants": {
+  "allRawBeforeAfterByteIdentical": true,
+  "allDOMAndReportPrivateValueCanariesAbsent": true,
+  "storageMutatorCalls": 0,
+  "ownerClaimCalls": 0,
+  "unknownKeyReads": 0,
+  "networkOrOtherForbiddenAPICalls": 0
+ },
+ "HTML": {
+  "bytes": 7662,
+  "sha256": "096b981172e37ac7fc65a7415e5cb3f9a19c544513eae7c777549b700112e4f9"
+ },
+ "README": {
+  "bytes": 1901,
+  "sha256": "ad4288374c24cd3d988d1f622246ad81882653bf0b50a23dcb95444e20dc8ced"
+ },
+ "sourcePinsSHA256": "08fe9bde56ee4f5c016357da32713bd1f9672d4f6da20fd2fea6a4df4a0853a6",
+ "allowlistCount": 11,
+ "dynamicEndingBackupsNotRead": true,
+ "notFullOriginUsageOrAvailableQuota": true,
+ "noGameFilesEdited": true,
+ "notCapacityFix": true,
+ "notBrowserOrPhysicalSaveProof": true,
+ "sendAndPublication": "HOLD_PARENT_REVIEW",
+ "io": {
+  "readBytes": 33364,
+  "writtenBytes": 0
+ }
+}

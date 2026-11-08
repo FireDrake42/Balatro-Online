@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-QLdDvdEdFWQSEqjSBvlAV/0B1WQgOafOkh8Nejl8k/k='; style-src 'sha256-/qgyJSD2Y8Mu5KqFjxiJc6RTA0Lt2aixmy7FSQtM1Ow='; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; media-src 'none'; font-src 'none'">
+<link rel="icon" href="data:,">
+<title>Read-only game storage sizes</title>
+<style>
+* { box-sizing: border-box; }
+html { color-scheme: dark light; }
+body { margin: 1rem; font: 16px/1.5 system-ui, sans-serif; }
+main { max-width: 48rem; min-width: 0; margin: auto; }
+h1 { font-size: 1.45rem; line-height: 1.25; }
+p { overflow-wrap: anywhere; }
+strong { font-weight: 750; }
+textarea { display: block; width: 100%; max-width: 100%; min-width: 0; height: 32rem; padding: .75rem; border: 1px solid currentColor; border-radius: .4rem; font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+small { display: block; margin-top: .75rem; }
+</style>
+</head>
+<body>
+<main>
+<h1>Read-only game storage sizes</h1>
+<p><strong>Diagnostic only — this does not fix storage or confirm a save.</strong> Keep your paused game tab open. Do not retry rewards, reload that tab, clear data or delete backups.</p>
+<p id="status" role="status">Checking this page's origin before reading size metadata…</p>
+<p>Only source-verified, fixed game-bank keys are queried. Values, photos, models and slot contents are never shown, parsed or exported. Other keys and dynamic ending-backup IDs are not queried. The subtotal is not full-origin usage or available quota.</p>
+<label for="report">Size metadata only — select this text to copy it</label>
+<textarea id="report" readonly wrap="soft" spellcheck="false" aria-describedby="limits"></textarea>
+<small id="limits">Lengths are UTF-16 code units. Estimated bytes = 2 × (known key length + value length), not the browser's real quota accounting. Reads are not an atomic snapshot. No game code, writer claims, trial writes, network calls or recovery actions run here.</small>
+<noscript>This diagnostic needs JavaScript. It has not read your game data.</noscript>
+</main>
+<script>
+(() => {
+  'use strict';
+  const EXPECTED_ORIGIN = 'https://balatro-online.vercel.app';
+  const ALLOWLIST = Object.freeze([{"label":"Core game bank","key":"danis-table.profile.v1"},{"label":"Core game bank","key":"danis-table.run.v1"},{"label":"Core game bank","key":"danis-table.settings.v1"},{"label":"Daily game bank","key":"danis-table.daily-streak.v1"},{"label":"Daily game bank","key":"danis-table.daily-tasks.v1"},{"label":"All three save slots (one metadata bank)","key":"danis-table.save-slots.v1"},{"label":"Retained legacy slot backup","key":"danis-table.save-slots.legacy.v1"},{"label":"Save-slot journal","key":"danis-table.save-slots.journal.v1"},{"label":"Cloud local backup","key":"danis-table.cloud-local-backup.v1"},{"label":"Cloud restore journal","key":"danis-table.cloud-restore-journal.v1"},{"label":"Native feature/tutorial journal","key":"danis-table.tutorial-journal.v1"}].map(row => Object.freeze(row)));
+  const status = document.getElementById('status');
+  const output = document.getElementById('report');
+  const names = new Set(['SecurityError', 'QuotaExceededError', 'InvalidStateError', 'NotAllowedError', 'UnknownError', 'TypeError']);
+  function errorName(error) {
+    try { return names.has(error && error.name) ? error.name : 'OtherError'; }
+    catch (_) { return 'OtherError'; }
+  }
+  const report = {
+    schemaVersion: 1,
+    diagnostic: 'photo2053-fixed-game-bank-sizes-v1',
+    diagnosticOnly: true,
+    expectedOrigin: EXPECTED_ORIGIN,
+    originAllowed: false,
+    state: 'not-read',
+    coverage: {
+      fixedAllowlistCount: ALLOWLIST.length,
+      allThreeSlotsShareOneMetadataBank: true,
+      otherKeyNamesOrValuesQueried: false,
+      dynamicEndingBackupsQueried: false,
+      fullOriginUsage: false,
+      availableQuotaMeasured: false,
+      nativeStorageAccounting: false,
+      atomicSnapshot: false
+    },
+    totalOriginKeyCount: null,
+    totalKeyCountState: 'not-read',
+    rows: [],
+    subtotal: { presentBanks: 0, missingBanks: 0, readErrors: 0, valueCodeUnits: 0, estimatedBytesIncludingKeys: 0 },
+    notAccountedForKeyCount: null,
+    notAccountedForMeaning: 'Includes unlisted keys and any listed keys whose presence could not be read; names and values are not queried.',
+    storageWritesRequested: false,
+    ownerClaimsRequested: false,
+    gameBooted: false,
+    financialOrSaveCommitConfirmed: false
+  };
+  function show(message) {
+    status.textContent = message;
+    output.value = JSON.stringify(report, null, 2);
+  }
+  try {
+    if (window.location.origin !== EXPECTED_ORIGIN) {
+      report.state = 'blocked-other-origin';
+      show('Blocked: open this file only on the existing Balatro Online HTTPS origin. No storage was accessed.');
+      return;
+    }
+    report.originAllowed = true;
+    let storage;
+    try { storage = window.localStorage; }
+    catch (error) {
+      report.state = 'storage-access-error';
+      report.storageAccessErrorName = errorName(error);
+      show('Storage could not be read. No default profile was created and no write was attempted.');
+      return;
+    }
+    try {
+      const count = storage.length;
+      if (Number.isSafeInteger(count) && count >= 0) {
+        report.totalOriginKeyCount = count;
+        report.totalKeyCountState = 'read';
+      } else {
+        report.totalKeyCountState = 'unavailable';
+      }
+    } catch (error) {
+      report.totalKeyCountState = 'read-error';
+      report.totalKeyCountErrorName = errorName(error);
+    }
+    for (const item of ALLOWLIST) {
+      const row = { label: item.label, key: item.key, state: 'not-read', valueCodeUnits: null, estimatedBytesIncludingKey: null };
+      try {
+        const value = storage.getItem(item.key);
+        if (value === null) {
+          row.state = 'missing';
+          report.subtotal.missingBanks += 1;
+        } else if (typeof value !== 'string') {
+          row.state = 'read-error';
+          row.errorName = 'NonStringStorageValue';
+          report.subtotal.readErrors += 1;
+        } else {
+          row.state = 'present';
+          row.valueCodeUnits = value.length;
+          row.estimatedBytesIncludingKey = 2 * (item.key.length + value.length);
+          report.subtotal.presentBanks += 1;
+          report.subtotal.valueCodeUnits += value.length;
+          report.subtotal.estimatedBytesIncludingKeys += row.estimatedBytesIncludingKey;
+        }
+      } catch (error) {
+        row.state = 'read-error';
+        row.errorName = errorName(error);
+        report.subtotal.readErrors += 1;
+      }
+      report.rows.push(row);
+    }
+    if (report.totalOriginKeyCount !== null) {
+      if (report.totalOriginKeyCount >= report.subtotal.presentBanks) {
+        report.notAccountedForKeyCount = report.totalOriginKeyCount - report.subtotal.presentBanks;
+      } else {
+        report.keyCountChangedOrInconsistent = true;
+      }
+    }
+    report.state = report.subtotal.readErrors ? 'partial-read-error' : 'fixed-allowlist-read';
+    show('Read-only size metadata ready. No writes were requested. This is not a storage-capacity fix or a confirmed save.');
+  } catch (_) {
+    report.state = 'inspector-error';
+    report.rows = [];
+    report.subtotal = null;
+    show('The diagnostic could not finish. No recovery or write was attempted.');
+  }
+})();
+</script>
+</body>
+</html>
