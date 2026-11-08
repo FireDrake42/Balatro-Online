@@ -2099,7 +2099,15 @@ function validateNativeRewardLiveImage(c,before){
  // observer. No economic/source counter, discovery or progress is ignored.
  if(expected.advancedStats&&live.advancedStats&&Number.isFinite(oldSeconds)&&Number.isFinite(newSeconds)&&newSeconds>=oldSeconds)expected.advancedStats.visibleSeconds=newSeconds;
  if(JSON.stringify(expected)!==JSON.stringify(live))throw Error('The whole live PROFILE changed outside its confirmed native image.');
- let expectedRun=before[SAVE]===null?null:JSON.parse(before[SAVE]);if(expectedRun&&c.run&&Number.isSafeInteger(c.run.potionNow)&&c.run.potionNow>=(expectedRun.potionNow||0)&&c.run.potionNow<=Date.now()&&live.potions&&JSON.stringify(expectedRun.potions)===JSON.stringify(c.run.potions))E.setPotionState(expectedRun,live.potions,c.run.potionNow);
+ let expectedRun=before[SAVE]===null?null:JSON.parse(before[SAVE]);const level=saved.progression?.level;
+ // Mirror only the actual native UI sync, sourced from the confirmed RAW profile.
+ if(expectedRun&&c.run&&Number.isSafeInteger(level)&&level>=1&&level<=100&&(level>=12||expectedRun.potions)){
+  const sameLedger=JSON.stringify(expectedRun.potions)===JSON.stringify(c.run.potions),firstLedger=!Object.prototype.hasOwnProperty.call(expectedRun,'potions')&&level>=12;
+  if(Number.isSafeInteger(c.run.potionNow)&&c.run.potionNow>=(expectedRun.potionNow||0)&&c.run.potionNow<=Date.now()&&saved.potions&&(sameLedger||firstLedger)){
+   if(E.setPlayerLevel&&(!expectedRun.progressionEnabled||expectedRun.playerLevel!==level))E.setPlayerLevel(expectedRun,level);
+   E.setPotionState(expectedRun,saved.potions,c.run.potionNow);
+  }
+ }
  if(JSON.stringify(expectedRun)!==JSON.stringify(c.run))throw Error('The whole live RUN changed outside its derived native Potion clock.');return true;
 }
 function assertNativeRewardWritable(stage){if(stage?.committing||stage?.recovering){writerGuard.assert();slotStore.assertCurrent();}else assertEconomyWritable();if(!conductAllowed()||saveReadBlocked||cloudRestoring||!storageOK||slotBusy||customImageBusy||cloudPending||cloudBusy||cloudClient?.status().pending||cloudClient?.status().recovery.active)throw Error('The native reward owner is no longer writable.');}
