@@ -3,143 +3,168 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-QLdDvdEdFWQSEqjSBvlAV/0B1WQgOafOkh8Nejl8k/k='; style-src 'sha256-/qgyJSD2Y8Mu5KqFjxiJc6RTA0Lt2aixmy7FSQtM1Ow='; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; media-src 'none'; font-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-djKnB/3FZjyKY9adI7I+c/JBKycYFphCmCLfKXAGQ6c='; style-src 'sha256-iAi5wbi6AFNaAhuGVc5B3MDGzXEr7SsyfiGnPQrigdE='; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; media-src 'none'; font-src 'none'">
 <link rel="icon" href="data:,">
-<title>Read-only game storage sizes</title>
+<title>Read-only game storage sizes v2</title>
 <style>
 * { box-sizing: border-box; }
 html { color-scheme: dark light; }
-body { margin: 1rem; font: 16px/1.5 system-ui, sans-serif; }
+body { margin: 1rem; font: 16px/1.45 system-ui, sans-serif; }
 main { max-width: 48rem; min-width: 0; margin: auto; }
-h1 { font-size: 1.45rem; line-height: 1.25; }
-p { overflow-wrap: anywhere; }
-strong { font-weight: 750; }
-textarea { display: block; width: 100%; max-width: 100%; min-width: 0; height: 32rem; padding: .75rem; border: 1px solid currentColor; border-radius: .4rem; font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+h1 { font-size: 1.4rem; line-height: 1.25; }
+p, summary, label { overflow-wrap: anywhere; }
+label { display: block; font-weight: 650; margin-top: .75rem; }
+textarea { display: block; width: 100%; max-width: 100%; min-width: 0; padding: .65rem; border: 1px solid currentColor; border-radius: .4rem; font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+#short { height: 16rem; }
+#report { height: 30rem; }
+details { margin-top: 1rem; }
 small { display: block; margin-top: .75rem; }
 </style>
 </head>
 <body>
 <main>
-<h1>Read-only game storage sizes</h1>
-<p><strong>Diagnostic only — this does not fix storage or confirm a save.</strong> Keep your paused game tab open. Do not retry rewards, reload that tab, clear data or delete backups.</p>
-<p id="status" role="status">Checking this page's origin before reading size metadata…</p>
-<p>Only source-verified, fixed game-bank keys are queried. Values, photos, models and slot contents are never shown, parsed or exported. Other keys and dynamic ending-backup IDs are not queried. The subtotal is not full-origin usage or available quota.</p>
-<label for="report">Size metadata only — select this text to copy it</label>
-<textarea id="report" readonly wrap="soft" spellcheck="false" aria-describedby="limits"></textarea>
-<small id="limits">Lengths are UTF-16 code units. Estimated bytes = 2 × (known key length + value length), not the browser's real quota accounting. Reads are not an atomic snapshot. No game code, writer claims, trial writes, network calls or recovery actions run here.</small>
-<noscript>This diagnostic needs JavaScript. It has not read your game data.</noscript>
+<h1>Read-only game storage sizes v2</h1>
+<p><strong>Diagnostic only — not a storage fix or a confirmed save.</strong> Keep the paused game tab untouched. No reward retry, game reload or recovery action is run here.</p>
+<p id="status" role="status">Checking this page's origin before reading metadata…</p>
+<label for="short">Short metadata report — tap inside, Select All, Copy</label>
+<textarea id="short" readonly wrap="soft" spellcheck="false"></textarea>
+<details><summary>Detailed metadata: fixed banks and anonymous game entries</summary>
+<label for="report">No private names, dynamic IDs or bank values</label>
+<textarea id="report" readonly wrap="soft" spellcheck="false"></textarea>
+</details>
+<small>Current saved banks only — not the failed PROFILE candidate, native setter entry, actual quota or device free space. Game survey banks are measured by length only; answers and other contents are never parsed or shown. Authentication, owner and unrelated values are not queried. Unknown names are examined privately only for source-proven game-prefix matching.</small>
+<small>Estimated bytes = 2 × (key length + value length), using UTF-16 code units. The subtotal is not full-origin usage or available quota. Reads are not atomic. No automatic clipboard action, export, download, game boot or write occurs.</small>
+<noscript>JavaScript is required; this diagnostic has not read your storage.</noscript>
 </main>
 <script>
 (() => {
   'use strict';
   const EXPECTED_ORIGIN = 'https://balatro-online.vercel.app';
-  const ALLOWLIST = Object.freeze([{"label":"Core game bank","key":"danis-table.profile.v1"},{"label":"Core game bank","key":"danis-table.run.v1"},{"label":"Core game bank","key":"danis-table.settings.v1"},{"label":"Daily game bank","key":"danis-table.daily-streak.v1"},{"label":"Daily game bank","key":"danis-table.daily-tasks.v1"},{"label":"All three save slots (one metadata bank)","key":"danis-table.save-slots.v1"},{"label":"Retained legacy slot backup","key":"danis-table.save-slots.legacy.v1"},{"label":"Save-slot journal","key":"danis-table.save-slots.journal.v1"},{"label":"Cloud local backup","key":"danis-table.cloud-local-backup.v1"},{"label":"Cloud restore journal","key":"danis-table.cloud-restore-journal.v1"},{"label":"Native feature/tutorial journal","key":"danis-table.tutorial-journal.v1"}].map(row => Object.freeze(row)));
+  const FIXED = Object.freeze([{"label":"PROFILE / saved model state","key":"danis-table.profile.v1"},{"label":"Active RUN","key":"danis-table.run.v1"},{"label":"Game settings","key":"danis-table.settings.v1"},{"label":"Daily streak","key":"danis-table.daily-streak.v1"},{"label":"Daily tasks","key":"danis-table.daily-tasks.v1"},{"label":"Three-slot metadata","key":"danis-table.save-slots.v1"},{"label":"Retained legacy slot backup","key":"danis-table.save-slots.legacy.v1"},{"label":"Slot journal","key":"danis-table.save-slots.journal.v1"},{"label":"Cloud local backup","key":"danis-table.cloud-local-backup.v1"},{"label":"Cloud restore journal","key":"danis-table.cloud-restore-journal.v1"},{"label":"Native/tutorial journal","key":"danis-table.tutorial-journal.v1"},{"label":"Manual recovery journal","key":"danis-table.manual-recovery.journal.v1"},{"label":"Game survey reset bank","key":"danis-table.survey-reset.v1"}].map(item => Object.freeze(item)));
+  const PREFIXES = Object.freeze([{"id":"ending-backups","label":"Retained ending backups","prefix":"danis-table.emerald-ending-backup.v1."},{"id":"manual-backups","label":"Retained manual recovery backups","prefix":"danis-table.manual-recovery.backup.v1."},{"id":"game-survey-sessions","label":"Game survey-session banks","prefix":"danis-table.survey-session."}].map(item => Object.freeze(item)));
+  const MAX_ENUMERATE = 4096;
+  const fixedKeys = new Set(FIXED.map(item => item.key));
   const status = document.getElementById('status');
+  const short = document.getElementById('short');
   const output = document.getElementById('report');
-  const names = new Set(['SecurityError', 'QuotaExceededError', 'InvalidStateError', 'NotAllowedError', 'UnknownError', 'TypeError']);
+  const safeNames = new Set(['SecurityError', 'QuotaExceededError', 'InvalidStateError', 'NotAllowedError', 'UnknownError', 'TypeError']);
   function errorName(error) {
-    try { return names.has(error && error.name) ? error.name : 'OtherError'; }
+    try { return safeNames.has(error && error.name) ? error.name : 'OtherError'; }
     catch (_) { return 'OtherError'; }
   }
+  function totals() { return { present: 0, missing: 0, readErrors: 0, valueCodeUnits: 0, estimatedBytesIncludingKeys: 0 }; }
   const report = {
-    schemaVersion: 1,
-    diagnostic: 'photo2053-fixed-game-bank-sizes-v1',
-    diagnosticOnly: true,
-    expectedOrigin: EXPECTED_ORIGIN,
-    originAllowed: false,
-    state: 'not-read',
-    coverage: {
-      fixedAllowlistCount: ALLOWLIST.length,
-      allThreeSlotsShareOneMetadataBank: true,
-      otherKeyNamesOrValuesQueried: false,
-      dynamicEndingBackupsQueried: false,
-      fullOriginUsage: false,
-      availableQuotaMeasured: false,
-      nativeStorageAccounting: false,
-      atomicSnapshot: false
-    },
-    totalOriginKeyCount: null,
-    totalKeyCountState: 'not-read',
-    rows: [],
-    subtotal: { presentBanks: 0, missingBanks: 0, readErrors: 0, valueCodeUnits: 0, estimatedBytesIncludingKeys: 0 },
-    notAccountedForKeyCount: null,
-    notAccountedForMeaning: 'Includes unlisted keys and any listed keys whose presence could not be read; names and values are not queried.',
-    storageWritesRequested: false,
-    ownerClaimsRequested: false,
-    gameBooted: false,
-    financialOrSaveCommitConfirmed: false
+    schemaVersion: 2, diagnostic: 'photo2053-game-size-v2', diagnosticOnly: true,
+    expectedOrigin: EXPECTED_ORIGIN, originAllowed: false, state: 'not-read',
+    coverage: { fixedKeys: FIXED.length, privateGamePrefixes: PREFIXES.length, privateKeyEnumeration: true, dynamicNamesAndIDsDisplayed: false, authOwnerUnrelatedValuesQueried: false, bankValuesParsedOrExported: false, currentPersistedBanksOnly: true, failedCandidateMeasured: false, nativeSetterEntryProved: false, fullOriginUsage: false, availableQuotaMeasured: false, atomicSnapshot: false },
+    totalOriginKeyCount: null, finalOriginKeyCount: null,
+    fixed: [], fixedSubtotal: totals(),
+    categories: PREFIXES.map(item => ({ id: item.id, label: item.label, entries: [], subtotal: totals() })),
+    enumeration: { state: 'not-read', limit: MAX_ENUMERATE, attemptedIndexes: 0, skippedFixedEntries: 0, skippedUnlistedEntries: 0, duplicateMatchedEntries: 0, nullEntries: 0, invalidEntries: 0, readErrors: 0, errorNames: [], truncated: false },
+    readableGameSubtotal: totals(), notAccountedForKeyCount: null,
+    storageWritesRequested: false, ownerClaimsRequested: false, networkRequested: false, gameBooted: false,
+    notCapacityOrFinancialCommitProof: true
   };
   function show(message) {
     status.textContent = message;
+    const e = report.enumeration, t = report.readableGameSubtotal;
+    const lines = [
+      'Read-only game sizes v2: ' + report.state,
+      'Keys counted: ' + (report.totalOriginKeyCount === null ? 'unavailable' : report.totalOriginKeyCount) + '; privately scanned: ' + e.attemptedIndexes + '; skipped unlisted entries: ' + e.skippedUnlistedEntries,
+      'Fixed banks: ' + report.fixedSubtotal.present + ' present, ' + report.fixedSubtotal.missing + ' missing, ' + report.fixedSubtotal.readErrors + ' errors; estimated ' + report.fixedSubtotal.estimatedBytesIncludingKeys + ' B'
+    ];
+    for (const category of report.categories) {
+      const s = category.subtotal;
+      lines.push(category.label + ': ' + s.present + ' present, ' + s.missing + ' missing, ' + s.readErrors + ' errors; estimated ' + s.estimatedBytesIncludingKeys + ' B');
+    }
+    lines.push('Readable game subtotal: ' + t.valueCodeUnits + ' UTF-16 units; estimated ' + t.estimatedBytesIncludingKeys + ' B');
+    lines.push('Enumeration errors: ' + e.readErrors + '; truncated: ' + e.truncated + '; not accounted for: ' + (report.notAccountedForKeyCount === null ? 'unknown' : report.notAccountedForKeyCount));
+    lines.push('Current saved banks only. Failed candidate and native setter entry unknown. Not full-origin usage or available quota. No writes requested.');
+    short.value = lines.join('\n');
     output.value = JSON.stringify(report, null, 2);
   }
+  function addTotals(to, from) {
+    for (const field of ['present', 'missing', 'readErrors', 'valueCodeUnits', 'estimatedBytesIncludingKeys']) to[field] += from[field];
+  }
+  function measure(storage, key, row, subtotal) {
+    try {
+      const value = storage.getItem(key);
+      if (value === null) { row.state = 'missing'; subtotal.missing += 1; }
+      else if (typeof value !== 'string') { row.state = 'read-error'; row.errorName = 'NonStringStorageValue'; subtotal.readErrors += 1; }
+      else {
+        row.state = 'present'; row.valueCodeUnits = value.length;
+        row.estimatedBytesIncludingKey = 2 * (key.length + value.length);
+        subtotal.present += 1; subtotal.valueCodeUnits += value.length;
+        subtotal.estimatedBytesIncludingKeys += row.estimatedBytesIncludingKey;
+      }
+    } catch (error) { row.state = 'read-error'; row.errorName = errorName(error); subtotal.readErrors += 1; }
+    return row;
+  }
+  function row() { return { state: 'not-read', valueCodeUnits: null, estimatedBytesIncludingKey: null }; }
   try {
     if (window.location.origin !== EXPECTED_ORIGIN) {
       report.state = 'blocked-other-origin';
-      show('Blocked: open this file only on the existing Balatro Online HTTPS origin. No storage was accessed.');
+      show('Blocked outside the existing Balatro Online HTTPS origin. No storage was accessed.');
       return;
     }
     report.originAllowed = true;
     let storage;
     try { storage = window.localStorage; }
     catch (error) {
-      report.state = 'storage-access-error';
-      report.storageAccessErrorName = errorName(error);
-      show('Storage could not be read. No default profile was created and no write was attempted.');
-      return;
+      report.state = 'storage-access-error'; report.storageAccessErrorName = errorName(error);
+      show('Storage access failed. No default profile, write or recovery action was requested.'); return;
     }
     try {
       const count = storage.length;
-      if (Number.isSafeInteger(count) && count >= 0) {
-        report.totalOriginKeyCount = count;
-        report.totalKeyCountState = 'read';
-      } else {
-        report.totalKeyCountState = 'unavailable';
-      }
-    } catch (error) {
-      report.totalKeyCountState = 'read-error';
-      report.totalKeyCountErrorName = errorName(error);
+      if (Number.isSafeInteger(count) && count >= 0) report.totalOriginKeyCount = count;
+      else report.totalKeyCountState = 'unavailable';
+    } catch (error) { report.totalKeyCountState = 'read-error'; report.totalKeyCountErrorName = errorName(error); }
+    for (const item of FIXED) {
+      const entry = Object.assign(row(), { label: item.label, key: item.key });
+      report.fixed.push(measure(storage, item.key, entry, report.fixedSubtotal));
     }
-    for (const item of ALLOWLIST) {
-      const row = { label: item.label, key: item.key, state: 'not-read', valueCodeUnits: null, estimatedBytesIncludingKey: null };
-      try {
-        const value = storage.getItem(item.key);
-        if (value === null) {
-          row.state = 'missing';
-          report.subtotal.missingBanks += 1;
-        } else if (typeof value !== 'string') {
-          row.state = 'read-error';
-          row.errorName = 'NonStringStorageValue';
-          report.subtotal.readErrors += 1;
-        } else {
-          row.state = 'present';
-          row.valueCodeUnits = value.length;
-          row.estimatedBytesIncludingKey = 2 * (item.key.length + value.length);
-          report.subtotal.presentBanks += 1;
-          report.subtotal.valueCodeUnits += value.length;
-          report.subtotal.estimatedBytesIncludingKeys += row.estimatedBytesIncludingKey;
+    const e = report.enumeration;
+    if (report.totalOriginKeyCount === null) e.state = 'count-unavailable';
+    else {
+      const count = Math.min(report.totalOriginKeyCount, MAX_ENUMERATE);
+      e.truncated = report.totalOriginKeyCount > MAX_ENUMERATE;
+      const seenMatched = new Set();
+      for (let index = 0; index < count; index += 1) {
+        e.attemptedIndexes += 1;
+        let key;
+        try { key = storage.key(index); }
+        catch (error) { e.readErrors += 1; const name = errorName(error); if (!e.errorNames.includes(name)) e.errorNames.push(name); continue; }
+        if (key === null) { e.nullEntries += 1; continue; }
+        if (typeof key !== 'string') { e.invalidEntries += 1; continue; }
+        if (fixedKeys.has(key)) { e.skippedFixedEntries += 1; continue; }
+        let matched = -1;
+        for (let rule = 0; rule < PREFIXES.length; rule += 1) {
+          const prefix = PREFIXES[rule].prefix;
+          if (key.startsWith(prefix) && key.length > prefix.length) { matched = rule; break; }
         }
-      } catch (error) {
-        row.state = 'read-error';
-        row.errorName = errorName(error);
-        report.subtotal.readErrors += 1;
+        if (matched < 0) { e.skippedUnlistedEntries += 1; continue; }
+        if (seenMatched.has(key)) { e.duplicateMatchedEntries += 1; continue; }
+        seenMatched.add(key);
+        const category = report.categories[matched];
+        const entry = Object.assign(row(), { entry: category.entries.length + 1 });
+        category.entries.push(measure(storage, key, entry, category.subtotal));
       }
-      report.rows.push(row);
+      e.state = e.readErrors ? 'partial-read-error' : (e.truncated ? 'limited-scan' : 'scanned');
     }
-    if (report.totalOriginKeyCount !== null) {
-      if (report.totalOriginKeyCount >= report.subtotal.presentBanks) {
-        report.notAccountedForKeyCount = report.totalOriginKeyCount - report.subtotal.presentBanks;
-      } else {
-        report.keyCountChangedOrInconsistent = true;
-      }
-    }
-    report.state = report.subtotal.readErrors ? 'partial-read-error' : 'fixed-allowlist-read';
-    show('Read-only size metadata ready. No writes were requested. This is not a storage-capacity fix or a confirmed save.');
+    addTotals(report.readableGameSubtotal, report.fixedSubtotal);
+    for (const category of report.categories) addTotals(report.readableGameSubtotal, category.subtotal);
+    try {
+      const count = storage.length;
+      if (Number.isSafeInteger(count) && count >= 0) report.finalOriginKeyCount = count;
+    } catch (error) { report.finalKeyCountErrorName = errorName(error); }
+    if (report.totalOriginKeyCount !== null && report.totalOriginKeyCount >= report.readableGameSubtotal.present) report.notAccountedForKeyCount = report.totalOriginKeyCount - report.readableGameSubtotal.present;
+    else if (report.totalOriginKeyCount !== null) report.keyCountInconsistent = true;
+    report.keyCountChanged = report.totalOriginKeyCount !== report.finalOriginKeyCount;
+    report.state = report.readableGameSubtotal.readErrors || e.readErrors || report.totalOriginKeyCount === null || report.finalOriginKeyCount === null ? 'partial-read-error' : (e.truncated ? 'partial-enumeration-limit' : 'fixed-and-private-prefix-read');
+    show('Read-only metadata ready. Copy the short report above — no more photos are needed. This does not repair capacity or confirm a save.');
   } catch (_) {
     report.state = 'inspector-error';
-    report.rows = [];
-    report.subtotal = null;
-    show('The diagnostic could not finish. No recovery or write was attempted.');
+    show('The diagnostic could not finish. No write or recovery action was requested.');
   }
 })();
 </script>
