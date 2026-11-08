@@ -1,0 +1,454 @@
+{
+ "scope": "REPEAT_R2_PATCH_GREEN_PACKAGE",
+ "state": "NATIVE_GREEN_AND_STATIC_METADATA_QA_PASS",
+ "site17": [
+  "app.js",
+  "audio.js",
+  "cloud-save.js",
+  "exp-interest.js",
+  "game-speed-presentation.js",
+  "game-speed.css",
+  "game-speed.js",
+  "motion.js",
+  "native-observed-work.js",
+  "native-player-xp.js",
+  "native-profile-host.js",
+  "passive-money-controller.js",
+  "passive-money.js",
+  "passive-xp.js",
+  "progression.js",
+  "index.html",
+  "sw.js"
+ ],
+ "changes": {
+  "appOnlyFunction": {
+   "function": "validateNativeRewardLiveImage",
+   "originalAppSHA256": "592640abd44dacf79f38241fa6273896927352a9eb7477a86183cdaf76397a4d",
+   "candidateAppSHA256": "cfc4bfeeeb363340f728f0031b3c3604510ac58e50d12d8b7715ca8d6c891579",
+   "originalFunctionSHA256": "19ed38a3ed041e9e45342926d6f1177db66c8ab01c907134a0bae645dcce7f42",
+   "candidateFunctionSHA256": "1bb8a5a8fa8e3ba2ea095839328552c8b074144e968c886935ad1614a2ed5da3",
+   "originalUTF8Range": [
+    493640,
+    495323
+   ],
+   "newUTF8Range": [
+    493640,
+    495380
+   ],
+   "originalUTF16Range": [
+    493133,
+    494816
+   ],
+   "newUTF16Range": [
+    493133,
+    494873
+   ],
+   "onlyFunctionChangedInverseExact": true,
+   "outsideFunctionSHA256": "0a8beb05c17acb62c6d8a2cbb9b4af6fa2adb17114171f727a156e6ee60c8732",
+   "PROFILEAndVisibleSecondsPrefixByteIdentical": true,
+   "nativeLevelOutsidePotionEligibility": true,
+   "nativeRawPotionProjectionNoLedgerPrecheck": true,
+   "strictWholeRUNJSONComparison": true,
+   "uiIdIgnoredOrNormalized": false,
+   "diagnosticMarker": "PB-R2-LP1",
+   "diagnosticClosedRoots": [
+    "money",
+    "deck",
+    "round",
+    "playerLevel",
+    "potions",
+    "potionNow"
+   ],
+   "unknownDiagnostic": "RUN",
+   "diagnosticsOnlyAfterStrictMismatch": true,
+   "restSiteUnchangedBeforeIndexWorkerUpdate": true,
+   "allOtherCallbackSpansPreserved": [
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "coreActionNow",
+     "old": [
+      22876,
+      22946
+     ],
+     "new": [
+      22876,
+      22946
+     ],
+     "sha256": "aed723ef571e4dbabba99cbdf7c82f299bbe1d6f4d194f9866b226eedf81e6f9",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "freshProfile",
+     "old": [
+      108489,
+      108935
+     ],
+     "new": [
+      108489,
+      108935
+     ],
+     "sha256": "756109cc3eb0e1c88989922ab34d5c85233db3875c407ece2b007096ad04fca4",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "hasRunMode",
+     "old": [
+      109130,
+      109201
+     ],
+     "new": [
+      109130,
+      109201
+     ],
+     "sha256": "03c0392a49ae2b38347e99d9d0a2b495baaa6cdc32ffb5fbe2936b0b5601af04",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "playerLevel",
+     "old": [
+      166558,
+      166618
+     ],
+     "new": [
+      166558,
+      166618
+     ],
+     "sha256": "6a8da484ae0f3556f8e8c33408ba20985096782ac6d5c4c2193dde6157f9fffd",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "potionSignature",
+     "old": [
+      120738,
+      121007
+     ],
+     "new": [
+      120738,
+      121007
+     ],
+     "sha256": "b034daa54d83e7d31952b9fdd6225c88fda42be4916594afe94a94ce4a98fa12",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "pullPotionState",
+     "old": [
+      120611,
+      120737
+     ],
+     "new": [
+      120611,
+      120737
+     ],
+     "sha256": "737e61734845ae00914bd50d4d6f2f68aba8f1bc43e052da67ff57fddae3d351",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "recoverPotionLedger",
+     "old": [
+      118662,
+      118798
+     ],
+     "new": [
+      118662,
+      118798
+     ],
+     "sha256": "8bf6147577363bc0d2dd4a7173ba93b57698f5fc04d991db012cffb8a4dde895",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "storyEndingActive",
+     "old": [
+      74923,
+      75014
+     ],
+     "new": [
+      74923,
+      75014
+     ],
+     "sha256": "afe7e2f36eedd650ea9589cc5e23e16598a7e6ba98293f8f80d6df41e6824bbd",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "syncPotionClock",
+     "old": [
+      121445,
+      122066
+     ],
+     "new": [
+      121445,
+      122066
+     ],
+     "sha256": "39794e9f5e4ba8421a5fd877b43edb2efeb569cd2413e68dd86e8725db789786",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "syncPotionClockIfNeeded",
+     "old": [
+      122223,
+      122758
+     ],
+     "new": [
+      122223,
+      122758
+     ],
+     "sha256": "c5ac1be483b66852271e09b77e35c6f794714c1e64850946c3eda8ddf9dbd8e9",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "syncRunPotionState",
+     "old": [
+      121008,
+      121444
+     ],
+     "new": [
+      121008,
+      121444
+     ],
+     "sha256": "4c39a19a51c748a65389c36eb4fb7cd64d76754b4caea3a57d70218315b25525",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "validRun",
+     "old": [
+      109202,
+      110541
+     ],
+     "new": [
+      109202,
+      110541
+     ],
+     "sha256": "15bb7d8124b5e7b8c09ddd03bf23fd3ea15ba595bb5e621d8f746e824bec302c",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "validateCompanionProfile",
+     "old": [
+      43062,
+      45093
+     ],
+     "new": [
+      43062,
+      45093
+     ],
+     "sha256": "c8f65e04bb9ad04d31a4fa90e5052303cb42e86d1b8f372bd18efe409d596a79",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "validateFeatureBank",
+     "old": [
+      75826,
+      76448
+     ],
+     "new": [
+      75826,
+      76448
+     ],
+     "sha256": "804af27b04fdc52550a4a2b04c3f6a73a365cafd742de2f4cffe9fba9293df96",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "validateFeatureImage",
+     "old": [
+      77413,
+      77840
+     ],
+     "new": [
+      77413,
+      77840
+     ],
+     "sha256": "5a0d11208e920e41e371e5120d5c4a5ad7637f698eafc8f410a46032f20036a4",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "featureContext",
+     "old": [
+      75353,
+      75485
+     ],
+     "new": [
+      75353,
+      75485
+     ],
+     "sha256": "275938a12b04822405b855423322dbfd9382d75de9b5c9189149af6c563fadda",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "playerXpConfig",
+     "old": [
+      119089,
+      120056
+     ],
+     "new": [
+      119089,
+      120056
+     ],
+     "sha256": "301f7b575587ec450560aa716e173bdf0d727da5878bb159bc5d8d74c7fa2868",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "selectedAppFunctionSpans",
+     "name": "queueLevelUp",
+     "old": [
+      217822,
+      218288
+     ],
+     "new": [
+      217822,
+      218288
+     ],
+     "sha256": "0491db1403b7181fafe5d6af5e2529cab511fa3d6546f09339d626255bc84649",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "financialOptionBindingSpans",
+     "name": "xpConfig",
+     "old": [
+      497403,
+      497465
+     ],
+     "new": [
+      497460,
+      497522
+     ],
+     "sha256": "94ff16c55cb9e445134ea20aac32508394f95ebefc114982f06d90df4c2cbea6",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "financialOptionBindingSpans",
+     "name": "apply",
+     "old": [
+      497466,
+      498582
+     ],
+     "new": [
+      497523,
+      498639
+     ],
+     "sha256": "e2d4c3ed737814e1e62734160c0fa3a47879ba05d95312c71bbc2904faed5492",
+     "bytesUnchangedByExactOutsideInverse": true
+    },
+    {
+     "group": "financialOptionBindingSpans",
+     "name": "token",
+     "old": [
+      497360,
+      497389
+     ],
+     "new": [
+      497417,
+      497446
+     ],
+     "sha256": "9cf983ab47bbc3f715bb285b4ebdae32d7e075da5b8239d0150a3107f7b9717d",
+     "bytesUnchangedByExactOutsideInverse": true
+    }
+   ],
+   "model61RowsByteExact": true,
+   "oracleByteExactR4": true
+  },
+  "indexWorkerMetadata": {
+   "oldVersion": "360b1d9a3886f2b136501f63",
+   "newVersion": "bbde41c0877a3bd1818b8312",
+   "oldWorkerSHA256": "4a58734da0d460bbc7e495c3904178177e81c456ff48b321101d656bcb974c4d",
+   "newWorkerSHA256": "5c065f399212efd3a93f79d6b2fd74f40b2039106194ffcebc60e154fabc3685",
+   "oldIndexSHA256": "2c68d125aae6c9a968bcc3d3c277e7533f1b2a1d62b1ccbfd2fdb683f8072403",
+   "newIndexSHA256": "cb33801aa3ab9ca8b66e4f3a792ee288944465aac253d01c7e5643b949be6f02",
+   "appSHA256": "cfc4bfeeeb363340f728f0031b3c3604510ac58e50d12d8b7715ca8d6c891579",
+   "appSHA12": "cfc4bfeeeb36",
+   "oldAppSrc": "app.js?gpdiag=GP-D1-592640abd44d",
+   "newAppSrc": "app.js?gpdiag=GP-D1-cfc4bfeeeb36",
+   "oldAppSRI": "sha384-aXvhCqSgDSGwNNTk8k0FOaXsSX8zfpJuYB9YpYuOw/WcnUTA6euRTwO2wpsm7xZQ",
+   "newAppSRI": "sha384-5D0yYxkaepxZ60BRSBn9pAgDwG4/V5Jgfi5qHJVAKQoLJJF4cMr2bt+PbMrrxLKX",
+   "other218PinsUnchanged": true,
+   "FILESOrderByteIdentical": true,
+   "workerRuntimeInverseExact": true,
+   "indexAppRefOnlyInverseExact": true,
+   "noForceActivationOrPolicyChange": true
+  }
+ },
+ "functionFullDiff": "--- P/validateNativeRewardLiveImage\n+++ P2/validateNativeRewardLiveImage\n@@ -5,13 +5,16 @@\n  if(expected.advancedStats&&live.advancedStats&&Number.isFinite(oldSeconds)&&Number.isFinite(newSeconds)&&newSeconds>=oldSeconds)expected.advancedStats.visibleSeconds=newSeconds;\n  if(JSON.stringify(expected)!==JSON.stringify(live))throw Error('The whole live PROFILE changed outside its confirmed native image.');\n  let expectedRun=before[SAVE]===null?null:JSON.parse(before[SAVE]);const level=saved.progression?.level;\n- // Mirror only the actual native UI sync, sourced from the confirmed RAW profile.\n- if(expectedRun&&c.run&&Number.isSafeInteger(level)&&level>=1&&level<=100&&(level>=12||expectedRun.potions)){\n-  const sameLedger=JSON.stringify(expectedRun.potions)===JSON.stringify(c.run.potions),firstLedger=!Object.prototype.hasOwnProperty.call(expectedRun,'potions')&&level>=12;\n-  if(Number.isSafeInteger(c.run.potionNow)&&c.run.potionNow>=(expectedRun.potionNow||0)&&c.run.potionNow<=Date.now()&&saved.potions&&(sameLedger||firstLedger)){\n-   if(E.setPlayerLevel&&(!expectedRun.progressionEnabled||expectedRun.playerLevel!==level))E.setPlayerLevel(expectedRun,level);\n-   E.setPotionState(expectedRun,saved.potions,c.run.potionNow);\n-  }\n+ // Derive only the genuine native UI state, using the confirmed RAW profile.\n+ if(expectedRun&&c.run&&Number.isSafeInteger(level)&&level>=1&&level<=100){\n+  const rawPotions=expectedRun.potions,rawPotionNow=expectedRun.potionNow||0;\n+  if(!expectedRun.progressionEnabled||expectedRun.playerLevel!==level)E.setPlayerLevel(expectedRun,level);\n+  if((level>=12||rawPotions)&&Number.isSafeInteger(c.run.potionNow)&&c.run.potionNow>=rawPotionNow&&c.run.potionNow<=Date.now()&&saved.potions)E.setPotionState(expectedRun,saved.potions,c.run.potionNow);\n  }\n- if(JSON.stringify(expectedRun)!==JSON.stringify(c.run))throw Error('The whole live RUN changed outside its derived native Potion clock.');return true;\n+ if(JSON.stringify(expectedRun)!==JSON.stringify(c.run)){\n+  let field='RUN';\n+  if(expectedRun&&c.run)for(const key of ['money','deck','round','playerLevel','potions','potionNow'])if(JSON.stringify(expectedRun[key])!==JSON.stringify(c.run[key])){field=key;break;}\n+  throw Error('The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:'+field+']');\n+ }\n+ return true;\n }",
+ "nativeGREEN": {
+  "state": "PASS",
+  "candidate": "GREEN",
+  "exitCode": 0,
+  "seconds": 5.286,
+  "timeout": false,
+  "oracleSHA256": "230bac52eee0fea5a94c500f6ac76ee06b11861e2b983da3baaa034383e357c0",
+  "recipeSHA256": "899820e483168493befa8d2736ec3b1c28adc4f0fd398a6ab9dac07c55480307",
+  "reportSHA256": "88e33e7e6b53a484d94fd6baa9132ed62da3036475546f9f7167768258797a04",
+  "reportBytes": 22444
+ },
+ "oracleByteIdenticalToQualifiedR4": true,
+ "entrySentinelCounts": {
+  "controls": 3,
+  "targets": 2,
+  "negativeWitnessesRejected": 20,
+  "negativeProjectionCalls": 0
+ },
+ "wholePROFILE_RUN_rawUnchangedAll25": true,
+ "RAMwrites": 0,
+ "sourcePost": {
+  "state": "PASS",
+  "files": 81,
+  "full5": [
+   "bytes",
+   "sha256",
+   "mode",
+   "mtimeNs",
+   "inode"
+  ],
+  "allOriginalsUnchanged": true,
+  "witnessSHA256": "7e06eaadbaef02722cd32769d44e66a67653af35e9df01ff99400c228de9f5d5"
+ },
+ "sourceCountersThroughPreMetadataQA": {
+  "SOURCE": 6921987,
+  "OWNEDAuthoritative": "ledger.json",
+  "RAWupper": 7849
+ },
+ "package": {
+  "flat": true,
+  "siteMembers": 17,
+  "reports": [
+   "NATIVE-GREEN.json",
+   "METADATA-QA.json",
+   "REPAIR-REPORT.json"
+  ],
+  "readme": "README.txt",
+  "memberCount": 21,
+  "ZIPcapBytes": 1048576,
+  "metadataAndZIPProofAuthoritative": "METADATA-QA.json + external zip-proof.json"
+ },
+ "proofLimits": {
+  "notFinancialCommit": true,
+  "notPhysicalSaveDurability": true,
+  "notBrowserBootOrAppLoad": true,
+  "notDevice2047CauseAttribution": true,
+  "deviceBuildLoaded": "UNKNOWN",
+  "noProductionGETOrPrivateBank": true,
+  "sendAndPublication": "HOLD_PARENT_REVIEW",
+  "goal39": "PAUSED",
+  "petwork": "HOLD"
+ },
+ "metadataQA": {
+  "state": "PASS",
+  "testCount": 503,
+  "report": "METADATA-QA.json",
+  "sha256": "c91602ea424df2d62e1dcd9f9b8dbcefe1fb3553ec3e093a29e2bce126154006",
+  "notBrowserBoot": true
+ }
+}

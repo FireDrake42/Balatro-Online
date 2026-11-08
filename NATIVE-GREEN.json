@@ -1,0 +1,1007 @@
+{
+ "state": "PASS",
+ "candidate": "GREEN",
+ "deviceLoadedBuild": "UNKNOWN",
+ "NodeThisGrant": 1,
+ "financialCommits": 0,
+ "controls": [
+  {
+   "name": "CONTROL_EXISTING_LEDGER_N_EQUAL",
+   "bank": true,
+   "image": true,
+   "bankCalls": 3,
+   "imageCalls": 1,
+   "profilePreserved": true,
+   "deltaPaths": [
+    "$.potionNow"
+   ],
+   "admitted": true,
+   "message": "NATIVE_BANK_FENCE_ADMITTED_NO_PROJECTION",
+   "unchanged": {
+    "PROFILE": true,
+    "RUN": true,
+    "storage": true
+   },
+   "calls": {
+    "bank": 3,
+    "image": 1,
+    "live": 1,
+    "project": 1
+   },
+   "snapshotSHA256": {
+    "rawPROFILE": "a497e3dc1948e46128dbf7582ab92bccb46b3c86e6c760122adf7e4a391f5427",
+    "rawRUN": "18a4f631fc8e616249b11cbf81d24cfa05eb23fd25eadfc4c106875302724a25",
+    "livePROFILEbefore": "a497e3dc1948e46128dbf7582ab92bccb46b3c86e6c760122adf7e4a391f5427",
+    "liveRUNbefore": "bb6ff2ace1e11db013b1f88c8b413eb96e2b991dd1db1572e14df9e36dd62670",
+    "livePROFILEafter": "a497e3dc1948e46128dbf7582ab92bccb46b3c86e6c760122adf7e4a391f5427",
+    "liveRUNafter": "bb6ff2ace1e11db013b1f88c8b413eb96e2b991dd1db1572e14df9e36dd62670"
+   }
+  },
+  {
+   "name": "CONTROL_EXISTING_LEDGER_N_PLUS1_EQUAL",
+   "bank": true,
+   "image": true,
+   "bankCalls": 3,
+   "imageCalls": 1,
+   "profilePreserved": true,
+   "deltaPaths": [
+    "$.potionNow"
+   ],
+   "admitted": true,
+   "message": "NATIVE_BANK_FENCE_ADMITTED_NO_PROJECTION",
+   "unchanged": {
+    "PROFILE": true,
+    "RUN": true,
+    "storage": true
+   },
+   "calls": {
+    "bank": 3,
+    "image": 1,
+    "live": 1,
+    "project": 1
+   },
+   "snapshotSHA256": {
+    "rawPROFILE": "4706b959b05022e0807d94b6fae5eb1c9a8fe45052f5cc51074849fb2be6c1ca",
+    "rawRUN": "d90f5d4ced8cdba4a513e240081c8a422a912a1a991f874586e34d2fcf3e385b",
+    "livePROFILEbefore": "4706b959b05022e0807d94b6fae5eb1c9a8fe45052f5cc51074849fb2be6c1ca",
+    "liveRUNbefore": "79c28fe40b84cc7546d7a40257a5596e1dcabccd51281f8947fb668fca4d7425",
+    "livePROFILEafter": "4706b959b05022e0807d94b6fae5eb1c9a8fe45052f5cc51074849fb2be6c1ca",
+    "liveRUNafter": "79c28fe40b84cc7546d7a40257a5596e1dcabccd51281f8947fb668fca4d7425"
+   }
+  },
+  {
+   "name": "CONTROL_PROFILE11_RUN11_NO_RUN_POTIONS",
+   "bank": true,
+   "image": true,
+   "bankCalls": 3,
+   "imageCalls": 1,
+   "profilePreserved": true,
+   "deltaPaths": [],
+   "admitted": true,
+   "message": "NATIVE_BANK_FENCE_ADMITTED_NO_PROJECTION",
+   "unchanged": {
+    "PROFILE": true,
+    "RUN": true,
+    "storage": true
+   },
+   "calls": {
+    "bank": 3,
+    "image": 1,
+    "live": 1,
+    "project": 1
+   },
+   "snapshotSHA256": {
+    "rawPROFILE": "a4d1780aa67bd704e763cd535bab0bacf8b642948cd7ff216c507c24ee579339",
+    "rawRUN": "3f0d224441ae7b86b4466914d1aac63f6d9daa77b3481441063388d807a6c869",
+    "livePROFILEbefore": "a4d1780aa67bd704e763cd535bab0bacf8b642948cd7ff216c507c24ee579339",
+    "liveRUNbefore": "3f0d224441ae7b86b4466914d1aac63f6d9daa77b3481441063388d807a6c869",
+    "livePROFILEafter": "a4d1780aa67bd704e763cd535bab0bacf8b642948cd7ff216c507c24ee579339",
+    "liveRUNafter": "3f0d224441ae7b86b4466914d1aac63f6d9daa77b3481441063388d807a6c869"
+   }
+  }
+ ],
+ "targets": [
+  {
+   "name": "EXISTING_RUN_LEDGER_N_PROFILE_N_PLUS1",
+   "bank": true,
+   "image": true,
+   "bankCalls": 3,
+   "imageCalls": 1,
+   "profilePreserved": true,
+   "deltaPaths": [
+    "$.potions.revision",
+    "$.potions.inventory.0",
+    "$.potions.dropReceipts.0",
+    "$.potions.sequence",
+    "$.potionNow"
+   ],
+   "admitted": true,
+   "message": "NATIVE_BANK_FENCE_ADMITTED_NO_PROJECTION",
+   "unchanged": {
+    "PROFILE": true,
+    "RUN": true,
+    "storage": true
+   },
+   "calls": {
+    "bank": 3,
+    "image": 1,
+    "live": 1,
+    "project": 1
+   },
+   "snapshotSHA256": {
+    "rawPROFILE": "4706b959b05022e0807d94b6fae5eb1c9a8fe45052f5cc51074849fb2be6c1ca",
+    "rawRUN": "18a4f631fc8e616249b11cbf81d24cfa05eb23fd25eadfc4c106875302724a25",
+    "livePROFILEbefore": "4706b959b05022e0807d94b6fae5eb1c9a8fe45052f5cc51074849fb2be6c1ca",
+    "liveRUNbefore": "d90f5d4ced8cdba4a513e240081c8a422a912a1a991f874586e34d2fcf3e385b",
+    "livePROFILEafter": "4706b959b05022e0807d94b6fae5eb1c9a8fe45052f5cc51074849fb2be6c1ca",
+    "liveRUNafter": "d90f5d4ced8cdba4a513e240081c8a422a912a1a991f874586e34d2fcf3e385b"
+   }
+  },
+  {
+   "name": "PROFILE11_RUN10_NO_RUN_POTIONS",
+   "bank": true,
+   "image": true,
+   "bankCalls": 3,
+   "imageCalls": 1,
+   "profilePreserved": true,
+   "deltaPaths": [
+    "$.playerLevel"
+   ],
+   "admitted": true,
+   "message": "NATIVE_BANK_FENCE_ADMITTED_NO_PROJECTION",
+   "unchanged": {
+    "PROFILE": true,
+    "RUN": true,
+    "storage": true
+   },
+   "calls": {
+    "bank": 3,
+    "image": 1,
+    "live": 1,
+    "project": 1
+   },
+   "snapshotSHA256": {
+    "rawPROFILE": "a4d1780aa67bd704e763cd535bab0bacf8b642948cd7ff216c507c24ee579339",
+    "rawRUN": "5154e0cf510fcb0e584c0497127f7ae1dcb3635b14d74f589118bb6811446bf3",
+    "livePROFILEbefore": "a4d1780aa67bd704e763cd535bab0bacf8b642948cd7ff216c507c24ee579339",
+    "liveRUNbefore": "3f0d224441ae7b86b4466914d1aac63f6d9daa77b3481441063388d807a6c869",
+    "livePROFILEafter": "a4d1780aa67bd704e763cd535bab0bacf8b642948cd7ff216c507c24ee579339",
+    "liveRUNafter": "3f0d224441ae7b86b4466914d1aac63f6d9daa77b3481441063388d807a6c869"
+   }
+  }
+ ],
+ "negatives": [
+  [
+   "NEW_LEDGER_N:money",
+   "money",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:money]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:deck-order",
+   "deck-order",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:RUN]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:ui-round",
+   "ui-round",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:RUN]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:level",
+   "level",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:playerLevel]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:ledger",
+   "ledger",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:potions]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:future-clock",
+   "future-clock",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:potionNow]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:rollback-clock",
+   "rollback-clock",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:potionNow]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:profile-money",
+   "profile-money",
+   "The whole live PROFILE changed outside its confirmed native image.",
+   [
+    "PROFILE"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:foreign-owner",
+   "foreign-owner",
+   "Synthetic owner authority changed",
+   [
+    "authority"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N:foreign-epoch",
+   "foreign-epoch",
+   "Synthetic owner epoch changed",
+   [
+    "authority"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:money",
+   "money",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:money]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:deck-order",
+   "deck-order",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:RUN]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:ui-round",
+   "ui-round",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:RUN]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:level",
+   "level",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:playerLevel]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:ledger",
+   "ledger",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:potions]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:future-clock",
+   "future-clock",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:potionNow]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:rollback-clock",
+   "rollback-clock",
+   "The whole live RUN changed outside its derived native Potion clock. [PB-R2-LP1:potionNow]",
+   [
+    "RUN"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:profile-money",
+   "profile-money",
+   "The whole live PROFILE changed outside its confirmed native image.",
+   [
+    "PROFILE"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:foreign-owner",
+   "foreign-owner",
+   "Synthetic owner authority changed",
+   [
+    "authority"
+   ],
+   true,
+   true,
+   0,
+   false
+  ],
+  [
+   "NEW_LEDGER_N_PLUS1:foreign-epoch",
+   "foreign-epoch",
+   "Synthetic owner epoch changed",
+   [
+    "authority"
+   ],
+   true,
+   true,
+   0,
+   false
+  ]
+ ],
+ "phase": "producer:potion:NEW_LEDGER_N_PLUS1:foreign-epoch",
+ "phaseTrace": [
+  "realm",
+  "helpers",
+  "producer:potion:NATIVE_EXISTING_LEDGER_INITIAL_UI",
+  "bank+CIG:NATIVE_EXISTING_LEDGER_INITIAL_UI",
+  "bank+CIG:EXISTING_RUN_LEDGER_N_PROFILE_N_PLUS1",
+  "producer:potion:EXISTING_RUN_LEDGER_N_PROFILE_N_PLUS1",
+  "bank+CIG:CONTROL_EXISTING_LEDGER_N_EQUAL",
+  "producer:potion:CONTROL_EXISTING_LEDGER_N_EQUAL",
+  "bank+CIG:CONTROL_EXISTING_LEDGER_N_PLUS1_EQUAL",
+  "producer:potion:CONTROL_EXISTING_LEDGER_N_PLUS1_EQUAL",
+  "producer:progression:GENUINE_EARLIER_NATIVE_UI_AT_LEVEL10",
+  "bank+CIG:GENUINE_EARLIER_NATIVE_UI_AT_LEVEL10",
+  "bank+CIG:PROFILE11_RUN10_NO_RUN_POTIONS",
+  "producer:progression:PROFILE11_RUN10_NO_RUN_POTIONS",
+  "bank+CIG:CONTROL_PROFILE11_RUN11_NO_RUN_POTIONS",
+  "producer:progression:CONTROL_PROFILE11_RUN11_NO_RUN_POTIONS",
+  "entry:CONTROL_EXISTING_LEDGER_N_EQUAL",
+  "entry:CONTROL_EXISTING_LEDGER_N_PLUS1_EQUAL",
+  "entry:CONTROL_PROFILE11_RUN11_NO_RUN_POTIONS",
+  "entry:EXISTING_RUN_LEDGER_N_PROFILE_N_PLUS1",
+  "entry:PROFILE11_RUN10_NO_RUN_POTIONS",
+  "twenty-strict-negatives",
+  "bank+CIG:NEW_LEDGER_N:money",
+  "producer:potion:NEW_LEDGER_N:money",
+  "bank+CIG:NEW_LEDGER_N:deck-order",
+  "producer:potion:NEW_LEDGER_N:deck-order",
+  "bank+CIG:NEW_LEDGER_N:ui-round",
+  "producer:potion:NEW_LEDGER_N:ui-round",
+  "bank+CIG:NEW_LEDGER_N:level",
+  "producer:potion:NEW_LEDGER_N:level",
+  "bank+CIG:NEW_LEDGER_N:ledger",
+  "producer:potion:NEW_LEDGER_N:ledger",
+  "bank+CIG:NEW_LEDGER_N:future-clock",
+  "producer:potion:NEW_LEDGER_N:future-clock",
+  "bank+CIG:NEW_LEDGER_N:rollback-clock",
+  "producer:potion:NEW_LEDGER_N:rollback-clock",
+  "bank+CIG:NEW_LEDGER_N:profile-money",
+  "producer:potion:NEW_LEDGER_N:profile-money",
+  "bank+CIG:NEW_LEDGER_N:foreign-owner",
+  "producer:potion:NEW_LEDGER_N:foreign-owner",
+  "bank+CIG:NEW_LEDGER_N:foreign-epoch",
+  "producer:potion:NEW_LEDGER_N:foreign-epoch",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:money",
+  "producer:potion:NEW_LEDGER_N_PLUS1:money",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:deck-order",
+  "producer:potion:NEW_LEDGER_N_PLUS1:deck-order",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:ui-round",
+  "producer:potion:NEW_LEDGER_N_PLUS1:ui-round",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:level",
+  "producer:potion:NEW_LEDGER_N_PLUS1:level",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:ledger",
+  "producer:potion:NEW_LEDGER_N_PLUS1:ledger",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:future-clock",
+  "producer:potion:NEW_LEDGER_N_PLUS1:future-clock",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:rollback-clock",
+  "producer:potion:NEW_LEDGER_N_PLUS1:rollback-clock",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:profile-money",
+  "producer:potion:NEW_LEDGER_N_PLUS1:profile-money",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:foreign-owner",
+  "producer:potion:NEW_LEDGER_N_PLUS1:foreign-owner",
+  "bank+CIG:NEW_LEDGER_N_PLUS1:foreign-epoch",
+  "producer:potion:NEW_LEDGER_N_PLUS1:foreign-epoch"
+ ],
+ "realm": {
+  "window": true,
+  "process": "undefined",
+  "require": "undefined",
+  "module": "undefined",
+  "exports": "undefined",
+  "Buffer": "undefined",
+  "fetch": "undefined",
+  "clonePrototype": true,
+  "cloneUndefined": true,
+  "cloneCycles": true
+ },
+ "appInitializerClosure": {
+  "imported": [
+   "moneyToken",
+   "deckView",
+   "suits",
+   "emblems",
+   "I18NModule",
+   "EC",
+   "economyLedgerError",
+   "handNames",
+   "supportedAchievements",
+   "MAXIMUM_SESSION"
+  ],
+  "deferred": [
+   "card",
+   "__boGPDiagD1",
+   "moneySkip",
+   "handlers",
+   "medalAchievements",
+   "statsClock"
+  ],
+  "originalSourceExpressionsOnly": true,
+  "bootAndStorageInitializersNotExecuted": true
+ },
+ "appLiteralStateNames": [
+  "__boGPDiagD1_active",
+  "__boGPDiagD1_out",
+  "__boGPDiagD1_values",
+  "__boGPDiagD1_i",
+  "__boGPDiagD1_name",
+  "__boR4Root",
+  "nativeGSState",
+  "nativeGSPublications",
+  "identityBootMeta",
+  "i18n",
+  "emeraldSurfaceIdentity",
+  "conductPaused",
+  "maximumChoiceContext",
+  "emeraldActions",
+  "nativeFeaturePermit",
+  "nativeStoryView",
+  "batteryController",
+  "customImageBusy",
+  "usernameContext",
+  "progressTransferContext",
+  "started",
+  "slotStore",
+  "saveReadBlocked",
+  "run",
+  "cardFrames",
+  "animating",
+  "interest",
+  "passiveTimer",
+  "foodBarContext",
+  "potions",
+  "dailyStreak",
+  "cloudClient",
+  "xpAwardsSeen",
+  "pendingXpAwards",
+  "attentiveOldBatteryFlushed",
+  "powerBoundary",
+  "kind",
+  "nativeEndingRestoreContext",
+  "quiesced",
+  "storageOK",
+  "batteryAttempted",
+  "a",
+  "i",
+  "unsafeRead",
+  "attempt",
+  "reconciled",
+  "nativeRewardLockScope",
+  "NATIVE_PROFILE_QUEUE_MS",
+  "granted",
+  "journal",
+  "start",
+  "probabilityHTML",
+  "stage",
+  "nativePassiveMoneyPolling",
+  "attempted",
+  "changed",
+  "_foodToastBindings",
+  "discovery",
+  "nativeMarketSources",
+  "frame",
+  "nativeActPreludePending",
+  "hash",
+  "pokerPaint",
+  "facts",
+  "attacked",
+  "cloudSerial",
+  "hasBackup",
+  "committed",
+  "writtenSettingsRaw",
+  "confirmed",
+  "faucetUiContext",
+  "dp",
+  "completed",
+  "pendingBossRush",
+  "proposedRun",
+  "__boGPDiagD1_result",
+  "nativeGameSources",
+  "out",
+  "fskRequestIntents",
+  "emeraldFaucetJob"
+ ],
+ "actualUIFunctions": [
+  "defaultPreferences",
+  "xpDecimals",
+  "playerLevel",
+  "syncProgression",
+  "refreshProgressPresentation",
+  "showMaximumLevel",
+  "modal",
+  "renderDialogEmerald",
+  "presentDialogSpeech",
+  "presentEmeraldSpeech",
+  "companionSystemText",
+  "companionName",
+  "emeraldIdentity",
+  "surveyViewActive",
+  "bindFaucetUiSettings",
+  "faucetCooldownCopy",
+  "help",
+  "viewTitle",
+  "viewCopy",
+  "esc",
+  "btn",
+  "persist",
+  "settleXpAwards",
+  "presentXpAward",
+  "presentLevelUp",
+  "xpAudioAllowed",
+  "store",
+  "pauseBatterySave",
+  "pauseNativeRunSave",
+  "slotFailure",
+  "appendNativeRecoveryTools",
+  "appendNativeEndingBackups",
+  "viewLeaf",
+  "openNativeEndingRestore",
+  "toast",
+  "decorateMoney",
+  "render",
+  "paintExpansionBars",
+  "faucetConfig",
+  "slotsEffects",
+  "playerXpConfig",
+  "pokerPolicy",
+  "coreActionNow",
+  "refreshDeckModal",
+  "deckOverviewHTML",
+  "cardHTML",
+  "descriptionText",
+  "probabilityNumber",
+  "fmt",
+  "deckCounterHTML",
+  "deckOverview",
+  "deckHiddenIds",
+  "renderGame",
+  "tableControls",
+  "attentiveFeatureEnabled",
+  "level10DealButton",
+  "viewAttribute",
+  "viewText",
+  "movingModeButton",
+  "abandonRunButton",
+  "consumables",
+  "viewNameHTML",
+  "viewName",
+  "movingPhaseHTML",
+  "renderPhase",
+  "renderEnd",
+  "fmtBank",
+  "pokerHandLevelHTML",
+  "viewSpan",
+  "royalHandNameHTML",
+  "renderRushEnd",
+  "rushLabel",
+  "hasRunMode",
+  "renderPack",
+  "descriptionHTML",
+  "effectTextHTML",
+  "descriptionPieces",
+  "jokerHTML",
+  "mothimHealthHTML",
+  "localizedDescriptionText",
+  "jokerDef",
+  "tagPackOriginHTML",
+  "queuedTagPackCount",
+  "tagDefinition",
+  "renderShop",
+  "canAfford",
+  "foodTicketsHTML",
+  "foodHost",
+  "settings",
+  "refreshTextAppearanceControls",
+  "textAppearanceDisabled",
+  "textAppearanceSettingsHTML",
+  "customImagesSettingsHTML",
+  "viewCustomImagesHTML",
+  "customImageControlsDisabled",
+  "viewOptionCopy",
+  "viewVolumePercentHTML",
+  "trackUnlocked",
+  "playerBuffs",
+  "musicTracks",
+  "effectiveAudioPrefs",
+  "musicScene",
+  "blackjackUnlocked",
+  "chillUnlocked",
+  "pokerUnlocked",
+  "soundtrackCreditsHTML",
+  "emeraldFriendshipSettingsHTML",
+  "emeraldPlacementSettingsHTML",
+  "faucetCooldownSettingsHTML",
+  "levelRewardSettingsHTML",
+  "usernameSettingsHTML",
+  "usernameDisabled",
+  "nativeStorySettingsHTML",
+  "progressTransferSettingsHTML",
+  "languageSettingsHTML",
+  "batterySettingsHTML",
+  "batteryPresentation",
+  "batteryEligible",
+  "conductAllowed",
+  "showConductRestriction",
+  "storyEndingActive",
+  "storyEnrolled",
+  "tutorialContext",
+  "assertEconomyWritable",
+  "assertEconomyCurrent",
+  "interestSignature",
+  "economySignature",
+  "companionSignature",
+  "assertBatteryCanonical",
+  "batterySignature",
+  "readEconomicProfile",
+  "assertNativeJournalClear",
+  "foodSlotStamp",
+  "isFoodBarOpen",
+  "renderCashout",
+  "roundMostPlayedHTML",
+  "renderPlay",
+  "selectionLimit",
+  "nativeIds",
+  "renderBlinds",
+  "safeBlind",
+  "tagTray",
+  "canOpenPendingTagPack",
+  "pendingTags",
+  "descriptionTitleAttribute",
+  "doubleTagCount",
+  "jokerTray",
+  "foodRunStrip",
+  "foodNameHTML",
+  "abandonedReviewHTML",
+  "runSlotStamp",
+  "sidebar",
+  "renderHome",
+  "renderHomeTab",
+  "renderCollection",
+  "coinJokerCard",
+  "fmtParameter",
+  "renderAchievements",
+  "stakeList",
+  "renderStats",
+  "chosenStake",
+  "stakeUnlocked",
+  "unlockedStakeIndex",
+  "originalStakeRecords",
+  "tutorialActive",
+  "deckDescriptionHTML",
+  "deckLockHTML",
+  "deckUnlocked",
+  "deckTitleAttribute",
+  "deckLockText",
+  "renderBlackjack",
+  "renderChill",
+  "renderPoker",
+  "emeraldMotion",
+  "attentiveTabEnabled",
+  "baseTabs",
+  "manualRestorationBanner",
+  "syncLevel34Shine",
+  "syncLevel20Polish",
+  "syncPotionClockIfNeeded",
+  "syncPotionClock",
+  "potionSignature",
+  "syncRunPotionState",
+  "queueLevelUp",
+  "pullPotionState",
+  "recoverPotionLedger",
+  "nativeStoryConsentHTML",
+  "featureContext",
+  "nativeStoryNow",
+  "downloadNativeEndingBackup",
+  "nativeRecoveryExport",
+  "load",
+  "finishProgressTransferLocalWrite",
+  "rememberSaveReadWitness",
+  "beginProgressTransferLocalWrite",
+  "validateCompanionProfile",
+  "validateLegacyRunWallet",
+  "mirrorPotionProfile",
+  "syncStats",
+  "checkAchievements",
+  "flushVisibleTime",
+  "bindLanguageSettings",
+  "paintBattery",
+  "compactSettings50",
+  "refreshMusicStatus",
+  "viewMusicName",
+  "closeCloud",
+  "clearCloudPasswords",
+  "invalidateProgressTransfer",
+  "discardCardPresentation",
+  "clearMaximumDialog",
+  "maximumHandled",
+  "maximumStamp",
+  "presentPokerSpeech",
+  "presentChillSpeech",
+  "presentBlackjackSpeech",
+  "syncHudSpace",
+  "refreshMusicOptions",
+  "syncLevel41Light",
+  "updatePassiveMoneyButton",
+  "passiveMoneyEligible",
+  "slotIdle",
+  "assertNativeRewardWritable",
+  "updatePassiveButton",
+  "viewScalarAttribute",
+  "viewScalarText",
+  "viewScalarFallback",
+  "fmtXpParameter",
+  "viewScalarLeaf",
+  "updateFaucetShortcut",
+  "syncAudioButton",
+  "refreshPlayerIdentity",
+  "paintPlayerIdentity",
+  "refreshUsernameControls",
+  "refreshCustomImageControls",
+  "paintCustomImageSettings",
+  "applyPersonalImages",
+  "syncCleanGameUI",
+  "syncGamePolish61",
+  "syncRunOptions",
+  "capturePassiveJoker",
+  "coinUnlockIds",
+  "newRunId"
+ ],
+ "candidateSource": {
+  "path": "/home/seviperd/workspace/balatro-faucet-cooldown-better-ui1974-r1/gs50-public-rebase-r1/gs50-play-blind-ledger-level-repair-r2/overlay/app.js",
+  "bytes": 530350,
+  "sha256": "cfc4bfeeeb363340f728f0031b3c3604510ac58e50d12d8b7715ca8d6c891579"
+ },
+ "uiContext": {
+  "mode": "actual nativeCoreProjection data-sync context",
+  "presentationSuppressionOnly": true,
+  "sourceSyncProgressionOccurrences": 1,
+  "genuineEarlierLevel10UIBeforeCapture": true
+ },
+ "constructors": {
+  "ledgerSteps": [
+   {
+    "before": 1,
+    "amount": 100,
+    "after": 2
+   },
+   {
+    "before": 2,
+    "amount": 150,
+    "after": 3
+   },
+   {
+    "before": 3,
+    "amount": 250,
+    "after": 4
+   },
+   {
+    "before": 4,
+    "amount": 375,
+    "after": 5
+   },
+   {
+    "before": 5,
+    "amount": 500,
+    "after": 6
+   },
+   {
+    "before": 6,
+    "amount": 750,
+    "after": 7
+   },
+   {
+    "before": 7,
+    "amount": 1000,
+    "after": 8
+   },
+   {
+    "before": 8,
+    "amount": 1300,
+    "after": 9
+   },
+   {
+    "before": 9,
+    "amount": 1700,
+    "after": 10
+   },
+   {
+    "before": 10,
+    "amount": 1250,
+    "after": 11
+   },
+   {
+    "before": 11,
+    "amount": 1500,
+    "after": 12
+   }
+  ],
+  "belowSteps": [
+   {
+    "before": 1,
+    "amount": 100,
+    "after": 2
+   },
+   {
+    "before": 2,
+    "amount": 150,
+    "after": 3
+   },
+   {
+    "before": 3,
+    "amount": 250,
+    "after": 4
+   },
+   {
+    "before": 4,
+    "amount": 375,
+    "after": 5
+   },
+   {
+    "before": 5,
+    "amount": 500,
+    "after": 6
+   },
+   {
+    "before": 6,
+    "amount": 750,
+    "after": 7
+   },
+   {
+    "before": 7,
+    "amount": 1000,
+    "after": 8
+   },
+   {
+    "before": 8,
+    "amount": 1300,
+    "after": 9
+   },
+   {
+    "before": 9,
+    "amount": 1700,
+    "after": 10
+   }
+  ],
+  "capInput": "prior-earned cap20 via actual PG.normalize; levels only real PG.addXp",
+  "PTmethod": "receiveDrop",
+  "N": 0,
+  "Nplus1": 1,
+  "belowAdvance": {
+   "from": 10,
+   "to": 11,
+   "cost": 1250
+  }
+ },
+ "firstRender": {
+  "beforeRawCapture": true,
+  "paths": [
+   "$._uiId"
+  ],
+  "uiIdSeparateLegitHole": true,
+  "bank": true,
+  "image": true,
+  "snapshotSHA256": [
+   "63c14f59c3433f4815de5168239032b76aa64ce01b34d90dcb91e4647aea83a2",
+   "5154e0cf510fcb0e584c0497127f7ae1dcb3635b14d74f589118bb6811446bf3",
+   "35bf86157dbf7980d11ed3c5d7172a6a357c16f1e21972ca088c97d578cc9a43"
+  ]
+ },
+ "negativeColumns": [
+  "case",
+  "category",
+  "nativeFailure",
+  "changedWitnessKeys",
+  "originalBankAndImageValid",
+  "wholePROFILE_RUN_rawUnchanged",
+  "projectCalls",
+  "admitted"
+ ],
+ "storageWrites": 0,
+ "sourceReadBytes": 1955759,
+ "sourceReadCount": 65,
+ "sourceReadsSHA256": "b13468df7c92b2988e92ddaa50cce96ce0b75c82e81a7e8fb1cfc25400b5f492",
+ "ownedNodeEntryReads": [
+  [
+   "oracle-entry",
+   22791
+  ],
+  [
+   "recipe.json",
+   9780
+  ]
+ ]
+}

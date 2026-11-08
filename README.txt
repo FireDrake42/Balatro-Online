@@ -1,12 +1,11 @@
-Balatro Play Blind Repair r1
+Balatro Play Blind Repair r2 — REVIEW PACKAGE, NOT PUBLISHED
 
-Partial website update, NOT a standalone game.
-Merge the 17 site files into the EXISTING same-site project root, replacing those matching files only. Keep ALL other files, media, and browser data. Do not create a new origin/domain.
+Merge these 17 site files into the SAME existing web root and SAME origin. Preserve every other existing file, media asset, browser datum, saved slot, profile, preference and progress record. Do not replace the whole site folder with this small overlay.
 
-The fix changes one native Potion/RUN validation function. The index app integrity/fingerprint and offline-worker hashes/version match the repaired app; other scripts and worker runtime remain unchanged.
+No reset, storage clear, migration, reseeding or import is required or authorized. Do not force service-worker activation or bypass ownership, locks, readback, backup, journal, rollback or uncertain-write guards. Use the normal update lifecycle; old tabs can keep an older build.
 
-Do not clear/reset/import/restore saves or retry a reward to install this update. No forced service-worker activation or reload is supplied.
+The guard now derives the detached expected RUN from the confirmed RAW level at every valid level and the confirmed RAW native Potion profile when eligible. Entire RUN JSON comparison and economic identity remain strict; PROFILE permits only native nondecreasing visibleSeconds. Optional closed RUN diagnostics contain field names only.
 
-NATIVE-QA.json retains the genuine native ENTRY-fence reproduction/repair checks: positives and 20 strict negative cases, no storage writes. PACKAGE-MANIFEST.json records source fingerprints and metadata QA (15 SRI checks, original worker crypto/canonical/query/negative checks, app syntax only).
+NATIVE-GREEN.json is the unchanged qualified oracle: 3controls+2targets reach the no-projection ENTRY sentinel; 20 witnessed strict negatives remain blocked, whole data unchanged, RAMwrites0. This is NOT a financial commit or physical browser-save proof. METADATA-QA.json covers static hashes, SRI, syntax, canonical pins and unchanged 503 worker policy, not a browser boot. REPAIR-REPORT.json records the guard-only inverse and full diff/source-post proof.
 
-Not tested: full 220-file installation, physical devices, startup, complete gameplay/financial commit, or durable FILE saves. This is not a claim that all earlier startup or save issues are resolved.
+Device2047 exact state, loaded build and save durability remain UNKNOWN. This ZIP is held for parent review; no send or publication is authorized by the package itself. Companion/petwork HOLD; goal39 PAUSED.
