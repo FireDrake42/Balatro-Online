@@ -1,3 +1,4 @@
+(function(){const yanmaNativeEngine=globalThis.BOYanmaAnorithNative.claimEngine();
 /* Balatro Online rules engine. Original code; no DOM, network or assets. */
 (function (root, factory) {
   'use strict';
@@ -73,7 +74,46 @@
     check(s.phase==='select'&&s.round===0&&s.ante===1&&s.blindIndex===0&&s.deckId==='red'&&s.stake==='white'&&s.progressionEnabled===true&&s.playerLevel===1,'Only the new fresh Red/White lesson run may be prepared.');
     TutorialPolicy.order(s.cards,'small');s.bossId='head';
   }
-  function withPokerEvents(s,context,fn) {
+
+  // Only native.enterAction can authenticate a registration's controller.
+  // Registry keys and returned capabilities never appear on the public host.
+  const ownedPlayRegistrations=new WeakMap(),ownedPlayRuns=new WeakMap();
+  function ownedPlayCheck(binding,ok,message){if(!ok){if(binding)binding.failed=true;throw Error('Native owned PLAY: '+message);}}
+  function bindNativeOwnedPlay(controller,postlude){
+    ownedPlayCheck(null,controller&&typeof controller==='object'&&typeof postlude==='function','fixed controller and postlude required');
+    ownedPlayCheck(null,!ownedPlayRegistrations.has(controller),'controller already registered');
+    const registration=Object.freeze({controller,postlude});ownedPlayRegistrations.set(controller,registration);
+    return Object.freeze({
+      arm(frame,selected){
+        ownedPlayCheck(null,frame&&frame.controller===controller&&frame.state==='projecting'&&frame.run&&Array.isArray(selected),'original private frame required');
+        ownedPlayCheck(null,!ownedPlayRuns.has(frame.run),'source run already bound');
+        const selectedStrings=selected.map(String),ids=frame.run.hand.filter(c=>selectedStrings.includes(String(c.id))).map(c=>c.id);
+        ownedPlayCheck(null,ids.length===selected.length&&new Set(selectedStrings).size===selected.length,'whole original selection required');
+        ownedPlayRuns.set(frame.run,{registration,frame,profile:frame.profile,run:frame.run,owner:frame.owner,epoch:frame.epoch,slot:JSON.stringify(frame.slot),id:frame.actionId,serial:frame.serial,preProfile:frame.preProfile,preRun:frame.preRun,sourceProfileRaw:frame.sourceProfileRaw,sourceRunRaw:frame.sourceRunRaw,ids:JSON.stringify(ids),phase:'armed',physicalCalls:0,failed:false,scope:null});
+      },
+      release(frame){const binding=frame&&ownedPlayRuns.get(frame.run);if(binding){ownedPlayCheck(binding,binding.frame===frame&&binding.registration===registration,'cannot release another owned action');ownedPlayRuns.delete(frame.run);}}
+    });
+  }
+  function ownedPlayIdentity(binding,scope){
+    return scope===binding.frame&&scope.controller===binding.registration.controller&&ownedPlayRegistrations.get(scope.controller)===binding.registration&&scope.profile===binding.profile&&scope.run===binding.run&&scope.owner===binding.owner&&scope.epoch===binding.epoch&&JSON.stringify(scope.slot)===binding.slot&&scope.actionId===binding.id&&scope.serial===binding.serial&&scope.preProfile===binding.preProfile&&scope.preRun===binding.preRun&&scope.sourceProfileRaw===binding.sourceProfileRaw&&scope.sourceRunRaw===binding.sourceRunRaw;
+  }
+  function withOwnedPokerPlay(s,context,fn,binding){
+    ownedPlayCheck(binding,binding.phase==='armed'&&!binding.failed,'one-use original action required');
+    let scope=null,completed=false;
+    try{
+      scope=yanmaNativeEngine.enterAction(s);
+      ownedPlayCheck(binding,scope&&ownedPlayIdentity(binding,scope),'actual native controller/source identity required');
+      binding.scope=scope;binding.phase='playing';
+      const result=withPokerEventsScope(s,context,fn); // Original finally restores Poker context FIRST.
+      ownedPlayCheck(binding,result===undefined&&!binding.failed&&binding.physicalCalls===1&&scope.state==='scored-draft'&&ownedPlayIdentity(binding,scope),'exactly one completed synchronous physical PLAY required');
+      binding.phase='postlude';
+      const saved=binding.registration.postlude(scope);
+      ownedPlayCheck(binding,saved===true&&!binding.failed&&binding.physicalCalls===1&&scope.state==='scored-draft'&&ownedPlayIdentity(binding,scope),'fixed synchronous staged model postlude required');
+      binding.phase='closed';completed=true;return result;
+    }finally{if(!completed){binding.failed=true;binding.phase='rejected';}yanmaNativeEngine.leaveAction(s,scope,completed);}
+  }
+  function withPokerEvents(s,context,fn){const binding=ownedPlayRuns.get(s);return binding?withOwnedPokerPlay(s,context,fn,binding):withPokerEventsScope(s,context,fn);}
+  function withPokerEventsScope(s,context,fn) {
     check(s&&typeof s==='object'&&typeof fn==='function','Supply a run and synchronous native Poker-event callback.');
     check(context&&typeof context==='object'&&[Object.prototype,null].includes(Object.getPrototypeOf(context)),'Invalid Poker event context.');
     var keys=Reflect.ownKeys(context),out={};check(keys.length===2,'Supply only Poker XP and score snapshots.');
@@ -680,6 +720,15 @@
   }
   function refresh(s) {rebalanceJokers(s);var v=summary(s);s.handSize=v.handSize;s.jokerSlots=v.jokerSlots;s.consumableSlots=v.consumableSlots;}
   function hydrate(s) {validateFoods(s);if(s.level10Deal===undefined)s.level10Deal=false;normalizeProgression(s);if(s.potions){check(Potions,'Load the potion model before the engine.');s.potions=Potions.recover(s.potions,null);}rebalanceJokers(s);if(s.stake===undefined)s.stake='white';if(s.stakeIndex===undefined)s.stakeIndex=runStake(s).index;var map={};s.cards.forEach(function(c){map[c.id]=c;});['hand','drawPile','discardPile'].forEach(function(k){s[k]=(s[k]||[]).map(function(c){check(map[c.id],'Save contains an unknown playing card.');return map[c.id];});});refreshPrices(s);}
+  function yanmaAtomicPlay(){
+    const run=arguments[0],binding=ownedPlayRuns.get(run);
+    if(binding){
+      ownedPlayCheck(binding,binding.phase==='playing'&&!binding.failed&&binding.physicalCalls===0&&binding.scope&&ownedPlayIdentity(binding,binding.scope)&&JSON.stringify(arguments[1])===binding.ids,'physical PLAY is one-use and selection-bound');
+      binding.physicalCalls++;return atomic(play).apply(this,arguments);
+    }
+    const scope=yanmaNativeEngine.enterAction(run);let completed=false;
+    try{ownedPlayCheck(null,!scope,'native PLAY lacks its private registered model action');const result=atomic(play).apply(this,arguments);completed=true;return result;}finally{yanmaNativeEngine.leaveAction(run,scope,completed)}
+  }
   function atomic(fn) {return function(s){
     check(!isLabMarked(s),'Practice reports cannot be used as a real run.');check(validateRunVersion(s),'This save version/mode is not supported.');check(validateRunEvolution(s),'Joker evolution needs attention. No run was changed.');validateFrenzy(s);validateLegacyWallet(s);validatePassiveMoney(s);validateFoods(s);check(validateDeckProfile(s),'Deck starting profile needs attention. No run was changed.');var args=Array.prototype.slice.call(arguments,1),next=clone(s),effects=[];bossEffectActions.set(next,effects);if(pokerContexts.has(s))pokerContexts.set(next,pokerContexts.get(s));if(tutorialContexts.has(s))tutorialContexts.set(next,tutorialContexts.get(s));if(practiceRuns.has(s))practiceRuns.add(next);
     try{hydrate(next);fn.apply(null,[next].concat(args));refresh(next);
@@ -917,7 +966,8 @@
     else if(!s.hand.some(function(c){return c.id===s.forcedCardId;}))s.forcedCardId=s.hand.length?s.hand[0].id:null;
     applyDebuffs(s);
   }
-  function setPotionState(s,state,now) {
+  function setPotionState(...args){const run=args[0],has=!!(run._potionProfile&&Object.prototype.hasOwnProperty.call(run._potionProfile,'yanmaAnorith')),state=has?JSON.parse(JSON.stringify(run._potionProfile.yanmaAnorith)):null,result=setPotionStateBase.apply(this,args);if(has&&run._potionProfile)run._potionProfile.yanmaAnorith=state;return result;}
+  function setPotionStateBase(s,state,now) {
     check(Potions,'Load the potion model before the engine.');
     check(potionEligible(s)||Object.prototype.hasOwnProperty.call(s,'potions'),'Reach player level 12 to use potions.');
     var incoming=Potions.normalize(state),previousInterestDivisor=potionEffects(s).interestDivisor;Potions.effectsAt(incoming,now);
@@ -1064,6 +1114,7 @@
           // This is not a held, on-play, independent or preview event.
           case 'critical_joker':if(chance(s,25))CRIT(c,label+' CRIT!');break;
         }});
+        yanmaNativeEngine.trigger(s,c,suit(c,'C',s),practiceRuns.has(s));
       }
     });
     var lowestHeld=held.filter(function(c){return c.enhancement!=='stone';}).reduce(function(low,c){return !low||c.rank<=low.rank?c:low;},null);
@@ -1222,7 +1273,7 @@
     if(!e||!b||!e.enumerable||!b.enumerable||!Object.prototype.hasOwnProperty.call(e,'value')||!Object.prototype.hasOwnProperty.call(b,'value'))return 0;
     return Number.isInteger(e.value)&&e.value>=2&&e.value<=10&&Number.isInteger(b.value)&&b.value>=0&&b.value<=100?b.value:0;
   }catch(_){return 0}}
-  function play(s,ids,options,battery) {
+  function play(s,ids,options,battery) {yanmaNativeEngine.begin(s,practiceRuns.has(s));let yanmaCompleted=false;try{const result=(function(){
     // Legacy two-argument callers never gain Frenzy scoring authority from a
     // cached run level. The app supplies the actual profile level and one clock.
     var context=null,actualLevel;if(options!==undefined){check(Frenzy,'Load the Frenzy model before the engine.');context=Frenzy.context(options);actualLevel=context.actualLevel;if(context.actualLevel<33)context=null;}
@@ -1264,7 +1315,8 @@
     if(s.score>=s.target){finishRound(s);return;}
     if(activeBoss(s,'hook')){var victims=shuffle(s,handInDrawOrder(s)).slice(0,2);discardCards(s,victims,false);if(victims.length)recordBossEffect(s,'hook','forced-discard');}
     refill(s,true);maybeLose(s);
-  }
+  
+}).call(this);yanmaCompleted=true;return result;}finally{yanmaNativeEngine.end(s,yanmaCompleted);}}
   function discardCards(s,cards,trigger) {
     if(trigger){var discardBindings=captureJokerBindings(s);eachAbility(s,discardBindings,'discard',function(j){switch(j.id){case 'green_joker':j.counter=Math.max(0,j.counter-1);break;case 'double_green_joker':j.counter=Math.max(0,j.counter-2);break;case 'faceless_joker':if(cards.filter(function(c){return face(s,c);}).length>=3)addMoney(s,5);break;case 'mail_in_rebate':addMoney(s,5*cards.filter(function(c){return c.rank===j.targetRank&&c.enhancement!=='stone';}).length);break;case 'ramen':j.counter=Math.max(1,j.counter-cards.length*0.01);break;case 'castle':j.counter+=3*cards.filter(function(c){return suit(c,j.targetSuit,s);}).length;break;case 'hit_the_road':j.counter+=0.5*cards.filter(function(c){return c.rank===11&&c.enhancement!=='stone';}).length;break;case 'yorick':j.discarded=(j.discarded||0)+cards.length;while(j.discarded>=23){j.discarded-=23;j.counter++;}break;case 'burnt_joker':if(s.roundDiscards===1)level(s,evaluateRun(s,cards).key,1);break;case 'trading_card':if(s.roundDiscards===1&&cards.length===1){destroyCards(s,cards);addMoney(s,3);}break;}});
       cards.forEach(function(c){if(c.seal==='purple'&&!c.debuffed)addConsumable(s,randomConsumable(s,'tarot').id);});s.jokers=s.jokers.filter(function(j){return j.eternal||!(j.id==='ramen'&&j.counter<=1);});}
@@ -1490,11 +1542,15 @@
     } finally {practiceRuns.delete(s);}
   }
   function describeCard(c) {check(c&&SUIT_NAMES[c.suit],'Unknown playing card.');var lines=[(RANK_NAMES[c.rank]||c.rank)+' of '+SUIT_NAMES[c.suit]];if(c.enhancement)lines.push(ENHANCEMENTS[c.enhancement]||'Unknown enhancement.');else lines.push('Base card: +'+rankChips(c)+' Chips when scored.');if(c.edition)lines.push(EDITIONS[c.edition]||'Unknown edition.');if(c.seal)lines.push(SEALS[c.seal]||'Unknown Seal.');if(c.bonusChips)lines.push('Permanent bonus: +'+c.bonusChips+' Chips when scored.');if(c.debuffed)lines.push('Debuffed: no Chips, card effects, edition, Seal or card-triggered Joker effects.');if(c.faceDown)lines.push('Face down for this Blind.');return lines.join('\n');}
-  return {version:1,decks:decks,stakes:stakes,jokers:jokers,tags:tags,planets:planets,tarots:tarots,spectrals:spectrals,vouchers:vouchers,bosses:bosses,packs:PACKS,enhancements:clone(ENHANCEMENTS),editions:clone(EDITIONS),seals:clone(SEALS),hands:clone(HANDS),
+  const api={version:1,decks:decks,stakes:stakes,jokers:jokers,tags:tags,planets:planets,tarots:tarots,spectrals:spectrals,vouchers:vouchers,bosses:bosses,packs:PACKS,enhancements:clone(ENHANCEMENTS),editions:clone(EDITIONS),seals:clone(SEALS),hands:clone(HANDS),
     achievements:[{id:'first_blind',name:'First Blind',description:'Win a Blind.'},{id:'ante_eight',name:'Eight Antes',description:'Defeat the Ante 8 Boss.'}],
     isLabMarked:isLabMarked,validateRunVersion:validateRunVersion,validateRunMode:validateRunMode,validateJokerEvolution:validateJokerEvolution,validateRunEvolution:validateRunEvolution,evolutionInfo:evolutionInfo,simulate:simulate,validateDeckProfile:validateDeckProfile,deckDescription:deckDescription,withPokerEvents:withPokerEvents,withTutorialPolicy:withTutorialPolicy,prepareTutorial:atomic(prepareTutorial),newRun:newRun,evaluate:evaluate,preview:preview,selectionLimit:selectionLimit,blindInfo:blindInfo,frenzyInfo:frenzyInfo,describeCard:describeCard,summary:summary,isJokerActive:isJokerActive,creditLimit:creditLimit,xpMultiplier:xpMultiplier,bossRerollCost:bossRerollCost,purchaseQuote:purchaseQuote,mothimHP:mothimHP,canMothimAttack:canMothimAttack,copyInfo:copyInfo,probabilityInfo:probabilityInfo,copyCompatibility:clone(COPY_COMPATIBILITY),
-    setHandSort:atomic(setHandSort),setLevel10Deal:atomic(setLevel10Deal),setPotionState:atomic(setPotionState),drinkPotion:atomic(drinkPotion),setCoinUnlocks:atomic(setCoinUnlocks),setPlayerLevel:atomic(setPlayerLevel),disableBossOnce:atomic(disableBossOnce),mothimAttack:atomic(mothimAttack),startBlind:atomic(startBlind),skipBlind:atomic(skipBlind),play:atomic(play),discard:atomic(discard),cashout:atomic(cashout),buyFood:atomic(buyFood),buy:atomic(buy),buyUse:atomic(buyUse),reroll:atomic(reroll),buyVoucher:atomic(buyVoucher),openPack:atomic(openPack),openPendingTagPack:atomic(openPendingTagPack),choosePack:atomic(choosePack),sellJoker:atomic(sellJoker),moveJoker:atomic(moveJoker),useConsumable:atomic(useConsumable),sellConsumable:atomic(sellConsumable),abandon:atomic(abandon),continueRun:atomic(continueRun),leaveShop:atomic(leaveShop),nextRound:atomic(leaveShop),rerollBoss:atomic(rerollBoss),sellValue:sellValue,
+    setHandSort:atomic(setHandSort),setLevel10Deal:atomic(setLevel10Deal),setPotionState:atomic(setPotionState),drinkPotion:atomic(drinkPotion),setCoinUnlocks:atomic(setCoinUnlocks),setPlayerLevel:atomic(setPlayerLevel),disableBossOnce:atomic(disableBossOnce),mothimAttack:atomic(mothimAttack),startBlind:atomic(startBlind),skipBlind:atomic(skipBlind),play:yanmaAtomicPlay,discard:atomic(discard),cashout:atomic(cashout),buyFood:atomic(buyFood),buy:atomic(buy),buyUse:atomic(buyUse),reroll:atomic(reroll),buyVoucher:atomic(buyVoucher),openPack:atomic(openPack),openPendingTagPack:atomic(openPendingTagPack),choosePack:atomic(choosePack),sellJoker:atomic(sellJoker),moveJoker:atomic(moveJoker),useConsumable:atomic(useConsumable),sellConsumable:atomic(sellConsumable),abandon:atomic(abandon),continueRun:atomic(continueRun),leaveShop:atomic(leaveShop),nextRound:atomic(leaveShop),rerollBoss:atomic(rerollBoss),sellValue:sellValue,
     coverage:{decks:decks.length,jokers:jokers.length,tarots:tarots.length,planets:planets.length,spectrals:spectrals.length,vouchers:vouchers.length,tags:tags.length,bosses:bosses.length,stakes:stakes.length,stickers:3},
     _test:{addJoker:function(s,id,edition){return addJoker(s,id,edition);},addConsumable:function(s,id){return addConsumable(s,id);},grantTag:function(s,id){grantTag(s,id);},generateShop:function(s){generateShop(s);},rollShopStickers:rollShopStickers,chance:chance,edition:edition,resolveJokerAbility:resolveJokerAbility,captureJokerBindings:captureJokerBindings,eachAbility:eachAbility}
   };
+  Object.defineProperty(api,'bindNativeOwnedPlay',{value:bindNativeOwnedPlay,enumerable:true,writable:false,configurable:false});
+  return api;
 });
+
+})();

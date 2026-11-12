@@ -1066,6 +1066,8 @@
     else throw new TypeError('An explicit Joker unlock catalog is required.');
     return prices;
   }
+  function spendCoinsHalf(p,priceHalf,config){requireProfile(p);if(!Number.isSafeInteger(priceHalf)||priceHalf<0)throw new TypeError('Invalid native coin-half price');const draft=JSON.parse(JSON.stringify(p));if(!Number.isFinite(draft.coinsHalf)||draft.coinsHalf<priceHalf)throw new Error('Insufficient native coins');const after=draft.coinsHalf-priceHalf;if(!Number.isFinite(after)||after<0)throw new Error('Invalid native coin-half debit');draft.coinsHalf=after;return draft;}
+
   function unlockJoker(p, jokerId, priceHalf, catalog, config) {
     if (!record(p)) return failure('invalid-profile', 'A progression profile is required.');
     if (!identifier(jokerId)) return failure('invalid-joker', 'A configured Joker ID is required.');
@@ -1114,5 +1116,5 @@
   return {validateFaucetSkill:validateFaucetSkill,faucetSkillInfo:faucetSkillInfo,grantFaucetSkill:grantFaucetSkill,MAX_PLAYER_LEVEL: MAX_PLAYER_LEVEL, MAX_FAUCET_LEVEL: MAX_FAUCET_LEVEL, CAP_THRESHOLDS: CAP_THRESHOLDS,
     create: create, normalize: normalize, captureCostContext:captureCostContext, discountSavings:XP.savings, costPolicy:XP.read, validateCostMirror:XP.validateMirror, buffs: buffs, extraRewardMultiplier:extraRewardMultiplier, coinSourceMultiplier:coinSourceMultiplier, jokerXpMultiplier:jokerXpMultiplier, interestCostMultiplier: interestCostMultiplier, cost: cost, costForProfile:costForProfile, addXp: addXp, addAwardedXp: addAwardedXp, addEarnedXp: addEarnedXp, earnedXpMultiplier: earnedXpMultiplier,
     applyEvents: applyEvents, setGateMode: setGateMode, progress: progress, format: format, applyCooldownPotion: applyCooldownPotion,
-    faucetCosts: faucetCosts, faucetDay: faucetDay, faucetInfo: faucetInfo, claimFaucet: claimFaucet, creditPokerClaims:creditPokerClaims, pokerEffects:pokerEffects, pokerCooldownDuration:pokerCooldownDuration, pokerXpMultiplier:pokerXpMultiplier, unlockJoker: unlockJoker};
+    faucetCosts: faucetCosts, faucetDay: faucetDay, faucetInfo: faucetInfo, claimFaucet: claimFaucet, creditPokerClaims:creditPokerClaims, pokerEffects:pokerEffects, pokerCooldownDuration:pokerCooldownDuration, pokerXpMultiplier:pokerXpMultiplier, spendCoinsHalf:spendCoinsHalf,unlockJoker: unlockJoker};
 }));
