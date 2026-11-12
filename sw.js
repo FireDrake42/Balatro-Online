@@ -1,6 +1,6 @@
 /* Poker Table offline worker. Stamped by tools/stamp-offline-cache.cjs; preserve runtime guards. */
 'use strict';
-const VERSION = 'yanma-anorith-authority-v2-r15-source-owned-speech';
+const VERSION = 'petsimx-visible-youtube-r21-v1';
 const EXPECTED_HASHES = Object.freeze({
   "DEADLY-ROULETTE-LICENSE.md": "2f9cff5891f86868a39befcf0b085e877671d6142229349c737548e689b532f4",
   "IPAD-SETUP.md": "94db7b84a10dc41082f5296195815419d884af50f88ae712ff60f7f638cc19e7",
@@ -18,7 +18,7 @@ const EXPECTED_HASHES = Object.freeze({
   "assets/fonts/LiberationSans-Regular.ttf": "4659bc0c58c5028dd488ec928d41d9265db43d9b669fc14ca8b0832daca7b144",
   "assets/fonts/LiberationSerif-Regular.ttf": "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65",
   "assets/fonts/manifest.json": "d1221e5772bb220541a1e33340abc3903f8826699ae3dbac6dbdf895a84c9016",
-  "audio.js": "34138046af280d8924bf65925f1bd75d7d90be4ff881f7f4e6db10ad23d4cc29",
+  "audio.js": "f7bc86552808eacaf573d5ff5bfed9235192abc77e058ec4d402f2ae5c50bb48",
   "battery-controller.js": "d0200293eaa25215692ac4e5cd46170bb3714f3268def4e670ec08e9b61d4304",
   "battery-display.js": "a21302fed85e56666be6e4b1a16ae9da32ef86275c7ec8264daf5ef638e497c5",
   "battery-ui.js": "f2c9a69c0ae5ecb6a4873de69ed7476d27eb7ecb2e0c0ef441d2794d50111705",
@@ -122,7 +122,7 @@ const EXPECTED_HASHES = Object.freeze({
   "icon-512.png": "6bcc710c835288fe8fddc744a503d7450bf2b571c35624612f1a1175bbb23711",
   "icon-apple-180.png": "6bd472219ed1a48c861b210e2b691d84a06ee01b972d058e45a9124d2b352d59",
   "icon.svg": "747f8f0630a98052f849ea609413065c02dc3f6fcc13cd888a3476351b1d3880",
-  "index.html": "e90c79afcec696b9f98df1255fad0e2f0a860fcd9fed2e9c3aa3a2c6ae3afbea",
+  "index.html": "6cbe6776a437e2bf580e40755a5a0d9da897ab4d47af4b3c8cbd0eb49faf6a00",
   "interest-legacy.js": "18563f1d3218eec98c39cf987c9169eceed635e8ec67e0e3fb7dee2d2875d38e",
   "interest-settings.js": "dbff95ae2e3cf7ec0eb81d5ba2fc2c98dbcb6201cc1f7cef416df9679997f602",
   "joker-art.css": "b9f66357fb3dfe99b12ca16064a5e65113b562b9e504aeafb79ec26075f1ae7c",
@@ -226,7 +226,9 @@ const EXPECTED_HASHES = Object.freeze({
   "./yanma-anorith-native.js": "a1d9ae0fd4c97ddb094f988f147f09593297ab12ab6abc1bca563f5ff86f4ed1",
   "./yanma-anorith-ui.js": "327098553c7f837e59a93652b4f613e094a26eeeabb72eebee5e5d860ff80b32",
   "./yanma-portrait.jpg": "a469b20d5a5bb2066d975172ff238fa2f2dbe7f7148907024b3c4f444038d4e6",
-  "./anorith-portrait.jpg": "2dee6b5cf1b1add0a00a1e0c7883d2ea45fa8e8a5f26abe054a42d109d24bb3c"
+  "./anorith-portrait.jpg": "2dee6b5cf1b1add0a00a1e0c7883d2ea45fa8e8a5f26abe054a42d109d24bb3c",
+  "youtube-music.js": "944d49ba999b994ca1ecc6a12a7e0d6ce91753635d72625fada16273e370e1a3",
+  "youtube-music.css": "2eecdc387ec9f1f7dcddf64a4e655c34b5eb7d3f588dfc310f121d98197c2f96"
 });
 const FILES = Object.freeze([
   "DEADLY-ROULETTE-LICENSE.md",
@@ -453,7 +455,9 @@ const FILES = Object.freeze([
   "./yanma-anorith-native.js",
   "./yanma-anorith-ui.js",
   "./yanma-portrait.jpg",
-  "./anorith-portrait.jpg"
+  "./anorith-portrait.jpg",
+  "youtube-music.js",
+  "youtube-music.css"
 ]);
 const BASE = new URL('./', self.registration.scope);
 const PREFIX = 'poker-table-pwa-v1|' + encodeURIComponent(BASE.pathname) + '|';

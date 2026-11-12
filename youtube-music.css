@@ -1,0 +1,11 @@
+/* Visible, in-flow online player; never an overlay or hidden audio source. */
+.psx-youtube{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line,#54716c);max-width:100%;min-width:0;overflow-wrap:anywhere}
+.psx-youtube h3{margin:.2rem 0 .55rem;font-size:1.05rem}.psx-youtube p{margin:.55rem 0;line-height:1.5}
+.psx-online{display:inline-block;padding:.15rem .4rem;border:1px solid #90c8b5;border-radius:.4rem;font-size:.7em;letter-spacing:.07em}
+.psx-youtube select{display:block;width:100%;min-width:0;max-width:100%;margin:.4rem 0;box-sizing:border-box}.psx-youtube label{display:block}
+.psx-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:.65rem 0}.psx-actions .psx-loop{display:flex;align-items:center;gap:.35rem;font-size:.9rem}
+.psx-player-host{width:100%;max-width:100%;min-width:0;margin:.7rem 0}.psx-player-host:empty{display:none}
+.psx-player-host iframe{display:block;width:100%;min-width:200px;max-width:100%;height:clamp(200px,45vw,300px);min-height:200px;border:0;background:#101010;box-sizing:border-box}
+.psx-youtube [hidden]{display:none!important}.psx-youtube a{display:block;margin:.7rem 0;text-decoration:underline;overflow-wrap:anywhere}
+.psx-youtube .psx-privacy,.psx-youtube .psx-bounds{font-size:.8rem;opacity:.85}.psx-youtube [data-psx-status]{font-size:.9rem;min-height:1.5em}
+@media(max-width:360px){.psx-youtube .psx-actions{gap:.35rem}.psx-youtube .btn{max-width:100%;white-space:normal}}

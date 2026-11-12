@@ -1276,19 +1276,21 @@
     assetBuffer=null;assetBufferId=null;
   }
   let lastStatusSignature = '';
+  // Runtime-only ownership: never changes saved music IDs, volumes, mute or unlocks.
+  let externalMusicActive = false;
   let playingMusic = false, timer = null, lastContextState = 'uninitialized';
   let musicPosition = 0, baseBeat = 0, baseTime = 0, scoreIndex = 0, cycle = 0;
   let lastSfx = null, eventsTriggered = 0, resumeAttempt = null, listening = false, xpVoice = null;
   const lastCalls = new Map();
   const fxEnabled = () => prefs.sound && !prefs.muted && prefs.sfxVolume > 0;
   const musicEnabled = () => prefs.music && !prefs.muted && prefs.musicVolume > 0;
-  const musicAllowed = () => !!(context && graph && unlocked && musicEnabled() && !hidden() && context.state === 'running');
+  const musicAllowed = () => !!(!externalMusicActive && context && graph && unlocked && musicEnabled() && !hidden() && context.state === 'running');
 
   function notifyStatus() {
     if (!root.dispatchEvent || typeof root.CustomEvent !== 'function') return;
     const value = status(), signature = JSON.stringify([value.track,value.scene,value.effectiveTrack,
       value.assetStatus,value.assetError,value.playingMusic,value.licensedPlaying,value.contextState,value.muted,value.unlocked,
-      value.fxEnabled,value.musicEnabled,value.bossDrama,value.bossDramaActive,value.playerLevel]);
+      value.fxEnabled,value.musicEnabled,value.bossDrama,value.bossDramaActive,value.playerLevel,value.externalMusicActive,value.musicVolume]);
     if (signature === lastStatusSignature) return;
     lastStatusSignature = signature;
     try { root.dispatchEvent(new root.CustomEvent('bo-audio-status', { detail:value })); } catch (_) {}
@@ -1413,6 +1415,13 @@
       root.document.addEventListener('visibilitychange', onVisibility); listening = true;
     }
     if (context && context.addEventListener) context.addEventListener('statechange', onStateChange);
+  }
+  function setExternalMusicActive(active) {
+    const next = active === true;
+    if (next === externalMusicActive) return status();
+    pauseMusic(); externalMusicActive = next;
+    if (!next) { try { startMusic(); } catch (_) { pauseMusic(); } }
+    notifyStatus(); return status();
   }
   function configure(next) {
     if (!next || typeof next !== 'object') return status();
@@ -1580,6 +1589,7 @@
     return { available: typeof audioConstructor() === 'function', unlocked,
       contextState: context ? context.state : lastContextState, playingMusic,
       fxEnabled: fxEnabled(), musicEnabled: musicEnabled(), muted: prefs.muted,
+      externalMusicActive, musicVolume: prefs.musicVolume, sfxVolume: prefs.sfxVolume,
       scheduledVoices: graph ? graph.fx.size + graph.music.size : 0,
       lastSfx, eventsTriggered, track: prefs.track,
       bossDrama: prefs.bossDrama, bossDramaActive: prefs.bossDrama === true && bossScene(scene),
@@ -1692,6 +1702,6 @@
     } catch (error) { disposeGraph(offlineGraph); return Promise.reject(error); }
   }
 
-  root.BOAudio = Object.freeze({ configure, unlock, sfx, gameEffect, moneyGain, batteryCharge, setScene, pokerSelect, pokerUnselect, pokerLevelUp, cancelEffects, status, close,
+  root.BOAudio = Object.freeze({ configure, unlock, sfx, gameEffect, moneyGain, batteryCharge, setScene, pokerSelect, pokerUnselect, pokerLevelUp, cancelEffects, status, close, setExternalMusicActive,
     tracks: TRACKS, tracksForPlayerLevel, renderOffline });
 })(typeof window !== 'undefined' ? window : globalThis);
