@@ -27,3 +27,8 @@
 .yac-native.yac-rail .yac-actor{background:#173022}
 @media(max-width:400px){.yac-native.yac-rail .yac-message{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.yac-native.yac-rail,.yac-native.yac-rail *{animation:none!important;transition:none!important}}
+
+/* R27: one approved portrait, with a visible red outer / green inner profile frame. */
+.yac-native.yac-rail .yac-photo{padding:12px 15px;border:5px solid #ed4e63;outline:3px solid #a4f66c;outline-offset:3px;background:linear-gradient(145deg,#571b32,#152e22);box-shadow:0 0 0 7px #193b26,0 0 22px #9fee7070,0 6px 18px #0009}
+.yac-native.yac-rail .yac-portrait{border:3px solid #9ff174;padding:3px;background:#12271b;box-shadow:0 0 0 2px #e85670}
+.yac-native.yac-rail .yac-guidance{width:100%;margin:0 0 14px;padding:11px 12px;border:1px solid #a4f66c;border-radius:12px;background:#172b20;color:#f3ffe9;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
