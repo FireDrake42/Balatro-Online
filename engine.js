@@ -1271,13 +1271,13 @@
     var keys=Reflect.ownKeys(value);if(keys.length!==2||keys.indexOf('emeraldLevel')<0||keys.indexOf('batteryPercent')<0)return 0;
     var e=Object.getOwnPropertyDescriptor(value,'emeraldLevel'),b=Object.getOwnPropertyDescriptor(value,'batteryPercent');
     if(!e||!b||!e.enumerable||!b.enumerable||!Object.prototype.hasOwnProperty.call(e,'value')||!Object.prototype.hasOwnProperty.call(b,'value'))return 0;
-    return Number.isInteger(e.value)&&e.value>=2&&e.value<=10&&Number.isInteger(b.value)&&b.value>=0&&b.value<=100?b.value:0;
+    return Number.isInteger(e.value)&&e.value>=2&&e.value<=50&&Number.isInteger(b.value)&&b.value>=0&&b.value<=100?b.value:0;
   }catch(_){return 0}}
   function play(s,ids,options,battery) {yanmaNativeEngine.begin(s,practiceRuns.has(s));let yanmaCompleted=false;try{const result=(function(){
     // Legacy two-argument callers never gain Frenzy scoring authority from a
     // cached run level. The app supplies the actual profile level and one clock.
     var context=null,actualLevel;if(options!==undefined){check(Frenzy,'Load the Frenzy model before the engine.');context=Frenzy.context(options);actualLevel=context.actualLevel;if(context.actualLevel<33)context=null;}
-    phase(s,['play']);check(s.hands>0,'No hands remain.');var cards=selected(s,ids,s.hand,selectionLimit(s,actualLevel),1),r=evaluateRun(s,cards);
+    phase(s,['play']);check(s.hands>0,'No hands remain.');var cards=selected(s,ids,s.hand,selectionLimit(s,actualLevel),1);yanmaNativeEngine.selection(s,cards);var r=evaluateRun(s,cards);
     if(s.levels[r.key]===undefined&&(r.key==='double_triple'||r.key==='six'))s.levels[r.key]=1;
     var forbidden=activeBoss(s,'psychic')&&cards.length!==5?'The Psychic requires exactly 5 cards.':activeBoss(s,'eye')&&s.roundTypes[r.key]?'The Eye forbids repeating a poker hand.':activeBoss(s,'mouth')&&s.firstRoundHand&&s.firstRoundHand!==r.key?'The Mouth only allows '+HANDS[s.firstRoundHand][0]+'.':null;
     check(!activeBoss(s,'cerulean_bell')||ids.indexOf(s.forcedCardId)>=0,'Include the card selected by Cerulean Bell.');

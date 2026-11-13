@@ -41,7 +41,7 @@
   try{const p=E.preview(r,cards.map(c=>c.id),{actualLevel:s.level});if(typeof p.royalFlush==='boolean')return p.royalFlush}catch(_){return false}
   return ['S','H','D','C'].some(suit=>[10,11,12,13,14].every(rank=>cards.some(c=>c.rank===rank&&c.enhancement!=='stone'&&(c.suit===suit||c.enhancement==='wild'&&!c.debuffed))));
  }
- function ownLevel(s){if(Number.isInteger(s.pet?.level)&&s.pet.level>=1&&s.pet.level<=10)return s.pet.level;const total=Number.isInteger(s.pet?.totalWins)&&s.pet.totalWins>=0&&s.pet.totalWins<=415?s.pet.totalWins:0;return 1+[10,25,50,80,120,170,235,315,415].filter(n=>total>=n).length}
+ function ownLevel(s){return Number.isInteger(s.pet?.level)&&s.pet.level>=0&&s.pet.level<=50?s.pet.level:0}
  function quoteEntries(E,s){if(!visible(s))return [];const out=[],add=(id,message)=>out.push({id:'second:'+id,source:'second',message}),l=s.level,e=ownLevel(s);
   add('table','Im sitting right here by the poker table!');add('team','Your Level is Level '+l+', and I’m level '+e+'! We make a great team!');
   if(l>=6){add('never','Never give up!');add('try','Try your best!');add('NEVER','NEVER GIVE UP!!!')}

@@ -33,7 +33,7 @@
   delete f.earnedLifetimeHundredths;delete f.lifetimeEarningsKnown;
   p.progression=PG.normalize(g,CONFIG);
   const seed=k=>{const v=context.seeds?.[k];check(Number.isInteger(v)&&v>0&&v<=4294967295,'new future-only '+k+' seed is unavailable.');return v};
-  p.emerald=p.emerald?clone(p.emerald):EP.create(seed('emerald'));p.emerald.version=3;p.emerald.bonusWinRunIds=p.emerald.bonusWinRunIds||[];p.emerald.manualRestoration=M.baseline(request,'emeraldWins');
+  check(p.emerald?.version!==4,'Restoration cannot downgrade the preserved Emerald GB ledger. Use its full paired native backup.');p.emerald=p.emerald?clone(p.emerald):EP.create(seed('emerald'));p.emerald.version=3;p.emerald.bonusWinRunIds=p.emerald.bonusWinRunIds||[];p.emerald.manualRestoration=M.baseline(request,'emeraldWins');
   p.emeraldFriendship=p.emeraldFriendship?clone(p.emeraldFriendship):EF.create();p.emeraldFriendship.version=4;p.emeraldFriendship.level=10;p.emeraldFriendship.fp=0;p.emeraldFriendship.manualRestoration=M.baseline(request,'friendshipFp');
   p.emeraldPoker=p.emeraldPoker?clone(p.emeraldPoker):clone(P.create(seed('poker')));p.emeraldPoker.version=2;p.emeraldPoker.manualRestoration=M.baseline(request,'pokerPxp');
   p.emeraldSlots=p.emeraldSlots?clone(p.emeraldSlots):SL.create(seed('slots'),context.now);p.emeraldSlots.version=2;p.emeraldSlots.manualRestoration=M.baseline(request,'slotsSxp10');

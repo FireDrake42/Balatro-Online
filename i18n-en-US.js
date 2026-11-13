@@ -1,5 +1,10 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['en-US']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "emerald.gbedxp.label": "Emerald Level {level} • {earned}/{target} GBedXP • Next level {next}",
+  "emerald.gbedxp.max": "Emerald Level 50 • MAX • {earned} GBedXP",
+  "emerald.gbedxp.short": "Emerald E{value1} · {value2}",
+  "emerald.gbedxp.progress": "Emerald GBedXP progress",
+  "emerald.gbedxp.rule": "Each physical original Rank 6 card consumed by a genuine native PLAY earns exactly 1 GBedXP. Non-scoring and debuffed sixes count; retriggers, held cards, discards, previews and minigames do not. Wins never grant GBedXP.",
   "all3.curve.note": "Actual saved-profile curve. Opened bands keep their original costs; eligible future bands cost 5% less. This table awards no XP.",
   "all3.savings.title": "Recorded XP cost savings",
   "all3.savings.potion": "XP saved · Discount Potion",

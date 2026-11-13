@@ -1,5 +1,10 @@
 /* Keyed text-only language catalog. Keep {named} placeholders unchanged. */
 (function(root,factory){'use strict';const value=Object.freeze(factory());if(typeof module==='object'&&module.exports)module.exports=value;else{root.BOI18nCatalogs=root.BOI18nCatalogs||Object.create(null);root.BOI18nCatalogs['es']=value;}})(typeof window!=='undefined'?window:null,function(){return {
+  "emerald.gbedxp.label": "Emerald nivel {level} • {earned}/{target} GBedXP • Próximo nivel {next}",
+  "emerald.gbedxp.max": "Emerald nivel 50 • MÁX. • {earned} GBedXP",
+  "emerald.gbedxp.short": "Emerald E{value1} · {value2}",
+  "emerald.gbedxp.progress": "Progreso GBedXP de Emerald",
+  "emerald.gbedxp.rule": "Cada carta física de rango original 6 consumida por una jugada nativa real da exactamente 1 GBedXP. Cuentan los seises que no puntúan o están debilitados; no cuentan repeticiones de efectos, cartas retenidas, descartes, vistas previas ni minijuegos. Las victorias nunca dan GBedXP.",
   "all3.curve.note": "Curva real del perfil guardado. Los tramos abiertos conservan su coste original; los futuros tramos elegibles cuestan un 5% menos. Esta tabla no concede XP.",
   "all3.savings.title": "Ahorro registrado en costes de XP",
   "all3.savings.potion": "XP ahorrada · Poción de descuento",

@@ -19,7 +19,7 @@
   const low=x.revision<y.revision?x:y,high=x.revision<y.revision?y:x;
   check(high.lastNow>=low.lastNow,'Frenzy history moved backwards. Keep your save and reload safely.');return high;
  }
- function recover(profile,run){runGate(run);
+ function recover(profile,run){runGate(run);if(run)P.validateGBMirror(profile.emerald,run._emeraldProfile);
   if(own(profile,'emerald'))P.copy(profile.emerald);
   if(own(profile,'frenzy'))F.normalize(profile.frenzy);
   if(own(run,'frenzy'))F.normalize(run.frenzy);
@@ -48,7 +48,7 @@
   if(before.modeAbsent===true&&!('runMode' in run)&&before.effect==='cashout'&&before.phase==='cashout'&&before.ante===8&&before.blindIndex===2&&!before.endless&&!before.abandoned&&!before.outcome&&P.unlocked(before.actualLevel)&&run.phase==='won'&&run.abandoned!==true&&!run.endless){
    const options=winOptions(context),d=Object.getOwnPropertyDescriptor(profile,'emerald');
    check(!d||own(d,'value')&&d.enumerable===true,'Emerald progress must be an enumerable data field.');
-   const state=d?P.copy(d.value):P.create(seed(run._uiId));
+   const state=P.startGB(d?P.copy(d.value):P.create(seed(run._uiId)),run._uiId);
    profile.emerald=P.creditWin(state,{runId:run._uiId,actualLevel:before.actualLevel,beforePhase:'cashout',afterPhase:'won',endless:false,abandoned:false,source:'fresh-completion'},state.revision,options).state;
   }
   if(before.actualLevel>=5)for(const [key,n]of Object.entries(run.levels||{})){if(![10,20,30,40,50].includes(n)||before.levels[key]===n)continue;const name=before.handNames?.[key]||key;const message=n===10?'Your poker hand is level 10. Nice.':n===20?'Your '+name+' is level 20!? WOW!!!':n===30?'Your poker hand is level 30, but how!?!?':n===40?'LEVEL 40!!! YOURE UNSTOPPABLE!!!!!':'LEVEL 50!! The legendary poker hand!!!';messages.push({message,handKey:key,handLevel:n})}

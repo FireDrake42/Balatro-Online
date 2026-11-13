@@ -1,4 +1,4 @@
-(function(){const yanmaHostRegistration=globalThis.BOYanmaAnorithNative.claimHost();const yanmaNativeProgression=globalThis.BOProgress;
+(function(){const emeraldNativeProgress=globalThis.BOEmeraldProgress;const yanmaHostRegistration=globalThis.BOYanmaAnorithNative.claimHost(emeraldNativeProgress);const yanmaNativeProgression=globalThis.BOProgress;
 /* Existing writer + selected-slot + whole native paired-bank boundary for
  * genuine rewards. Never acquires/steals an owner, guesses a slot, creates a
  * RUN, advances passive time, retries uncertainty, or treats a game journal as
@@ -9,7 +9,7 @@
  // Exact pre-existing app95 cost configuration, shared without a second rule fork.
  const PLAYER_XP_CONFIG=Object.freeze({level25Cost:27500,exponentialBase:100000,exponentialFactor:1.15,costOverrides:Object.freeze({35:25000,36:27500,37:30000,38:33000,39:36000,40:45000,41:50000,42:55000,43:60000,44:65000,45:70000,46:80000,47:90000,48:95000,49:100000})});
  const KEYS=M.NFT?.KEYS||[],PROFILE=KEYS[0],RUN=KEYS[1],SETTINGS=KEYS[2];
- function mirror(profile,run,at){const next=mirrorBase(profile,run,at);if(next!==null){if(own(profile,'yanmaAnorith')){check(next._potionProfile,'native potion mirror required');next._potionProfile.yanmaAnorith=copy(profile.yanmaAnorith);}else if(next._potionProfile)delete next._potionProfile.yanmaAnorith;if(own(profile,'faucetChatAuthority'))next.faucetChatAuthority=copy(profile.faucetChatAuthority);else delete next.faucetChatAuthority;}return next;}
+ function mirror(profile,run,at){const next=mirrorBase(profile,run,at);if(next!==null){if(profile.emerald?.version===4)next._emeraldProfile=emeraldNativeProgress.copy(profile.emerald);if(own(profile,'yanmaAnorith')){check(next._potionProfile,'native potion mirror required');next._potionProfile.yanmaAnorith=copy(profile.yanmaAnorith);}else if(next._potionProfile)delete next._potionProfile.yanmaAnorith;if(own(profile,'faucetChatAuthority'))next.faucetChatAuthority=copy(profile.faucetChatAuthority);else delete next.faucetChatAuthority;}return next;}
  function mirrorBase(profile,run,at){if(run===null)return null;const next=copy(run);check(!M.BO.isLabMarked(next),'Lab/practice is not an earning source');if(next.playerLevel!==profile.progression.level)M.BO.setPlayerLevel(next,profile.progression.level);
   if(own(profile,'potions')){if(profile.progression.level>=12||own(next,'potions'))M.BO.setPotionState(next,profile.potions,at);next._potionProfile={revision:profile.potions.revision,progression:copy(profile.progression)};for(const k of ['passiveXp','expInterest','achievementXp'])if(own(profile,k))next._potionProfile[k]=copy(profile[k]);}
   else check(!own(next,'potions')&&!own(next,'_potionProfile'),'RUN Potion mirror is missing its whole PROFILE source');return next;

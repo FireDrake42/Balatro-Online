@@ -47,8 +47,8 @@
  }
  function stripLabel(title){return title.replace(/<[^>]*>/g,'')}
  function companionBars(f,e){
-  const friend=f||{},pet=e||{},level=Math.max(1,Math.min(15,Math.trunc(finite(friend.level,1)))),fpct=friend.capped?100:pct(friend.percent),epct=pet.max?100:pet.nextWins>0?pct(100*finite(pet.wins)/pet.nextWins):0;
-  return meter('poker-friendship',t('friendship',{level}),friend.capped?t('totalFP',{total:number(friend.totalFP??friend.fp)}):number(friend.fp)+'/'+number(friend.required??100)+' FP',fpct)+meter('poker-own',t('ownLevel',{level:count(pet.level)}),esc(pet.bar??(pet.max?'MAX':number(pet.wins)+'/'+number(pet.nextWins))),epct);
+  const friend=f||{},pet=e||{},level=Math.max(1,Math.min(15,Math.trunc(finite(friend.level,1)))),fpct=friend.capped?100:pct(friend.percent),epct=pet.max?100:pet.nextXP>0?pct(100*finite(pet.earnedXP)/pet.nextXP):0;
+  return meter('poker-friendship',t('friendship',{level}),friend.capped?t('totalFP',{total:number(friend.totalFP??friend.fp)}):number(friend.fp)+'/'+number(friend.required??100)+' FP',fpct)+meter('poker-own',t('ownLevel',{level:count(pet.level)}),esc(pet.bar??(pet.max?'MAX':number(pet.earnedXP)+'/'+number(pet.nextXP))),epct);
  }
  const experience=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=Number.MAX_SAFE_INTEGER&&!Object.is(v,-0);
  function pokerLevelInfo(s){

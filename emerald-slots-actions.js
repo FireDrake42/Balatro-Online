@@ -37,7 +37,7 @@
    check((resumeOnly||!c.hidden&&!root.document?.hidden&&root.document?.visibilityState!=='hidden')&&!c.protected&&!c.suspended&&!c.animating&&!c.conductPaused&&!c.cloudRestoring&&!c.slotBusy&&!c.survey&&!c.batteryBlocked,'Slots is protected or gameplay is paused. Your saved spin is kept.');
    const progression=data(c.profile,'progression'),actual=data(progression,'level');check(Number.isInteger(c.level)&&c.level>=50&&c.level<=100&&actual===c.level,'Slots unlocks at actual reconciled player Level50, not a cached run level.');return c;
   }
-  function ownMax(profile,level){const emerald=data(profile,'emerald');if(emerald===undefined){check(!own(profile,'emerald'),'The optional Emerald ledger is invalid.');return false}check(EP.validate(emerald),'Emerald progress needs attention.');return EP.progress(emerald,level).max===true}
+  function ownMax(profile,level){const emerald=data(profile,'emerald');if(emerald===undefined){check(!own(profile,'emerald'),'The optional Emerald ledger is invalid.');return false}check(EP.validate(emerald),'Emerald progress needs attention.');return EP.progress(emerald,level).level>=10}
   function read(key){const value=host.read(key);check(value===null||typeof value==='string','The canonical '+key+' save could not be read.');return value}
   function fence(c,expectedRaw=c.rawProfile){
    // A guard may itself discover foreign progress; reread AFTER every guard.
