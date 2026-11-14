@@ -9,3 +9,6 @@
 .psx-youtube [hidden]{display:none!important}.psx-youtube a{display:block;margin:.7rem 0;text-decoration:underline;overflow-wrap:anywhere}
 .psx-youtube .psx-privacy,.psx-youtube .psx-bounds{font-size:.8rem;opacity:.85}.psx-youtube [data-psx-status]{font-size:.9rem;min-height:1.5em}
 @media(max-width:360px){.psx-youtube .psx-actions{gap:.35rem}.psx-youtube .btn{max-width:100%;white-space:normal}}
+
+/* Links are references, not another audio transport. */
+.psx-youtube .music-reference-list{margin-top:1rem;border-top:1px solid var(--line);padding-top:.5rem}.psx-youtube .music-reference-list summary{min-height:44px;padding:.7rem .2rem;cursor:pointer;line-height:1.4}.psx-youtube .music-reference-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:.4rem;list-style:none;padding:0;min-width:0}.psx-youtube .music-reference-links li{min-width:0}.psx-youtube .music-reference-links a{display:flex;align-items:center;min-height:44px;margin:0;padding:.5rem;border:1px solid var(--line);border-radius:.45rem;overflow-wrap:anywhere}.psx-youtube .music-reference-list a:focus-visible,.psx-youtube .music-reference-list summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
