@@ -59,7 +59,22 @@
   return {unlocked:enabled,level:enabled?level:0,totalWins:total,wins:enabled?total:0,nextWins:enabled&&!max?CUMULATIVE_WINS[level-1]:null,nextLevel:enabled&&!max?level+1:null,cumulativeForNext:enabled&&!max?CUMULATIVE_WINS[level-1]:null,bar:!enabled?'Locked':max?'MAX':total+'/'+CUMULATIVE_WINS[level-1],max:enabled&&max};
  }
  // Computed presentation only: no saved field, replay change or default write.
- function appearance(ownLevel){const level=Number.isInteger(ownLevel)&&ownLevel>=1&&ownLevel<=50?Math.min(10,ownLevel):0,step=Math.max(0,level-1),photoScale=1+step/10,glowRadius=level?4+2*step:0,glowAlpha=level?Number((.18+.07*step).toFixed(2)):0;return Object.freeze({level,photoScale,glowRadius,glowAlpha,css:'--emerald-scale:'+photoScale+';--emerald-glow-radius:'+glowRadius+'px;--emerald-glow-alpha:'+glowAlpha+';'})}
+ function appearance(ownLevel){const level=Number.isFinite(ownLevel)?Math.max(0,Math.min(50,Math.trunc(ownLevel))):0,growth=Math.min(5,level),aura=Math.max(0,level-5),photoScale=1+growth*.1,outlineWidth=1+growth*.4,glowRadius=level<5?0:8+aura*10/45,glowAlpha=level<5?0:.18+aura*.47/45;return {level,photoScale,outlineWidth,glowRadius,glowAlpha,css:'--emerald-scale:'+photoScale+';--emerald-outline:'+outlineWidth+'px;--emerald-glow-radius:'+glowRadius+'px;--emerald-glow-alpha:'+glowAlpha+';'};}
+ // Cosmetic public-event reactions only. No speech, reward, clock, save or RNG changes.
+ const REACTION_EVENTS=Object.freeze([['portrait',0,'portrait attention'],['faucet-ready',5,'visible faucet ready'],['face-up-card',10,'face-up cards'],['face-up-joker',15,'face-up Jokers'],['public-shop',20,'affordable visible shop offers'],['frenzy-active',25,'visible Frenzy activation'],['battery-low',30,'visible low fictional battery'],['public-result',35,'completed public scores'],['page-change',40,'visible page changes'],['player-level',45,'actual Player level changes'],['portrait-focus',50,'keyboard portrait focus']].map(x=>Object.freeze(x)));
+ function reactionProfile(ownLevel){const level=appearance(ownLevel).level,delayMs=level<5?700-40*level:Math.round(500-420*(level-5)/45),rows=REACTION_EVENTS.filter(x=>x[1]<=level);return Object.freeze({level,delayMs,events:Object.freeze(rows.map(x=>x[0])),labels:Object.freeze(rows.map(x=>x[2]))});}
+ function reactionEvents(s){if(!s)return[];const out=[],add=(kind,stamp)=>out.push({kind,stamp:String(stamp)}),r=s.page==='game'?s.run:null;
+  if(s.faucetReady===true)add('faucet-ready','ready');
+  const visible=x=>x&&x.hidden!==true&&x.faceDown!==true;
+  const card=(Array.isArray(r?.hand)?r.hand:[]).find(x=>visible(x)&&(typeof x.id==='string'||Number.isSafeInteger(x.id)));if(card)add('face-up-card',card.id+':'+card.rank+':'+(card.edition||''));
+  const joker=(Array.isArray(r?.jokers)?r.jokers:[]).find(x=>visible(x)&&(typeof x.uid==='string'||Number.isSafeInteger(x.uid)));if(joker)add('face-up-joker',joker.uid+':'+(joker.edition||''));
+  if(r?.phase==='shop'&&Number.isFinite(r.money)){const offer=(r.shop?.items||[]).find(x=>visible(x)&&!x.sold&&Number.isFinite(x.price)&&x.price>=0&&x.price<=r.money&&typeof x.name==='string');if(offer)add('public-shop',(offer.id||offer.name)+':'+offer.price);}
+  if(s.level>=33&&s.frenzy?.active===true)add('frenzy-active',String(s.frenzy.startedAt)+':'+s.frenzy.expiresAt);
+  if(Number.isFinite(s.batteryPercent)&&s.batteryPercent>=0&&s.batteryPercent<=20)add('battery-low',Math.floor(s.batteryPercent));
+  if(r?.lastResult&&Number.isFinite(r.lastResult.total))add('public-result',String(r._uiId)+':'+r.round+':'+r.roundHands+':'+r.lastResult.key+':'+r.lastResult.total);
+  add('page-change',String(s.page)+':'+s.section);if(Number.isInteger(s.level))add('player-level',s.level);return out;
+ }
+ function createReactor(host){let pending=null;function cancel(){if(pending!==null)host.clearTimeout(pending);pending=null;}function schedule(event,level,context){if(!host.eligible()){cancel();return false;}const p=reactionProfile(level);if(!event||!p.events.includes(event.kind))return false;cancel();pending=host.setTimeout(()=>{pending=null;if(host.eligible()&&host.context()===context)host.react(event);},p.delayMs);return true;}return Object.freeze({schedule,cancel,pending:()=>pending!==null});}
  function capabilities(state,actualLevel){const l=progress(state,actualLevel).level;return {level:l,facts:l>=2,photoScale:appearance(l).photoScale,movementSpeed:Number(((l>=3?1.2:1)*(Number.isInteger(actualLevel)&&actualLevel>=48&&actualLevel<=100?1.5:1)).toFixed(5)),speedGift:l>=4,greenAura:l>=5,eventCommentary:l>=6,welcome:l>=7,adviceRichness:l>=8?1.2:1,workshop:l>=9,workshopRankGain:l>=10?3:l>=9?1:0}}
  // Optional action-only options; the legacy receipt schema is unchanged.
  function legacyCreditWin(state,receipt,expectedRevision,options){
@@ -152,5 +167,5 @@
   if(a.version===4){const g=copy(a).gb,r=legacyRecover(legacy(a),legacy(b));return withGB(r,g)}
   return legacyRecover(a,b);
  }
- return Object.freeze({VERSION,UNLOCK_LEVEL,MAX_WINS,MAX_TIME,SPEECH_COOLDOWN_MS,NEXT_WINS,CUMULATIVE_WINS,FACTS,GB_THRESHOLDS,validRunId,unlocked,validate,copy,create,progress,appearance,capabilities,creditWin,giftForRoll,recordSpeech,recover,startGB,creditPlayedRank6,validateGBMirror});
+ return Object.freeze({VERSION,UNLOCK_LEVEL,MAX_WINS,MAX_TIME,SPEECH_COOLDOWN_MS,NEXT_WINS,CUMULATIVE_WINS,FACTS,GB_THRESHOLDS,validRunId,unlocked,validate,copy,create,progress,appearance,reactionProfile,reactionEvents,createReactor,capabilities,creditWin,giftForRoll,recordSpeech,recover,startGB,creditPlayedRank6,validateGBMirror});
 });

@@ -84,7 +84,10 @@ body.frenzy-active .emerald-photo-link{border-color:#d8ffeb}
 .emerald-controls [data-emerald-looker][aria-pressed=true]{border-color:#ffd7f1;background:#513047}
 /* Supplied full framed card: one accessible, own-level label in its original
    label region. Never crop/stretch the frame; growth/glow stay on the whole card. */
-.emerald-framed-portrait{box-sizing:border-box;position:relative;display:block;flex:none;width:calc(min(140px,(100vw - 140px) / 1.9) * var(--emerald-scale,1));max-width:calc(100% - 44px);height:auto;aspect-ratio:1280/1216;margin:var(--emerald-glow-radius,0px);overflow:visible;filter:drop-shadow(0 5px 7px #0006) drop-shadow(0 0 var(--emerald-glow-radius,0px) rgba(42,255,113,var(--emerald-glow-alpha,0)))}
+.emerald-framed-portrait{box-sizing:border-box;position:relative;display:block;flex:none;width:calc(min(140px,(100vw - 140px) / 1.9) * var(--emerald-scale,1));max-width:calc(100% - 44px);height:auto;aspect-ratio:1280/1216;margin:8px;overflow:visible;filter:drop-shadow(0 5px 7px #0006) drop-shadow(0 0 var(--emerald-glow-radius,0px) rgba(42,255,113,var(--emerald-glow-alpha,0)))}
+/* Fixed E5 layout gutter; only the cosmetic drop-shadow grows beyond E5.
+   Outrank the native Blackjack photo margin without changing its responsive bounds. */
+#emerald-blackjack-table .blackjack-emerald-photo.emerald-framed-portrait{margin:8px}
 .emerald-framed-portrait>img,.emerald-group .emerald-framed-portrait>img{display:block;box-sizing:border-box;width:100%;height:auto;max-width:100%;margin:0;border:0;border-radius:0;object-fit:contain;filter:none}
 .emerald-framed-portrait>svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
 .emerald-framed-portrait>svg text{font-family:Georgia,'Times New Roman',serif;fill:#fffdf2;stroke:none;letter-spacing:normal;text-transform:none}
@@ -109,3 +112,11 @@ body.frenzy-active .emerald-photo-link{border-color:#d8ffeb}
  body.clean-game-ui #app .game-grid.clean-table > .emerald-positioned{grid-area:emerald;min-width:0;margin:0;align-self:start}
 }
 
+
+/* R45 static separation and level-only aura; never brighten the supplied image. */
+.emerald-framed-portrait{background:#03120d;border-radius:10px;outline:var(--emerald-outline,1px) solid #bcf6b5;outline-offset:2px;box-shadow:0 4px 9px #000b}
+.emerald-aura .emerald-framed-portrait>img{outline:0;box-shadow:none}
+.emerald-roadmap{overflow-wrap:anywhere}.emerald-roadmap-stat{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px;border:1px solid #a4ed94;border-radius:12px;background:#0c251b}.emerald-roadmap-stat dt{font-weight:700}.emerald-roadmap-stat dd{margin:0;font-variant-numeric:tabular-nums;font-size:22px}.emerald-roadmap li[aria-current=step]{border-left:4px solid #a1f68f;padding-left:10px}.emerald-roadmap li{margin-bottom:14px}
+
+.emerald-playing-roadmap{border:0;padding:0;background:transparent;color:inherit;cursor:pointer;display:inline-block}.emerald-playing-roadmap:focus-visible{outline:3px solid white;outline-offset:5px}
+html.fps-boost .emerald-framed-portrait,html.fps-boost .emerald-framed-portrait>img{filter:none!important;box-shadow:none!important;animation:none!important;transition:none!important}html.fps-boost .emerald-group{animation:none!important}
