@@ -593,3 +593,15 @@ body.reduced-motion #faucet-hud-button[data-faucet-cd-ui="26"]::after,body.motio
 /* R34 catalogue-only UI: no imported/persistent layout or art changes. */
 .tabbar [data-tab="pet-shop"]{min-height:44px;min-width:44px}
 #pet-shop{min-width:0;overflow-wrap:anywhere}#pet-shop>.panel{margin-bottom:18px}#pet-shop .catalog-controls label{display:block;min-width:0;flex:1}#pet-shop .search{display:block;width:100%;min-height:44px;max-width:420px}#pet-shop .pet-catalogue{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}#pet-shop .collection-entry{min-width:0}#pet-shop .collection-entry p+p{margin-top:.5rem}#pet-shop .pet-map-meters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}#pet-shop .pet-map-meters>p{padding:.65rem;border:1px solid var(--line);border-radius:8px}#pet-shop .pet-map-meters span{display:block;font-size:.8rem;color:var(--muted)}
+
+/* R38 current-page FPS Boost: scoped decoration only, never game clocks. */
+.bo-fps-settings{min-width:0;padding:12px;margin:0 0 18px;border:1px solid var(--line);border-radius:10px}
+.bo-fps-settings h3{margin-top:0}.bo-fps-settings .build-note{overflow-wrap:anywhere}
+.bo-fps-boost{min-height:44px;min-width:44px;max-width:100%;padding:9px 14px;border:1px solid #7fa7a0;border-radius:9px;background:#173a32;color:#edf9ef;font-size:14px;font-weight:750;touch-action:manipulation}
+.bo-fps-boost[aria-pressed="true"]{background:#c9edb3;color:#172d20;border-color:#e2ffcd}
+.bo-fps-boost:focus-visible{outline:3px solid #ffe478;outline-offset:3px}
+html.fps-boost .grain,html.fps-boost .faucet-shortcut-bubbles{display:none!important}
+html.fps-boost :is(.faucet-shortcut,.passive-up,.passive-clock-hand,.passive-money-icon),html.fps-boost #faucet-hud-button::after{animation:none!important;transition:none!important}
+html.fps-boost :is(.panel,.tray-wrap,.deck-selected,.stat-box,.table-surface,.shop-item,.resource,.sheet,.blind-panel,.blind-choice,.blind-symbol,.money-amount,.btn,.icon-button,.sort-buttons>button,.yac-photo,.yac-portrait,.yac-message,#faucet-hud-button,.faucet-shortcut){box-shadow:none!important;text-shadow:none!important}
+html.fps-boost :is(.btn,.icon-button,.sort-buttons>button,.faucet-shortcut){transition:none!important;filter:none!important}
+html.fps-boost :is(#level-hud,.topbar,.sheet,#overlay),html.fps-boost #interest-graphs-panel::backdrop{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}

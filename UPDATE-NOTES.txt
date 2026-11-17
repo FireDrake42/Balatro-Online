@@ -1,0 +1,9 @@
+BALATRO ONLINE - EMERALD + YANMA/ANORITH COMPANIONS
+
+Emerald: size/contrast growth caps at Lv5; cosmetic aura/reaction progression and the clickable roadmap continue through Lv50. Roadmap shows configured Reaction time (ms), not measured device latency. Both companions show XP progress/percentages; Yanma/Anorith unlocked rows are green and future rows red.
+
+Reported lag/freezes are NOT fixed by this companion update.
+Before replacing website files, export an in-game backup. Keep the SAME website domain/origin and browser data; a new origin does not import your progress. Do NOT clear site/browser data. Preserve your existing saves, slots, uploaded photos and preferences.
+This ZIP does not publish or deploy itself. Extract the COMPLETE ZIP into the website root. If using the two ordinary smaller ZIPs instead, extract BOTH into the SAME folder before using/uploading it; Part1 has all code and Part2 the remaining original media. No 7-Zip or binary joining is required. Do not mix versions.
+
+QA: private Chromium component fixtures plus separately retained current-app synthetic P36/native tests; not physical-device, natural-play, universal file-save-durability or hardware-performance certification.
