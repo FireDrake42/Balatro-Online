@@ -1,6 +1,6 @@
 /* Poker Table offline worker. Stamped by tools/stamp-offline-cache.cjs; preserve runtime guards. */
 'use strict';
-const VERSION = 'companion-visuals-r45qa11-74d575e969de';
+const VERSION = 'ui-writeguard-r62-ea8eaa43b0af';
 const EXPECTED_HASHES = Object.freeze({
   "DEADLY-ROULETTE-LICENSE.md": "2f9cff5891f86868a39befcf0b085e877671d6142229349c737548e689b532f4",
   "IPAD-SETUP.md": "94db7b84a10dc41082f5296195815419d884af50f88ae712ff60f7f638cc19e7",
@@ -87,7 +87,7 @@ const EXPECTED_HASHES = Object.freeze({
   "emerald-survey.js": "049f0c334f4027fe289143a042120e25de970c04f772416941c5a854fce40bb3",
   "emerald-text-quirks.js": "95610b5b86b1d15b7c0b61172794714fd9002e6a59bb6dfe594581dc0c8915a9",
   "emerald-typewriter.js": "2e312aeb085746d287522abcc868ea90d27f810a0858ef09c9664a9775a9a525",
-  "emerald-ui.js": "862ab8d48451286e85833a5a2b3135645f8ac1cebcfceb57a8672242c9ae3be1",
+  "emerald-ui.js": "ea8eaa43b0afdabc8c7f256c6eb10c04577f1f18ff4845b0b76a3001b3d88cbd",
   "emerald-workshop.js": "5046f08004991aec96e17e4052d4c6cbf1361393bf06d8a2698f412b3a936aad",
   "emerald.css": "55f21c2c97e17feaa226ca00cb5de7da3c7d94c2f9680242066717442721f28f",
   "engine.js": "8004a05b0d860701f141bac367b03a26751fab16f1d8a9b66efc6c6c55f453c2",
@@ -122,7 +122,7 @@ const EXPECTED_HASHES = Object.freeze({
   "icon-512.png": "6bcc710c835288fe8fddc744a503d7450bf2b571c35624612f1a1175bbb23711",
   "icon-apple-180.png": "6bd472219ed1a48c861b210e2b691d84a06ee01b972d058e45a9124d2b352d59",
   "icon.svg": "747f8f0630a98052f849ea609413065c02dc3f6fcc13cd888a3476351b1d3880",
-  "index.html": "7c7ff9fd31b257c01f60522c5139f36d416452af669332669048d266aacf1a50",
+  "index.html": "902b81f3ae57c13a5fc3df4596c3da322d5b053409c891007f3b10db6adcea8f",
   "interest-legacy.js": "18563f1d3218eec98c39cf987c9169eceed635e8ec67e0e3fb7dee2d2875d38e",
   "interest-settings.js": "dbff95ae2e3cf7ec0eb81d5ba2fc2c98dbcb6201cc1f7cef416df9679997f602",
   "joker-art.css": "b9f66357fb3dfe99b12ca16064a5e65113b562b9e504aeafb79ec26075f1ae7c",
