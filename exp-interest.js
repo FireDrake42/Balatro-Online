@@ -208,5 +208,6 @@
   env.document.addEventListener('visibilitychange',visibility);env.addEventListener('pagehide',hide);env.addEventListener('pageshow',show);
   return {start,stop,reset,resetAnchor,setClock,setPaused,heartbeat,status,destroy,assertFenceCurrent:checkFence,ownsLease:()=>owner};
  }
- return {create,normalize,validateProfile,validateMirror,rate,step,intervalMs,payEligible,createController,createWriterGuard,INTERVAL_MS,MAX_GAP_MS,LEASE_KEY:LEASE};
+ function readImmutableStoredProfileV5(raw){check(typeof raw==='string','stored PROFILE must be raw JSON text.');const value=JSON.parse(raw);check(record(value),'actual whole stored profile unavailable.');if(!Object.prototype.hasOwnProperty.call(value,'expInterest')||!record(value.expInterest)||value.expInterest.version!==5)return null;function freeze(v){if(v&&typeof v==='object'){for(const k of Reflect.ownKeys(v))freeze(v[k]);Object.freeze(v)}}freeze(value);Proof.validateProfile(value);return Object.freeze({value,signature:JSON.stringify(value.expInterest)})}
+ return {readImmutableStoredProfileV5,create,normalize,validateProfile,validateMirror,rate,step,intervalMs,payEligible,createController,createWriterGuard,INTERVAL_MS,MAX_GAP_MS,LEASE_KEY:LEASE};
 });

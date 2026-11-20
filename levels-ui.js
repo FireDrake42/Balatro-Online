@@ -99,7 +99,7 @@ let faucetAssisting=false,fskSolving=false,fskChallenge=null,fskConfirmation=nul
 const fskOwnedControls=new WeakSet(),fskOwnedRequests=new WeakSet(),fskFencedControls=new WeakMap();
 const FSK_CONFIRM='Please Emerald, claim it!!!';
 // Host owns actual Emerald E5/slot/conduct/cloud eligibility. Never infer E5 from player level.
-function emeraldAssistView(f){try{const view=api?.emeraldAssist?.();return !document.hidden&&f?.level>=10&&f.unlocked&&claimable(f)&&view?.eligible===true&&typeof view.stamp==='string'&&view.stamp.length?view:null}catch(_){return null}}
+function emeraldAssistView(f){try{if(f===null||f===undefined)return null;const view=api?.emeraldAssist?.();return !document.hidden&&f?.level>=10&&f.unlocked&&claimable(f)&&view?.eligible===true&&typeof view.stamp==='string'&&view.stamp.length?view:null}catch(_){return null}}
 // Controls are minted as owned nodes in paint; parsed HTML/console-created copies never authorize jobs.
 function emeraldAssistButton(f){return ''}
 function paintEmeraldAssist(f){
