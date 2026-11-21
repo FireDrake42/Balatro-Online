@@ -163,13 +163,15 @@
    if(api.busy?.()){native?.reset();anchor=now;retainedMs=0;return {ok:false,code:'busy'}}
    let context;try{context=api.capture()}catch(e){error=e.message;api.changed?.();return {ok:false,code:'stale',reason:error}}
    const nativeLease=native?.lease();if(native&&!nativeLease)return {ok:true,unchanged:true,code:'fresh-native-anchor'};
-   const requestEpoch=epoch,tickAt=native?native.details(nativeLease).at:wall(),capturedPolicyKey=lastPolicyKey,payableElapsed=native?native.details(nativeLease).amount:Math.min(elapsed,MAX_GAP_MS);abort=new env.AbortController();
+   const requestEpoch=epoch,tickAt=native?native.details(nativeLease).at:wall(),capturedPolicyKey=lastPolicyKey,payableElapsed=native?native.details(nativeLease).amount:Math.min(elapsed,MAX_GAP_MS),publicationCursor=native?api.publicationCursor?.():undefined;abort=new env.AbortController();
    const commit=()=>{
     if(requestEpoch!==epoch||!visible()||policyPaused||!powerAllowed())return {ok:false,code:'cancelled'};
     if(policyKey()!==capturedPolicyKey){reanchorPolicy(mono());return {ok:true,unchanged:true,code:'choice-anchor'}}
     if(api.busy?.())return {ok:false,code:'busy'};
     if(mono()-now>MAX_GAP_MS){native?.reset();anchor=mono()-retainedMs;return {ok:true,unchanged:true,code:'fresh-anchor'}}
-    const at=tickAt,result=api.transact(next=>{if(native)native.assert(nativeLease);const r=native?payNativePrefix(next,payableElapsed,at):payEligible(next.progression,next.expInterest,payableElapsed,at,progression=>api.xpConfig?.(at,{...next,progression}));if(r.unchanged)return r;next.progression=r.progression;next.expInterest=r.state;return {...r,xpResult:r}},context);
+    let ownPublicationCancelled=false;
+    const at=tickAt,result=api.transact(next=>{if(native&&publicationCursor!==api.publicationCursor?.()&&native.discardOwnPublication(nativeLease)){ownPublicationCancelled=true;return {ok:true,unchanged:true,code:'own-publication-cancelled'};}if(native)native.assert(nativeLease);const r=native?payNativePrefix(next,payableElapsed,at):payEligible(next.progression,next.expInterest,payableElapsed,at,progression=>api.xpConfig?.(at,{...next,progression}));if(r.unchanged)return r;next.progression=r.progression;next.expInterest=r.state;return {...r,xpResult:r}},context);
+    if(ownPublicationCancelled){retainedMs=0;anchor=now;return result;}
     // Debit eligible time at the synchronous durable result, BEFORE awaiting a
     // shared fence grant. Visibility may invalidate this epoch while publication
     // waits, but must never resurrect time already spent by the saved PROFILE.
@@ -206,7 +208,7 @@
   function setClock(fn){check(fn===null||typeof fn==='function','test clock must be a function or null.');clock=fn||(()=>env.performance.now());resetAnchor()}
   function destroy(){stop();destroyed=true;env.document.removeEventListener('visibilitychange',visibility);env.removeEventListener('pagehide',hide);env.removeEventListener('pageshow',show)}
   env.document.addEventListener('visibilitychange',visibility);env.addEventListener('pagehide',hide);env.addEventListener('pageshow',show);
-  return {start,stop,reset,resetAnchor,setClock,setPaused,heartbeat,status,destroy,assertFenceCurrent:checkFence,ownsLease:()=>owner};
+  return {start,stop,reset,resetAnchor,setClock,setPaused,heartbeat,status,destroy,isPending:()=>!!pending,assertFenceCurrent:checkFence,ownsLease:()=>owner};
  }
  function readImmutableStoredProfileV5(raw){check(typeof raw==='string','stored PROFILE must be raw JSON text.');const value=JSON.parse(raw);check(record(value),'actual whole stored profile unavailable.');if(!Object.prototype.hasOwnProperty.call(value,'expInterest')||!record(value.expInterest)||value.expInterest.version!==5)return null;function freeze(v){if(v&&typeof v==='object'){for(const k of Reflect.ownKeys(v))freeze(v[k]);Object.freeze(v)}}freeze(value);Proof.validateProfile(value);return Object.freeze({value,signature:JSON.stringify(value.expInterest)})}
  return {readImmutableStoredProfileV5,create,normalize,validateProfile,validateMirror,rate,step,intervalMs,payEligible,createController,createWriterGuard,INTERVAL_MS,MAX_GAP_MS,LEASE_KEY:LEASE};
