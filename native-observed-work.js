@@ -50,11 +50,19 @@
    let left=amount;while(left>1e-9&&queue.length){const first=queue[0],n=Math.min(left,first.left),fraction=n/first.left;first.realLeft*=1-fraction;first.left-=n;left-=n;if(first.left<1e-9)queue.shift();}
    check(left<=1e-7,'confirmed FIFO prefix changed');e.spent=true;version++;binding=c;if(anchor)anchor.c=c;return true;
   }
+  function discardOwnPublication(token){
+   check(arguments.length===1,'discard takes only its private original lease');
+   const e=tokens.get(token),c=source({nativeTransaction:true}),t=clocks(),p=c?.ownedPublication;
+   // Exactly the original non-bank predicates. Provenance replaces ONLY banks.
+   if(!(e&&!e.spent&&e.version===version&&c?.eligible&&same(e.c,c)&&sum(queue)+1e-7>=e.details.amount&&t.mt>=e.t.mt&&t.mt-e.t.mt<=2500&&Math.abs(t.at-e.t.at-(t.mt-e.t.mt))<=50))return false;
+   if(!p||e.c.publicationCursor!==p.beforeCursor||c.publicationCursor!==p.afterCursor||p.beforeCursor===p.afterCursor||!witness(e.c,p.before)||!witness(c,p.after)||typeof p.take!=='function'||p.take()!==true)return false;
+   e.spent=true;clear();return true;
+  }
   function hold(){anchor=null;}
   function resume(){anchor=null;observe();}
   function reset(){clear();}
   function fail(){paused=true;anchor=null;}
-  const api=Object.freeze({observe,lease,details,assert,consume,hold,resume,reset,fail,amount:()=>sum(queue)});brands.add(api);return api;
+  const api=Object.freeze({observe,lease,details,assert,consume,discardOwnPublication,hold,resume,reset,fail,amount:()=>sum(queue)});brands.add(api);return api;
  }
  root.BONativeObservedWork=Object.freeze({create,isNative:cap=>brands.has(cap)});
 })(typeof globalThis!=='undefined'?globalThis:this);

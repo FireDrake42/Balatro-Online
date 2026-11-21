@@ -1,13 +1,13 @@
 /* Poker Table offline worker. Stamped by tools/stamp-offline-cache.cjs; preserve runtime guards. */
 'use strict';
-const VERSION = 'boost-reaction-r121-b8baa42975f0';
+const VERSION = 'ci-queued-scope-r144-4251e2a4d7be';
 const EXPECTED_HASHES = Object.freeze({
   "DEADLY-ROULETTE-LICENSE.md": "2f9cff5891f86868a39befcf0b085e877671d6142229349c737548e689b532f4",
   "IPAD-SETUP.md": "94db7b84a10dc41082f5296195815419d884af50f88ae712ff60f7f638cc19e7",
   "MACLEOD-PLAYER36-LICENSES.md": "4d7ab539187a2bb61fa667c2505d7bca0c8636b19bb6ed5a3d6fc697047366a5",
   "achievement-xp.js": "e429f3c8455991a2a6dedb95bfba29e81f88f8344ac106bc6eb9896893ce45b1",
   "achievements-data.js": "9d6aae1ae853f207a18259b6bf7ba1209dff17c71e6bb8ee987949eded1c4294",
-  "app.js": "eb7bc56754b977fc8a0080bd59ff045e35cd3400357002e8978d2fa1cc1a65eb",
+  "app.js": "021b1106acc6dd11c7163e945fac0abac7cc8f49431b6e6479cda68bdbf5d09e",
   "arcade-cycle-data.js": "6ea190f3146b1ee789d6f94b86c63a8750a23352777017cb8563e3ffd05a8137",
   "assets/fonts/DEJAVU-COPYRIGHT.txt": "e180b3d65bf650dffffd71dd21b6180767b469a18dd87e1d8552be69bb9ecdf0",
   "assets/fonts/DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
@@ -91,7 +91,7 @@ const EXPECTED_HASHES = Object.freeze({
   "emerald-workshop.js": "5046f08004991aec96e17e4052d4c6cbf1361393bf06d8a2698f412b3a936aad",
   "emerald.css": "55f21c2c97e17feaa226ca00cb5de7da3c7d94c2f9680242066717442721f28f",
   "engine.js": "8004a05b0d860701f141bac367b03a26751fab16f1d8a9b66efc6c6c55f453c2",
-  "exp-interest.js": "fa0ab589b100735377575e7da48689541a87f491c5a40d6c1bfa30032ebcbbb3",
+  "exp-interest.js": "ad57252019a2ad20e40e2cef74b904a505fc244a6ab4b1233ec00dbeed83abfe",
   "expansion-host.js": "a0a101997af3de4a223348efe39c8db39913f98777609e7e40d8f07c3877c70b",
   "expansion-profile.js": "327a3b0e475a72c8d2fe2f21d04974fbcdacc042658424c99059e761a8091b79",
   "expansion-rewards.js": "94927a52a483db5a124bae5e3fe841dd0f14dff9cf29b48475c16973fdcb572e",
@@ -122,7 +122,7 @@ const EXPECTED_HASHES = Object.freeze({
   "icon-512.png": "6bcc710c835288fe8fddc744a503d7450bf2b571c35624612f1a1175bbb23711",
   "icon-apple-180.png": "6bd472219ed1a48c861b210e2b691d84a06ee01b972d058e45a9124d2b352d59",
   "icon.svg": "747f8f0630a98052f849ea609413065c02dc3f6fcc13cd888a3476351b1d3880",
-  "index.html": "81f1827045f93b5ae78aa71e578d94ce48868d5280586b61781c63ddd428e095",
+  "index.html": "e8a113f4d3554a8554258bfc8c0512980401e4d3848dbb1c45a973c37dbd2fc9",
   "interest-legacy.js": "18563f1d3218eec98c39cf987c9169eceed635e8ec67e0e3fb7dee2d2875d38e",
   "interest-settings.js": "dbff95ae2e3cf7ec0eb81d5ba2fc2c98dbcb6201cc1f7cef416df9679997f602",
   "joker-art.css": "b9f66357fb3dfe99b12ca16064a5e65113b562b9e504aeafb79ec26075f1ae7c",
@@ -221,7 +221,7 @@ const EXPECTED_HASHES = Object.freeze({
   "game-speed-presentation.js": "47477681c6d885c3cb2db18f9e4b7eafb89e31f0d61c00567f9a8656cefef9df",
   "game-speed.css": "3f35a053032d7ada12d3912edd2d4200f1c888e2ba8fc98f108d618b137f989d",
   "game-speed.js": "8ea1b7f7523e90f969851636efe56b55fbbb075d9b658ca0464ad405b4ab5350",
-  "native-observed-work.js": "2b804c19b620949d6e4910e6707d3983e93f12bbff32360d6aa12651062e93c8",
+  "native-observed-work.js": "dfc3a5be063455f8f734714fd4623a81f0e7d3ea2b6cb2504a9d8e42b6956c04",
   "./yanma-anorith.js": "ba4b4a1620629bb448aa849ab97b07dfb83ccfade640753511fd1a5089ae9c15",
   "./yanma-anorith-native.js": "dbc253c17bc40a0b1b52c5fd698645cc0c0a2680b122cb8c42606e92951db871",
   "./yanma-anorith-ui.js": "c504ea82625b714b9b7f586c8dd9e612317fc6515fba453c35445e980ced6a21",
