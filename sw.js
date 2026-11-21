@@ -1,7 +1,10 @@
 /* Poker Table offline worker. Stamped by tools/stamp-offline-cache.cjs; preserve runtime guards. */
 'use strict';
-const VERSION = 'user-recording-r156-e568d9fdb8d9';
+const VERSION = 'stored-json-r167-f5b3e3382a55';
 const EXPECTED_HASHES = Object.freeze({
+  "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js": "f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f",
+  "exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js": "1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6",
+  "table-app-r167.js": "f4f5e89221528464fbdc8d138de8ea63bccfa4b4793a40b9be1b740c7f59db94",
   "DEADLY-ROULETTE-LICENSE.md": "2f9cff5891f86868a39befcf0b085e877671d6142229349c737548e689b532f4",
   "IPAD-SETUP.md": "94db7b84a10dc41082f5296195815419d884af50f88ae712ff60f7f638cc19e7",
   "MACLEOD-PLAYER36-LICENSES.md": "4d7ab539187a2bb61fa667c2505d7bca0c8636b19bb6ed5a3d6fc697047366a5",
@@ -123,7 +126,7 @@ const EXPECTED_HASHES = Object.freeze({
   "icon-512.png": "6bcc710c835288fe8fddc744a503d7450bf2b571c35624612f1a1175bbb23711",
   "icon-apple-180.png": "6bd472219ed1a48c861b210e2b691d84a06ee01b972d058e45a9124d2b352d59",
   "icon.svg": "747f8f0630a98052f849ea609413065c02dc3f6fcc13cd888a3476351b1d3880",
-  "index.html": "e568d9fdb8d92784e4ca227560ab7d688a9c56309c77201e05923e44a6755014",
+  "index.html": "f5b3e3382a55b8094bb0a7b870a1079eab38a39a6eb75665bc3020ec744f70b4",
   "interest-legacy.js": "18563f1d3218eec98c39cf987c9169eceed635e8ec67e0e3fb7dee2d2875d38e",
   "interest-settings.js": "dbff95ae2e3cf7ec0eb81d5ba2fc2c98dbcb6201cc1f7cef416df9679997f602",
   "joker-art.css": "b9f66357fb3dfe99b12ca16064a5e65113b562b9e504aeafb79ec26075f1ae7c",
@@ -236,6 +239,9 @@ const EXPECTED_HASHES = Object.freeze({
   "./session-fps.js": "ea3a54b450c24a18db641969204adcc6fe7c12c8ff6b63ebda352d5d1880d82c"
 });
 const FILES = Object.freeze([
+  "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js",
+  "exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js",
+  "table-app-r167.js",
   "DEADLY-ROULETTE-LICENSE.md",
   "IPAD-SETUP.md",
   "MACLEOD-PLAYER36-LICENSES.md",

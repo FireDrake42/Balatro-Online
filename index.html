@@ -9,6 +9,71 @@
  window.__BO_TAKE_AUTH_CALLBACK__=function(consume){const once=source;source='';delete window.__BO_TAKE_AUTH_CALLBACK__;consume(once,clean);};
 })();
 </script>
+<script id="stored-json-r167">
+/* Structural facts only. Authentic HTTPS parser prefix required through model init. */
+const boStoredJSONr167=(()=>{
+ 'use strict';
+ try{
+  if(typeof isSecureContext==='undefined'||isSecureContext!==true||location.protocol!=='https:')return null;
+  const G=globalThis,O=Object,A=Array,R=Reflect,N=Number,J=JSON,F=Function,S=Symbol,W=WeakSet;
+  const own=O.hasOwn,H=O.prototype.hasOwnProperty,desc=O.getOwnPropertyDescriptor,proto=O.getPrototypeOf;
+  const apply=R.apply,parse=J.parse,freeze=O.freeze,keys=R.ownKeys,finite=N.isFinite,is=O.is,isArray=A.isArray;
+  const WP=W.prototype,add=WP.add,has=WP.has,OP=O.prototype,AP=A.prototype,FP=F.prototype,iter=S.iterator;
+  const AIP=proto(apply(AP[iter],[],[])),IP=proto(AIP);
+  const edges=(owner,names)=>names.map(key=>[owner,key,desc(owner,key)]);
+  const bindings=edges(G,['globalThis','Object','Array','Reflect','Number','JSON','Function','Symbol','WeakSet']);
+  const hooks=[...edges(O,['prototype','hasOwn','getPrototypeOf','getOwnPropertyDescriptor','is','freeze']),...edges(A,['prototype','isArray']),
+   ...edges(R,['ownKeys','apply']),...edges(N,['isFinite']),...edges(J,['parse']),...edges(OP,['hasOwnProperty','version','return']),
+   ...edges(AP,['includes',iter]),...edges(H,['call']),...edges(FP,['call']),...edges(AIP,['next','return']),...edges(IP,['return']),
+   ...edges(W,['prototype']),...edges(WP,['add','has'])];
+  function match(list){for(let i=0;i<list.length;i++){
+   const e=list[i],was=e[2],d=desc(e[0],e[1]);
+   if(was===undefined?d!==undefined:!d||!own(d,'value')||d.value!==was.value||d.writable!==was.writable||d.enumerable!==was.enumerable||d.configurable!==was.configurable)return false;
+  }return true;}
+  function compatible(){
+   // Known owners only. A changed global (including an accessor or Proxy value)
+   // is rejected by descriptor identity without reading through that value.
+   if(!match(bindings))return false;
+   try{if(globalThis!==G||Object!==O||Array!==A||Reflect!==R||Number!==N||JSON!==J||Function!==F||Symbol!==S||WeakSet!==W)return false;}catch(_){return false;}
+   return proto(OP)===null&&proto(AP)===OP&&proto(H)===FP&&proto(FP)===OP&&proto(AIP)===IP&&proto(IP)===OP&&match(hooks);
+  }
+  if(!bindings.every(e=>e[2]&&own(e[2],'value'))||desc(OP,'version')!==undefined||!compatible())return null;
+  const nodes=new W(),roots=new W(),record=x=>!!x&&typeof x==='object'&&!isArray(x);
+  function parseFrozenJSON(raw){
+   // undefined: disabled before parse; false: invalid root; null: non-v5.
+   if(typeof raw!=='string'||!compatible())return undefined;
+   const value=parse(raw);
+   if(!record(value))return false;
+   if(!own(value,'expInterest')||!record(value.expInterest)||value.expInterest.version!==5)return null;
+   let pending=null,last=null,clean=true;
+   function visit(v,depth){
+    if(v&&typeof v==='object'){
+     if(depth>128)return false;
+     const ks=keys(v);for(let i=0;i<ks.length;i++)if(!visit(v[ks[i]],depth+1))return false;
+     // Postorder own-data links; no inherited setter, iterator or caller callback.
+     const p={node:v,next:null};if(last===null)pending=p;else last.next=p;last=p;
+    }else if(typeof v==='number'&&(!finite(v)||is(v,-0)))clean=false;
+    return true;
+   }
+   if(!visit(value,0)){
+    // Preserve the legacy recursion/validation path on deep input. Reuse this
+    // exact parse without a prior freeze, callback or partial facts.
+    function freezeDeep(v){if(v&&typeof v==='object'){for(const k of Reflect.ownKeys(v))freezeDeep(v[k]);Object.freeze(v)}}
+    freezeDeep(value);
+    return freeze({value});
+   }
+   for(let p=pending;p!==null;p=p.next)freeze(p.node);
+   if(clean){for(let p=pending;p!==null;p=p.next)apply(add,nodes,[p.node]);apply(add,roots,[value]);}
+   return freeze({value});
+  }
+  function isKnownPureData(node){
+   if(!node||typeof node!=='object'||!apply(has,nodes,[node])||!compatible())return false;
+   return apply(has,roots,[node])?1:2;
+  }
+  return freeze({parseFrozenJSON:freeze(parseFrozenJSON),isKnownPureData:freeze(isKnownPureData)});
+ }catch(_){return null;}
+})();
+</script>
 <script id="table-boot-controller">(function(){
  'use strict';
  // Only named startup files and explicit application milestones count. No clock or byte estimate.
@@ -18,16 +83,22 @@
   'table-boot-levels':['SCRIPT','src','progression.js'],
   'table-boot-music':['SCRIPT','src','music-assets.js'],
   'table-boot-slots':['SCRIPT','src','save-slots.js'],
-  'table-boot-entry':['SCRIPT','src','app.js']
+  'table-boot-entry':['SCRIPT','src','table-app-r167.js']
  };
+ // Required models report failures only; neither is a progress milestone.
+ const required={
+  'table-boot-proof':['SCRIPT','src','compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js'],
+  'table-boot-interest':['SCRIPT','src','exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js']
+ };
+ const resources={...files,...required}, modelComplete=new Set();
  const stages={local:'Checking local startup…',access:'Checking save access…',slots:'Preparing save slots…',profile:'Opening the selected save…',tutorial:'Preparing tutorial…',story:'Preparing story view…',render:'Rendering the table…'};
  const sequence=Object.keys(stages), fileCount=Object.keys(files).length-1, total=fileCount+sequence.length;
- const loaded=new Set(),failed=new Set();let step=-1,waiting=false,asked=false,appReady='',failedFile='',ended=false;
+ const loaded=new Set(),failed=new Set();let step=-1,waiting=false,asked=false,appReady='',failedFile='',modelFailed=false,ended=false;
  const byId=id=>document.getElementById(id), current=()=>stages[sequence[step]]||'Loading startup files…';
  function paint(message=current(),hidden=false){
   const box=byId('table-boot'),bar=byId('table-boot-bar'),count=byId('table-boot-count'),phase=byId('table-boot-phase');
   if(!box||!bar||!count||!phase)return;
-  const value=loaded.size+Math.max(0,step)+(appReady?1:0),text=value+' of '+total+' startup steps complete';
+  const value=loaded.size+Math.max(0,step)+(appReady&&!modelFailed?1:0),text=value+' of '+total+' startup steps complete';
   bar.max=total;bar.value=value;bar.setAttribute('aria-valuetext',text);
   if(count.textContent!==text)count.textContent=text;
   if(phase.textContent!==message)phase.textContent=message;
@@ -47,8 +118,8 @@
  }
  function selectedFile(node){
   const id=node?.id;
-  if(!Object.prototype.hasOwnProperty.call(files,id)||node.ownerDocument!==document||!node.isConnected||byId(id)!==node)return null;
-  const [tag,attr,file]=files[id];
+  if(!Object.prototype.hasOwnProperty.call(resources,id)||node.ownerDocument!==document||!node.isConnected||byId(id)!==node)return null;
+  const [tag,attr,file]=resources[id];
   return node.tagName===tag&&node.getAttribute(attr)?.split('?')[0]===file?file:null;
  }
  function onResource(event){
@@ -56,29 +127,35 @@
   let file=selectedFile(event.target);
   // Classic scripts can report an evaluation/parse error separately from element load.
   if(!file&&event.type==='error'&&event.target===window&&event.filename){
-   for(const id of Object.keys(files)){
+   for(const id of Object.keys(resources)){
     const node=byId(id);
-    if(files[id][0]==='SCRIPT'&&node?.src===event.filename){file=selectedFile(node);break;}
+    if(resources[id][0]==='SCRIPT'&&node?.src===event.filename){file=selectedFile(node);break;}
    }
   }
   if(!file||failed.has(file)||loaded.has(file))return;
+  const model=file==='compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js'||file==='exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js';
+  if(model){
+   if(event.type==='load'){modelComplete.add(file);return;}
+   if(event.target===window&&modelComplete.has(file))return;
+  }
   if(event.type==='error'){
-   if(file==='app.js'&&step!==-1)return;
+   if(file==='table-app-r167.js'&&step!==-1)return;
    failed.add(file);
-   if(file==='app.js'){
+   if(file==='table-app-r167.js'){
     failedFile=file;
     // In the head the shell does not yet exist. The shell's own hook can paint this result.
-    if(byId('table-boot')){paint('Could not load app.js.');detach();}
+    if(byId('table-boot')){paint('Could not load table-app-r167.js.');detach();}
     return;
    }
+   if(model)modelFailed=true;
    if(!failedFile)failedFile=file;
-  }else if(file!=='app.js')loaded.add(file);else return;
+  }else if(file!=='table-app-r167.js')loaded.add(file);else return;
   display();
  }
  function signal(name,viewOnly){
   if(ended)return;
   if(name==='shell'){
-   if(failedFile==='app.js'&&step===-1){paint('Could not load app.js.');detach();}else display();
+   if(failedFile==='table-app-r167.js'&&step===-1){paint('Could not load table-app-r167.js.');detach();}else display();
    return;
   }
   if(appReady)return;
@@ -211,8 +288,8 @@ try {
   "power-boundary.js",
   "power-settings-ui.js",
   "interest-legacy.js",
-  "compound-interest-proof.js",
-  "exp-interest.js",
+  "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js",
+  "exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js",
   "faucet-graph.js",
   "levels-enhancements.js",
   "levels-ui.js",
@@ -286,7 +363,7 @@ try {
   "native-player-xp.js",
   "achievement-xp.js",
   "native-profile-host.js",
-  "app.js",
+  "table-app-r167.js",
   "pwa.js"
  ],
  "phases": [
@@ -360,6 +437,7 @@ try {
   "A590_WAIT"
  ],
  "columns": [
+   [7,791,210],
   [
    2,
    32,
@@ -879,7 +957,7 @@ try {
   var old=col,j,r,file,columns;
   if(!id||!integer(line)||!integer(col))return "unknown I?:? O?";
   file=fileName(id);
-  if(file==="app.js")columns=C.columns;else if(file==="exp-interest.js")columns=C.writerColumns;else return file+" O"+line+":"+col;
+  if(file==="table-app-r167.js")columns=C.columns;else if(file==="exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js"){if(line===4||line===213)return file+" I"+line+":"+col+" O?";columns=C.writerColumns;}else return file+" O"+line+":"+col;
   for(j=0;j<columns.length;j++){r=columns[j];if(r[0]===line){if(col>=r[1]&&col<r[1]+r[2])return file+" I"+line+":"+col+" O?";if(col>=r[1]+r[2])old-=r[2];}}
   return file+" I"+line+":"+col+" O"+line+":"+old;
  }
@@ -993,7 +1071,7 @@ try {
 <script src="emerald-slots.js"></script><script src="originalgames/game-engine.js"></script><script src="arcade-cycle-data.js"></script><script src="game-offers.js"></script><script src="expansion-rewards.js"></script><script src="expansion-profile.js"></script><script src="emerald-poker-profile.js"></script><script src="potions.js"></script><script src="feature-power.js"></script><script src="battery-display.js"></script><script src="battery.js"></script><script src="battery-controller.js"></script><script src="battery-ui.js"></script><script src="passive-money.js?gs50=0937ccd394de" integrity="sha384-daZZ/zA5XNdiqrEFt3T9qGkPj1WRqhzlMhM6wffu+5zcfmKcHYl7NTUUYxJJHGFq" crossorigin="anonymous"></script><script src="passive-money-controller.js?gs50=0c71c9c89dac" integrity="sha384-rCZ2zKk7xXzb52XLtWcfNPWkct7Q/aQ6t+qclnzoPcRkVQaNgMh1CwYi/G+kmjpm" crossorigin="anonymous"></script><script src="run-wallet.js"></script><script src="frenzy.js"></script><script src="food-catalog.js"></script><script src="food-effects.js"></script><script src="food-bar.js"></script><script src="tutorial-native-policy.js"></script><script src="yanma-anorith.js?ya=ba4b4a162062"></script>
 <script src="yanma-anorith-native.js?r32=dbc253c17bc4" integrity="sha384-PFG/ocAlb3iMKULK9xxQ9DIVtcUuLvAGUS6BmAZ6oIfz7E6tZaGz6Cw2bbwmH/44"></script>
 <script src="yanma-anorith-ui.js?r45q11=c504ea82625b" integrity="sha384-j9bX9kF4eKHp2W7wUYZQNNL7fwpdRF4CtrIWzDee+zNvO9lMjdzhWQ12ip+TTTmh" crossorigin="anonymous"></script>
-<script src="engine.js?r32=8004a05b0d86" integrity="sha384-6jkxNY3PfLwcPZ6NNdWAKJWpuCZfzQ5tRmMOK7aLb6/V1BSzeXK4q6b+DwDU5807" crossorigin="anonymous" id="table-boot-engine"></script><script src="achievements-data.js"></script><script src="late-level-costs.js"></script><script src="late-level-rules.js"></script><script src="progression.js?ya=ebc4effd5598" integrity="sha384-8VeWdk57/Pmm9H9sZzMKjrG2Hq/PT1UOLAukVHlh8sljHkvjGr+UoU8RCmhTBJ1L" crossorigin="anonymous" id="table-boot-levels"></script><script src="passive-xp.js?gs50=e750e5d70329" integrity="sha384-f9QZvAN/lgqaGK3uc74rX+9IQj4QfNh/YR4y9AvgFCPErm3O3HOb51uhHbkoJxZI" crossorigin="anonymous"></script><script src="interest-settings.js"></script><script src="power-boundary.js"></script><script src="power-settings-ui.js"></script><script src="interest-legacy.js"></script><script src="compound-interest-proof.js?r115=55e43ac3a6fd" integrity="sha384-HORTsP8QD1m+eyvPT67fU7X61qGpxoyLJ5KPjOkg4eID+dgpwZk8jPUirpuDN9py" crossorigin="anonymous"></script><script src="exp-interest.js?r139=ad57252019a2" integrity="sha384-W02grdgmw5VsYmvu3ZWvqGYMrPYl9w7cSXLAVS2viKaUoivc0shLDjL2D6et1WGB" crossorigin="anonymous"></script><script src="faucet-graph.js"></script><script src="levels-enhancements.js?r32=b2df44ee647f" integrity="sha384-6dpLgPtLgMIjnjL1HiSpkYZBzZ/7kCLYRNKgYd6890CP9sCmShIo6HNcbDcyJyOn" crossorigin="anonymous"></script>
+<script src="engine.js?r32=8004a05b0d86" integrity="sha384-6jkxNY3PfLwcPZ6NNdWAKJWpuCZfzQ5tRmMOK7aLb6/V1BSzeXK4q6b+DwDU5807" crossorigin="anonymous" id="table-boot-engine"></script><script src="achievements-data.js"></script><script src="late-level-costs.js"></script><script src="late-level-rules.js"></script><script src="progression.js?ya=ebc4effd5598" integrity="sha384-8VeWdk57/Pmm9H9sZzMKjrG2Hq/PT1UOLAukVHlh8sljHkvjGr+UoU8RCmhTBJ1L" crossorigin="anonymous" id="table-boot-levels"></script><script src="passive-xp.js?gs50=e750e5d70329" integrity="sha384-f9QZvAN/lgqaGK3uc74rX+9IQj4QfNh/YR4y9AvgFCPErm3O3HOb51uhHbkoJxZI" crossorigin="anonymous"></script><script src="interest-settings.js"></script><script src="power-boundary.js"></script><script src="power-settings-ui.js"></script><script src="interest-legacy.js"></script><script src="compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js" integrity="sha384-RlUa7UYF7er/Q7zbnmgbQJRQmqGy1eaANirP/Kd5gXagkR1F16lVdqgHQOy+KhYp" crossorigin="anonymous" id="table-boot-proof"></script><script src="exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js" integrity="sha384-10tRO1Ay0Y0wQYIQzrwijos/yuRquHACCZBVd1REMCCJpanZjA5X6tPn4xYdr+ay" crossorigin="anonymous" id="table-boot-interest"></script><script src="faucet-graph.js"></script><script src="levels-enhancements.js?r32=b2df44ee647f" integrity="sha384-6dpLgPtLgMIjnjL1HiSpkYZBzZ/7kCLYRNKgYd6890CP9sCmShIo6HNcbDcyJyOn" crossorigin="anonymous"></script>
 <script src="levels-ui.js?r110=6b77340316d6" integrity="sha384-U1doVRKST8ZX4edj7OKUgJ7Hx7Ma5PRGohmKgiNgl9tGXaiJWTW9YQtAF9RHddy8" crossorigin="anonymous"></script><script src="collection-tracking.js"></script><!--R3:I:S_B55--><script id="bo-r4-s-55-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S55 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B55--><script src="music-assets.js" id="table-boot-music"></script><!--R3:I:S_A55--><script id="bo-r4-s-55-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S55 "+(c.getAttribute("data-r4-failed")==="55"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A55--><script src="late-music-data.js"></script><script src="music-data.js" integrity="sha384-ja/RE+KgMTH2cJ/RbcbtOFTeM4guv2cCFmwCWkBurWOdr9OmIXZ3HTzYZwaBy8Ts" crossorigin="anonymous"></script><script src="game-audio-data.js"></script><script src="table-audio-r156.js" integrity="sha384-0FTT93gVOoPsHzhcyqjZJRiqiyZgxNNQuK602mDOIivhTpPxdD4F/CNBRUTsEkhC" crossorigin="anonymous"></script><script src="youtube-music.js?r34=881c25efed14" integrity="sha384-tsj4f8PYYZxw8ElKxqT5YHzfWU9a/aVs/ZJwDq/ZgP/URhEUiGzoUGlXcx3fcarq" crossorigin="anonymous"></script><script src="motion.js?gs50=264f0a4da8e2" integrity="sha384-FHeKt/7TwZk9vuhu0OdAA3oDVcP9vfghGVksr6QnbjbOo2on/ZgpuCuv05I1ntW1" crossorigin="anonymous"></script><script src="stats.js"></script><script src="stock-market.js"></script><script src="stock-market-data.js"></script><script src="stock-market-ui.js"></script><script src="potions-ui.js"></script><script src="daily-streak.js"></script><script src="daily-tasks.js"></script><script src="daily-tasks-ui.js"></script><script src="daily-streak-ui.js"></script><script src="surveys.js"></script><script src="survey-videos.js"></script><script src="player-identity.js"></script><script src="survey-runner.js"></script><script src="surveys-ui.js"></script><script src="custom-images.js"></script><script src="moving-panels.js"></script><script src="text-customization.js"></script><script src="emerald-progress.js?r45=78e8af53f715" integrity="sha384-6xEUbiWjaPyWR385qERdBluKuubl6PgL4ic1CHrXbuNc2ckx/iW6UXDEu6wjwRA8" crossorigin="anonymous"></script><script src="emerald-blackjack.js"></script><script src="emerald-roadmap.js?r45=dc3ea1d89b23" integrity="sha384-u8hVhWukFWHVPR18f8UrFdAot128XCgXutW2LLyzMnoNOtvy1LwwbnETtO3muJ5D" crossorigin="anonymous"></script><script src="emerald-workshop.js"></script><script src="emerald-runtime.js?r32=130ef85d8633" integrity="sha384-ft+tsGbohN9uEPohMREC+nO5W5PCH4V+vi7tn43q5xrYwoh9vXwpGNfkb8X1CdKk" crossorigin="anonymous"></script><!--R3:I:S_B83--><script id="bo-r4-s-83-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S83 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B83--><script src="native-feature-transaction.js"></script><!--R3:I:S_A83--><script id="bo-r4-s-83-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S83 "+(c.getAttribute("data-r4-failed")==="83"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A83--><script src="tutorial-native-model.js"></script><script src="native-quiet-story.js"></script><script src="native-tutorial-ui.js"></script><script src="emerald-actions.js"></script><script src="emerald-blackjack-actions.js"></script><script src="emerald-cardgame-dialogue.js"></script><script src="emerald-blackjack-ui.js?r45=ae97751ed330" integrity="sha384-mpzCl1JuGGImz4uu/+8xCt7b3nznDmQ11qMqJv/odVtjfAJ86j92etlpAbQm6FKM" crossorigin="anonymous"></script><script src="emerald-chill-games.js"></script><script src="emerald-chill-actions.js"></script><script src="emerald-chill-ui.js?r45=5a2ff8fdfc02" integrity="sha384-9a5EfoNtg3EzRu2GyX4ceCx/QLD02DFP/+96VNUlEgG8uLoQ5kMilLpUzjQNN/fx" crossorigin="anonymous"></script><script src="darts-501.js"></script><script src="darts-native.js"></script><script src="darts-ui.js"></script><script src="native-speech.js?three=47923d657b1aa91b" integrity="sha384-ot/dS2a174m8x2SCpXEQ1AI5za9EUEUYZYcns+oOzQaBFH7oPFfAYlWeDknf8GiA" crossorigin="anonymous" data-sha256="47923d657b1aa91b152f58708cb70bf3fbed1901f4bfb54a6928cc93f47f1769"></script>
-<script src="cloud-save.js?r32=18c45155514b" integrity="sha384-Y9UX86Wyd6FyrbuHcCwViQHBbNZ7/xTGhYS/LNhABsDmxTZrqKT33InwTB2s5qsi" crossorigin="anonymous"></script><script src="save-slots.js" id="table-boot-slots"></script><script src="native-ending-recovery.js"></script><script src="native-quiet-story-ui.js"></script><script src="joker-art.js"></script><script src="emerald-asset.js?r45=42ac7cfebb19" integrity="sha384-j69i+ti8KqJMUdsObdyL4292kzTh24XriCnV3MS/cJhGYwfAdY6bVYsIIqPltaxd" crossorigin="anonymous"></script><script src="emerald-adviser.js?r32=5496afe74493" integrity="sha384-xmKdUuDPGk7/GpAAvSkP0PVHij56lCQOeIzWMGHGTeLkIUJCY538ubKyRVgPbL+K" crossorigin="anonymous"></script><script src="emerald-conduct.js"></script><script src="emerald-chat.js?r32=dcb2d6f6ff3c" integrity="sha384-ws3tGnDncL9N050Z9zUwFP8Tyk/QwT17b1rKyS9bb2vxUn8JZq3KMITyKhAnunri" crossorigin="anonymous"></script><script src="emerald-attentive.js"></script><script src="emerald-card-frames.js"></script><script src="emerald-ui.js?r121=b8baa42975f0" integrity="sha384-dYhvRwC7Y/JuDivRs+1+MPJp6zC+gNh7O1ZcpjyZK8MIm04MRptqkjjK8R9Qr5Mi" crossorigin="anonymous"></script><script src="emerald-survey.js"></script><script src="emerald-poker-actions.js"></script><script src="emerald-poker-ui.js?r32=c07b9101ec56" integrity="sha384-5vYNfXt5dXUCrFj99sxmJq7Wp9lQi+IcOOZjBUHgDh+tRH82XzGjQFJaPhcdyFk2" crossorigin="anonymous"></script><script src="emerald-strict-poker-actions.js"></script><script src="emerald-strict-poker-ui.js"></script><script src="emerald-slots-actions.js?r32=e534bc1b2c5e" integrity="sha384-NxDu3VapSP2Q451q3XE2EIpa0XZ3SnSBaLePvDkFtVvyhC+uCqENB3E+boLG8sWt" crossorigin="anonymous"></script><script src="emerald-slots-ui.js?r32=c1e565c8efaa" integrity="sha384-mQbPe3Ktlk/DRImlhlYWlgJ0lDFFEcfefmdRwcv526MDEkIyal7XMqxEshq/ISTk" crossorigin="anonymous"></script><script src="game-offers-ui.js"></script><script src="emerald-slots-lock-audio.js"></script><script src="expansion-host.js"></script><script src="level100-choice.js"></script><script src="native-player-xp.js?gs50=6e084df5f7ef" integrity="sha384-xs0vsnelsvKJBXaujkV/QKSvl78P2qty2r8OEd396rROJeIODTX8NW449quUfMnx" crossorigin="anonymous"></script><script src="achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script><!--R3:I:S_B123--><script id="bo-r4-s-123-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B123--><script src="native-profile-host.js?r32=027e834980c2" integrity="sha384-BcXs2QkY7Q94SZrTeEOlWIk1BnzANw+Jbg3Uz1PRdkNNLJ7XY3kDlaT+Px0t4XSP" crossorigin="anonymous"></script><!--R3:I:S_A123--><script id="bo-r4-s-123-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 "+(c.getAttribute("data-r4-failed")==="123"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-124-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A123--><script src="app.js?r156=5e11587e6cc9" integrity="sha384-3HhrxDBPE3y8YMPu1VyZ6jH1PPLvwc35Ipdxt7oTqws1WtynNf7vthQesnsdagQl" crossorigin="anonymous" id="table-boot-entry"></script><!--R3:I:S_A124--><script id="bo-r4-s-124-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 "+(c.getAttribute("data-r4-failed")==="124"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-125-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A124--><script src="pwa.js"></script><!--R3:I:S_A125--><script id="bo-r4-s-125-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 "+(c.getAttribute("data-r4-failed")==="125"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A125--><script defer src="interest-graphs.js?r32=ce1b84e442ab" integrity="sha384-n3cdK9lJBkfH5/P7QwQKLxZ1+JmT8kZdjlS4Xdm3fA3gWk8WPKhR0c2mn2m3ojIA" crossorigin="anonymous"></script><script defer src="session-fps.js?r38=ea3a54b450c2" integrity="sha384-0RtshQIWjpJny7fY2zu1jBg0AmqZVQ5MsGhEhpnbENn4Y1t6sfFN0ELlvytTxfMS" crossorigin="anonymous"></script>
+<script src="cloud-save.js?r32=18c45155514b" integrity="sha384-Y9UX86Wyd6FyrbuHcCwViQHBbNZ7/xTGhYS/LNhABsDmxTZrqKT33InwTB2s5qsi" crossorigin="anonymous"></script><script src="save-slots.js" id="table-boot-slots"></script><script src="native-ending-recovery.js"></script><script src="native-quiet-story-ui.js"></script><script src="joker-art.js"></script><script src="emerald-asset.js?r45=42ac7cfebb19" integrity="sha384-j69i+ti8KqJMUdsObdyL4292kzTh24XriCnV3MS/cJhGYwfAdY6bVYsIIqPltaxd" crossorigin="anonymous"></script><script src="emerald-adviser.js?r32=5496afe74493" integrity="sha384-xmKdUuDPGk7/GpAAvSkP0PVHij56lCQOeIzWMGHGTeLkIUJCY538ubKyRVgPbL+K" crossorigin="anonymous"></script><script src="emerald-conduct.js"></script><script src="emerald-chat.js?r32=dcb2d6f6ff3c" integrity="sha384-ws3tGnDncL9N050Z9zUwFP8Tyk/QwT17b1rKyS9bb2vxUn8JZq3KMITyKhAnunri" crossorigin="anonymous"></script><script src="emerald-attentive.js"></script><script src="emerald-card-frames.js"></script><script src="emerald-ui.js?r121=b8baa42975f0" integrity="sha384-dYhvRwC7Y/JuDivRs+1+MPJp6zC+gNh7O1ZcpjyZK8MIm04MRptqkjjK8R9Qr5Mi" crossorigin="anonymous"></script><script src="emerald-survey.js"></script><script src="emerald-poker-actions.js"></script><script src="emerald-poker-ui.js?r32=c07b9101ec56" integrity="sha384-5vYNfXt5dXUCrFj99sxmJq7Wp9lQi+IcOOZjBUHgDh+tRH82XzGjQFJaPhcdyFk2" crossorigin="anonymous"></script><script src="emerald-strict-poker-actions.js"></script><script src="emerald-strict-poker-ui.js"></script><script src="emerald-slots-actions.js?r32=e534bc1b2c5e" integrity="sha384-NxDu3VapSP2Q451q3XE2EIpa0XZ3SnSBaLePvDkFtVvyhC+uCqENB3E+boLG8sWt" crossorigin="anonymous"></script><script src="emerald-slots-ui.js?r32=c1e565c8efaa" integrity="sha384-mQbPe3Ktlk/DRImlhlYWlgJ0lDFFEcfefmdRwcv526MDEkIyal7XMqxEshq/ISTk" crossorigin="anonymous"></script><script src="game-offers-ui.js"></script><script src="emerald-slots-lock-audio.js"></script><script src="expansion-host.js"></script><script src="level100-choice.js"></script><script src="native-player-xp.js?gs50=6e084df5f7ef" integrity="sha384-xs0vsnelsvKJBXaujkV/QKSvl78P2qty2r8OEd396rROJeIODTX8NW449quUfMnx" crossorigin="anonymous"></script><script src="achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script><!--R3:I:S_B123--><script id="bo-r4-s-123-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B123--><script src="native-profile-host.js?r32=027e834980c2" integrity="sha384-BcXs2QkY7Q94SZrTeEOlWIk1BnzANw+Jbg3Uz1PRdkNNLJ7XY3kDlaT+Px0t4XSP" crossorigin="anonymous"></script><!--R3:I:S_A123--><script id="bo-r4-s-123-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 "+(c.getAttribute("data-r4-failed")==="123"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-124-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A123--><script src="table-app-r167.js" integrity="sha384-kYJEFjKWcRn/Me3hXnv0jqBb5LBFxoBxMJtBFOi1sk078ZHzjyoAgtBr+dJ72eJ+" crossorigin="anonymous" id="table-boot-entry"></script><!--R3:I:S_A124--><script id="bo-r4-s-124-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 "+(c.getAttribute("data-r4-failed")==="124"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-125-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A124--><script src="pwa.js"></script><!--R3:I:S_A125--><script id="bo-r4-s-125-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 "+(c.getAttribute("data-r4-failed")==="125"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A125--><script defer src="interest-graphs.js?r32=ce1b84e442ab" integrity="sha384-n3cdK9lJBkfH5/P7QwQKLxZ1+JmT8kZdjlS4Xdm3fA3gWk8WPKhR0c2mn2m3ojIA" crossorigin="anonymous"></script><script defer src="session-fps.js?r38=ea3a54b450c2" integrity="sha384-0RtshQIWjpJny7fY2zu1jBg0AmqZVQ5MsGhEhpnbENn4Y1t6sfFN0ELlvytTxfMS" crossorigin="anonymous"></script>
 </body></html>
