@@ -1,13 +1,13 @@
 /* Poker Table offline worker. Stamped by tools/stamp-offline-cache.cjs; preserve runtime guards. */
 'use strict';
-const VERSION = 'ci-queued-scope-r144-4251e2a4d7be';
+const VERSION = 'real-loading-boost-r153-b9d0c8ee2cff';
 const EXPECTED_HASHES = Object.freeze({
   "DEADLY-ROULETTE-LICENSE.md": "2f9cff5891f86868a39befcf0b085e877671d6142229349c737548e689b532f4",
   "IPAD-SETUP.md": "94db7b84a10dc41082f5296195815419d884af50f88ae712ff60f7f638cc19e7",
   "MACLEOD-PLAYER36-LICENSES.md": "4d7ab539187a2bb61fa667c2505d7bca0c8636b19bb6ed5a3d6fc697047366a5",
   "achievement-xp.js": "e429f3c8455991a2a6dedb95bfba29e81f88f8344ac106bc6eb9896893ce45b1",
   "achievements-data.js": "9d6aae1ae853f207a18259b6bf7ba1209dff17c71e6bb8ee987949eded1c4294",
-  "app.js": "021b1106acc6dd11c7163e945fac0abac7cc8f49431b6e6479cda68bdbf5d09e",
+  "app.js": "c6d5dade0c854391347f7b9095f63480028b257275374ccd88d95c23105800ab",
   "arcade-cycle-data.js": "6ea190f3146b1ee789d6f94b86c63a8750a23352777017cb8563e3ffd05a8137",
   "assets/fonts/DEJAVU-COPYRIGHT.txt": "e180b3d65bf650dffffd71dd21b6180767b469a18dd87e1d8552be69bb9ecdf0",
   "assets/fonts/DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
@@ -122,7 +122,7 @@ const EXPECTED_HASHES = Object.freeze({
   "icon-512.png": "6bcc710c835288fe8fddc744a503d7450bf2b571c35624612f1a1175bbb23711",
   "icon-apple-180.png": "6bd472219ed1a48c861b210e2b691d84a06ee01b972d058e45a9124d2b352d59",
   "icon.svg": "747f8f0630a98052f849ea609413065c02dc3f6fcc13cd888a3476351b1d3880",
-  "index.html": "e8a113f4d3554a8554258bfc8c0512980401e4d3848dbb1c45a973c37dbd2fc9",
+  "index.html": "b9d0c8ee2cff1bb07c8e98d2ab645e593303a9a43e1aee0f1480e328efb61a29",
   "interest-legacy.js": "18563f1d3218eec98c39cf987c9169eceed635e8ec67e0e3fb7dee2d2875d38e",
   "interest-settings.js": "dbff95ae2e3cf7ec0eb81d5ba2fc2c98dbcb6201cc1f7cef416df9679997f602",
   "joker-art.css": "b9f66357fb3dfe99b12ca16064a5e65113b562b9e504aeafb79ec26075f1ae7c",
