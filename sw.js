@@ -1,13 +1,13 @@
 /* Poker Table offline worker. Stamped by tools/stamp-offline-cache.cjs; preserve runtime guards. */
 'use strict';
-const VERSION = 'real-loading-boost-r153-b9d0c8ee2cff';
+const VERSION = 'user-recording-r156-e568d9fdb8d9';
 const EXPECTED_HASHES = Object.freeze({
   "DEADLY-ROULETTE-LICENSE.md": "2f9cff5891f86868a39befcf0b085e877671d6142229349c737548e689b532f4",
   "IPAD-SETUP.md": "94db7b84a10dc41082f5296195815419d884af50f88ae712ff60f7f638cc19e7",
   "MACLEOD-PLAYER36-LICENSES.md": "4d7ab539187a2bb61fa667c2505d7bca0c8636b19bb6ed5a3d6fc697047366a5",
   "achievement-xp.js": "e429f3c8455991a2a6dedb95bfba29e81f88f8344ac106bc6eb9896893ce45b1",
   "achievements-data.js": "9d6aae1ae853f207a18259b6bf7ba1209dff17c71e6bb8ee987949eded1c4294",
-  "app.js": "c6d5dade0c854391347f7b9095f63480028b257275374ccd88d95c23105800ab",
+  "app.js": "5e11587e6cc9bb96d8a5c98ffdcaab0ac8be9d7af78da66ffe6900c46c24b4b3",
   "arcade-cycle-data.js": "6ea190f3146b1ee789d6f94b86c63a8750a23352777017cb8563e3ffd05a8137",
   "assets/fonts/DEJAVU-COPYRIGHT.txt": "e180b3d65bf650dffffd71dd21b6180767b469a18dd87e1d8552be69bb9ecdf0",
   "assets/fonts/DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
@@ -19,6 +19,7 @@ const EXPECTED_HASHES = Object.freeze({
   "assets/fonts/LiberationSerif-Regular.ttf": "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65",
   "assets/fonts/manifest.json": "d1221e5772bb220541a1e33340abc3903f8826699ae3dbac6dbdf895a84c9016",
   "audio.js": "f7bc86552808eacaf573d5ff5bfed9235192abc77e058ec4d402f2ae5c50bb48",
+  "table-audio-r156.js": "665d614716215e8fa52d0f73310d8437fd764c6712b817e5afb6538e97a972e5",
   "battery-controller.js": "d0200293eaa25215692ac4e5cd46170bb3714f3268def4e670ec08e9b61d4304",
   "battery-display.js": "a21302fed85e56666be6e4b1a16ae9da32ef86275c7ec8264daf5ef638e497c5",
   "battery-ui.js": "f2c9a69c0ae5ecb6a4873de69ed7476d27eb7ecb2e0c0ef441d2794d50111705",
@@ -122,7 +123,7 @@ const EXPECTED_HASHES = Object.freeze({
   "icon-512.png": "6bcc710c835288fe8fddc744a503d7450bf2b571c35624612f1a1175bbb23711",
   "icon-apple-180.png": "6bd472219ed1a48c861b210e2b691d84a06ee01b972d058e45a9124d2b352d59",
   "icon.svg": "747f8f0630a98052f849ea609413065c02dc3f6fcc13cd888a3476351b1d3880",
-  "index.html": "b9d0c8ee2cff1bb07c8e98d2ab645e593303a9a43e1aee0f1480e328efb61a29",
+  "index.html": "e568d9fdb8d92784e4ca227560ab7d688a9c56309c77201e05923e44a6755014",
   "interest-legacy.js": "18563f1d3218eec98c39cf987c9169eceed635e8ec67e0e3fb7dee2d2875d38e",
   "interest-settings.js": "dbff95ae2e3cf7ec0eb81d5ba2fc2c98dbcb6201cc1f7cef416df9679997f602",
   "joker-art.css": "b9f66357fb3dfe99b12ca16064a5e65113b562b9e504aeafb79ec26075f1ae7c",
@@ -147,7 +148,7 @@ const EXPECTED_HASHES = Object.freeze({
   "moving-panels.css": "107571e69768040680c3a32770471e11f4e8a78331e44c0a0dcc5b8905c08398",
   "moving-panels.js": "6dda66dc4d2ee6aede602696d21f858c93e90aefdcc2a4138f967e9ca31123aa",
   "music-assets.js": "df0e4458f9f75bf6426cfee39b126797d3c9986b2ad59e333abad723ca0c7c9d",
-  "music-data.js": "3193f0452f600b39e2370b17b3d5fe497aff492863c3f90b8539cbce702da14b",
+  "music-data.js": "512a917bdfd162748010d6431343f6bb5b9080448f3cab30c04b78227c076987",
   "native-ending-recovery.js": "8438df44ce6d626ddb8a0eef039d60216b0727e4a27685777a34e32e6849d9d8",
   "native-feature-transaction.js": "4f1ae2d80dcebefd5ec5588cd49a87448d3bde74ad2c32d7feb0257d1e452f8b",
   "native-player-xp.js": "6e084df5f7efe049456c47cc26ce8f81c84bb06c736ccc8cf0da8456f8e82fbc",
@@ -252,6 +253,7 @@ const FILES = Object.freeze([
   "assets/fonts/LiberationSerif-Regular.ttf",
   "assets/fonts/manifest.json",
   "audio.js",
+  "table-audio-r156.js",
   "battery-controller.js",
   "battery-display.js",
   "battery-ui.js",
@@ -472,9 +474,14 @@ const PREFIX = 'poker-table-pwa-v1|' + encodeURIComponent(BASE.pathname) + '|';
 const CACHE = PREFIX + VERSION;
 const URLS = new Map(FILES.map(name => [new URL(name, BASE).href, name]));
 const INDEX = new URL('index.html', BASE).href;
+// An optional audio-only asset, deliberately absent from install/repair FILES.
+const RECORDING_URL = new URL('your-recording-r156.m4a', BASE).href;
+const RECORDING_BYTES = 2124151;
+const RECORDING_SHA256 = '539b7a1058fba4e614e247471f0e8948ae722fa896d0ca823b9eb762dd4f883c';
 
-async function digest(response) {
+async function digest(response, size) {
   const data = await response.clone().arrayBuffer();
+  if (size !== undefined && data.byteLength !== size) return '';
   const hash = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -519,11 +526,36 @@ self.addEventListener('message', event => {
   port.postMessage({type:'BO_MANUAL_RELEASE',nonce:data.nonce,release:'manual-recovery-55-v1',version:VERSION,modelSha256:EXPECTED_HASHES['manual-restoration-model.js'],hostSha256:EXPECTED_HASHES['manual-recovery-host.js']});
 });
 
+async function recordingResponse(request) {
+  // Cache Storage is optional for ordinary online playback. Only the exact,
+  // complete and independently verified asset may enter this release's cache.
+  const cache = await caches.open(CACHE).catch(() => null);
+  const saved = await cache?.match(RECORDING_URL).catch(() => null);
+  if (saved) return saved;
+  try {
+    const response = await fetch(new Request(RECORDING_URL, {
+      cache: 'no-store', credentials: 'omit', redirect: 'error', signal: request.signal
+    }));
+    if (response.status !== 200 || response.type === 'opaque' || response.headers.has('content-range') ||
+        (response.url && response.url !== RECORDING_URL) ||
+        await digest(response, RECORDING_BYTES) !== RECORDING_SHA256) throw new Error('Recording integrity mismatch');
+    await cache?.put(RECORDING_URL, response.clone()).catch(() => {});
+    return response;
+  } catch (_) {
+    return new Response('Local recording unavailable.', {status:503});
+  }
+}
+
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== BASE.origin || url.search || url.username || url.password) return;
+  if (url.href === RECORDING_URL) {
+    // The native decoder requests one full GET; allow unrelated clients' ranges through.
+    if (!request.headers.has('range')) event.respondWith(recordingResponse(request));
+    return;
+  }
   // Only the literal root URL aliases index.html. Unknown paths, saves, and requests are untouched.
   const key = url.href === BASE.href ? INDEX : url.href;
   if (!URLS.has(key)) return;

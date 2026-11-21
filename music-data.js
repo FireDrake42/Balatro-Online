@@ -415,11 +415,20 @@
   }];
   licensedTracks.filter(track => track.verified).forEach(track => tracks.push({ ...track,
     description: 'Licensed original recording; boss and Last Chance scenes include disclosed game modifications.' }));
+  // One user-supplied recording, separate from the licensed catalog. BPM is the
+  // fallback score's transport grid, not a claim about the recording's tempo.
+  const userRecording = {
+    id: 'your_recording', name: 'Your Recording', src: 'your-recording-r156.m4a',
+    verified: true, unlockMusicLevel: 2, bpm: scores.roulette_noir.bpm, fallback: 'roulette_noir',
+    duration: 87.786667, bytes: 2124151,
+    integrity: 'sha256-U5t6EFj7pOYU4kdHHw6JSK5yL6iW0MqCO563Yt1PiDw='
+  };
+  tracks.push(userRecording);
   const before36 = freeze(tracks.filter(track => !track.unlockPlayerLevel));
   const from36 = freeze(tracks.filter(track => !track.retirePlayerLevel && (track.unlockPlayerLevel || 1) <= 36));
   const from58 = freeze(tracks.filter(track => !track.retirePlayerLevel));
   const playerLevel = actual => Number.isInteger(actual) && actual >= 1 && actual <= 100 ? actual : 1;
   function tracksForPlayerLevel(actual) { const level=playerLevel(actual);return level>=58?from58:level>=36?from36:before36; }
   return freeze({ version: 1, scenes: ['table', 'boss', 'final_boss'], tracks, scores, licensed,
-    licensedTracks, tracksForPlayerLevel });
+    licensedTracks, userRecording, tracksForPlayerLevel });
 });
