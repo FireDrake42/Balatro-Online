@@ -1,6 +1,6 @@
 /* Poker Table offline worker. Stamped by tools/stamp-offline-cache.cjs; preserve runtime guards. */
 'use strict';
-const VERSION = 'private-display-r168-r3-0dff5401cb30';
+const VERSION = 'private-power-counter-r170-ca307ffe5d42';
 const EXPECTED_HASHES = Object.freeze({
   "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js": "f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f",
   "exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js": "1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6",
@@ -126,7 +126,7 @@ const EXPECTED_HASHES = Object.freeze({
   "icon-512.png": "6bcc710c835288fe8fddc744a503d7450bf2b571c35624612f1a1175bbb23711",
   "icon-apple-180.png": "6bd472219ed1a48c861b210e2b691d84a06ee01b972d058e45a9124d2b352d59",
   "icon.svg": "747f8f0630a98052f849ea609413065c02dc3f6fcc13cd888a3476351b1d3880",
-  "index.html": "0dff5401cb307bae461d90eee13e122f54ee8a0c77b354f14067c88c6ea18b1d",
+  "index.html": "ca307ffe5d42fd0db95535ecffded2b49dd738132bdbfb7a278c9f32ca5039c3",
   "interest-legacy.js": "18563f1d3218eec98c39cf987c9169eceed635e8ec67e0e3fb7dee2d2875d38e",
   "interest-settings.js": "dbff95ae2e3cf7ec0eb81d5ba2fc2c98dbcb6201cc1f7cef416df9679997f602",
   "joker-art.css": "b9f66357fb3dfe99b12ca16064a5e65113b562b9e504aeafb79ec26075f1ae7c",
@@ -261,7 +261,8 @@ const EXPECTED_HASHES = Object.freeze({
   "surveys-ui-r168.js": "337f1919fd6c55731b11bd8e69cbe1b487059002eb14af61a3c8d63cb201de25",
   "table-app-r168.js": "55f2fd1539908e6c49a29a82a202394bca78c1e47e088d178c54547d98fc6761",
   "view-options-r168.js": "e5e244627da1bd04a40f1a3f81edd03322deb4ca5c1237a5bb61603289b6a0c9",
-  "table-app-r168-r3.js": "590e0bee8af53f4c68bdfde78e19bdd79859e57427538c4caf70dfb2a466bc08"
+  "table-app-r168-r3.js": "590e0bee8af53f4c68bdfde78e19bdd79859e57427538c4caf70dfb2a466bc08",
+  "power-settings-ui-r170.js": "7fbc9c73ab38f4c03e6365cc0d9c2977e44559f4951d48b4723d6c8359cc603d"
 });
 const FILES = Object.freeze([
   "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js",
@@ -523,7 +524,8 @@ const FILES = Object.freeze([
   "surveys-ui-r168.js",
   "table-app-r168.js",
   "view-options-r168.js",
-  "table-app-r168-r3.js"
+  "table-app-r168-r3.js",
+  "power-settings-ui-r170.js"
 ]);
 const BASE = new URL('./', self.registration.scope);
 const PREFIX = 'poker-table-pwa-v1|' + encodeURIComponent(BASE.pathname) + '|';
