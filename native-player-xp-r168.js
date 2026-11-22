@@ -42,7 +42,7 @@
   function unpaid(command,adapter,intent){const result=tail.then(()=>{try{options.assertIntent(intent);}catch(error){return unavailable(error,command,adapter);}return invoke(command,intent);},error=>unavailable(error,command,adapter));setTail(result);return result;}
   function dispatch(ticket,command,adapter){
    if(ticket.handlers.has(adapter.owner))return ticket.handlers.get(adapter.owner);ticket.pending++;
-   const result=tail.then(()=>ticket.accepted).then(intent=>{try{check(!paused,'native button XP is paused');options.assertIntent(intent);}catch(error){return unavailable(error,command,adapter);}return invoke(command,intent);},error=>unavailable(error,command,adapter)).finally(()=>{if(--ticket.pending===0&&ticket.paid)try{options.finished?.(ticket.intent);}catch(_){/* UI publication never undoes a confirmed source. */}});
+   const result=tail.then(()=>ticket.accepted).then(intent=>{try{check(!paused,'native button XP is paused');options.assertIntent(intent);}catch(error){return unavailable(error,command,adapter);}return invoke(command,intent);},error=>unavailable(error,command,adapter)).finally(()=>{if(--ticket.pending===0&&ticket.paid)try{options.finished?.(ticket.intent,ticket.acceptedIntent);}catch(_){/* UI publication never undoes a confirmed source. */}});
    ticket.handlers.set(adapter.owner,result);setTail(result);return result;
   }
   function follow(event,command,adapter,origin,fresh){
@@ -68,7 +68,7 @@
     let captured;try{captured=options.capture(event,button,adapter);}catch(error){return unavailable(error,command,adapter);}if(!captured)return command();const origin={...captured,event,button,sourceWindow:adapter.sourceWindow||root};
     const identified=captured.levelAtIntent>=50;let intent=origin;
     if(identified){check(sequence<Number.MAX_SAFE_INTEGER,'native intent counter is full');intent={...origin,session,sequence:++sequence};const paid=captured.levelAtIntent>=60;
-     ticket={handlers:new Map(),intent,pending:0,paid,accepted:tail.then(async()=>{check(!paused,'native button XP is paused');options.assertIntent(intent);if(!paid)return intent;const reward=await options.award(intent);options.assertIntent(intent);return {...intent,reward};})};seen.set(event,ticket);}
+     ticket={handlers:new Map(),intent,pending:0,paid,accepted:tail.then(async()=>{check(!paused,'native button XP is paused');options.assertIntent(intent);if(!paid)return intent;const reward=await options.award(intent);options.assertIntent(intent);const accepted={...intent,reward};ticket.acceptedIntent=accepted;return accepted;})};seen.set(event,ticket);}
     if(event.type==='keydown'&&key){key.intent=intent;key.expectClick=!event.defaultPrevented;}else if(event.type==='click'&&event.detail===0&&key?.button===button)key.intent=intent;
     if(event.type==='pointerdown'&&pointer?.event===event){pointer.charged=true;pointer.intent=intent;}
     if(!identified)return unpaid(command,adapter,intent);
