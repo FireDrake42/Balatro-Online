@@ -1,15 +1,27 @@
-READ-ONLY SIZE INSPECTOR — DIAGNOSTIC ONLY, NOT A CAPACITY FIX
+BALATRO ONLINE R172 - EIGHT DISPLAY SWITCHES
+PRIVATE / NOT PUBLISHED
 
-Upload only quota-size-check.html beside the existing game files on the SAME existing origin. Do not replace app.js, index.html, sw.js or other assets.
+This is an update for your existing Balatro Online R170 website.
+It is not a standalone game, a save file or an automatic deployment.
 
-Keep the current paused game tab open and untouched. In a separate NEW tab, open:
-https://balatro-online.vercel.app/quota-size-check.html?readonly=photo2053
-The query is only a diagnostic label; it does not force activation or bypass any ownership/save guard. No game reload is required. Other origins and file:// are blocked before storage access.
+Before updating, export a backup for EACH slot you use and keep those files
+private. Close all game tabs, Original Games tabs and installed game apps.
+Keep a copy of your current website files as well.
 
-The page requests no writes or owner claims and loads no game modules or external assets. It reads presence and UTF-16 lengths for eleven source-verified fixed game banks only, plus the total key COUNT. No raw bank value is shown, parsed, copied or downloaded. You may select/copy the displayed metadata manually.
+If applying the update, extract into the SAME existing R170 website root
+where index.html already lives. Keep the folder names, including originalgames.
+Replace only matching files from this ZIP; keep all other files, old scripts,
+media and game runtime files. Do not open index.html directly as a local file.
+Reopen the SAME site address. Do not clear browser data, reset, migrate or
+move your saves to another address. If something looks wrong, stop and keep
+your backups instead of starting over.
 
-Coverage: core profile (including its stored model state), active run, settings, daily banks, one metadata bank holding all three slots, retained legacy slot backup, known cloud backup and slot/native/cloud journals. Dynamic ending-backup IDs, owner records, authentication keys, survey data and other unlisted keys are not queried. The subtotal is NOT full-origin usage, actual browser quota accounting, available capacity or device free space. Missing and read-error rows create no defaults. Reads are not atomic.
+Eight new independent switches in Settings > Display (Level 20+, on by default):
+Redeemed Vouchers, Yanma / Anorith, Stock Market, Potion Apothecary, Player Level,
+Owned Tags, Round Score and XP Fraction. Turning off Player Level or Round Score
+shows ???. XP Fraction off keeps the percentage and bar, without changing XP.
+These switches change what you see, not how you earn progress.
 
-Do not retry rewards, clear data, evict backups, migrate, reset, import or force-reload the paused game. Any later storage repair needs separate authorization, lossless preservation and owner/journal/readback failure tests.
-
-QA-proof.json covers isolated Node RAM fixtures and static HTML/JS/CSP/privacy checks. It is not an iPad browser boot, active-service-worker, financial-commit or physical-save proof. The ZIP is held for parent review; this package itself performs no delivery or publication.
+The R171 progress import error is not fixed by this update. Offline checks only:
+full browser, service-worker installation, native paired-save and physical rank-6
+reward testing were not run.
