@@ -78,15 +78,16 @@ const boStoredJSONr167=(()=>{
  'use strict';
  // Only named startup files and explicit application milestones count. No clock or byte estimate.
  const files={
-  'table-boot-style':['LINK','href','style.css'],
+  'table-boot-style':['LINK','href','style-r168.css'],
   'table-boot-engine':['SCRIPT','src','engine.js'],
   'table-boot-levels':['SCRIPT','src','progression.js'],
   'table-boot-music':['SCRIPT','src','music-assets.js'],
-  'table-boot-slots':['SCRIPT','src','save-slots.js'],
-  'table-boot-entry':['SCRIPT','src','table-app-r167.js']
+  'table-boot-slots':['SCRIPT','src','save-slots-r168.js'],
+  'table-boot-entry':['SCRIPT','src','table-app-r168-r3.js']
  };
- // Required models report failures only; neither is a progress milestone.
+ // Required models report failures only; none is a progress milestone.
  const required={
+  'table-boot-views':['SCRIPT','src','view-options-r168.js'],
   'table-boot-proof':['SCRIPT','src','compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js'],
   'table-boot-interest':['SCRIPT','src','exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js']
  };
@@ -133,29 +134,29 @@ const boStoredJSONr167=(()=>{
    }
   }
   if(!file||failed.has(file)||loaded.has(file))return;
-  const model=file==='compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js'||file==='exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js';
+  const model=file==='view-options-r168.js'||file==='compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js'||file==='exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js';
   if(model){
    if(event.type==='load'){modelComplete.add(file);return;}
    if(event.target===window&&modelComplete.has(file))return;
   }
   if(event.type==='error'){
-   if(file==='table-app-r167.js'&&step!==-1)return;
+   if(file==='table-app-r168-r3.js'&&step!==-1)return;
    failed.add(file);
-   if(file==='table-app-r167.js'){
+   if(file==='table-app-r168-r3.js'){
     failedFile=file;
     // In the head the shell does not yet exist. The shell's own hook can paint this result.
-    if(byId('table-boot')){paint('Could not load table-app-r167.js.');detach();}
+    if(byId('table-boot')){paint('Could not load table-app-r168-r3.js.');detach();}
     return;
    }
    if(model)modelFailed=true;
    if(!failedFile)failedFile=file;
-  }else if(file!=='table-app-r167.js')loaded.add(file);else return;
+  }else if(file!=='table-app-r168-r3.js')loaded.add(file);else return;
   display();
  }
  function signal(name,viewOnly){
   if(ended)return;
   if(name==='shell'){
-   if(failedFile==='table-app-r167.js'&&step===-1){paint('Could not load table-app-r167.js.');detach();}else display();
+   if(failedFile==='table-app-r168-r3.js'&&step===-1){paint('Could not load table-app-r168-r3.js.');detach();}else display();
    return;
   }
   if(appReady)return;
@@ -187,7 +188,7 @@ const boStoredJSONr167=(()=>{
  #table-boot progress{display:block;width:100%;height:.9rem;accent-color:var(--gold,#edc878)}
  #table-boot p{margin:.55rem 0 0;line-height:1.4}
  #table-boot-count{color:var(--muted,#adc1bf);font-size:.85em;font-variant-numeric:tabular-nums}
-</style><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b2427"><title>Balatro Online — Poker Table</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b2427'/%3E%3Ctext x='32' y='49' font-size='48' text-anchor='middle' fill='%23edc878'%3E♠%3C/text%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Poker Table"><link rel="apple-touch-icon" sizes="180x180" href="icon-apple-180.png"><link rel="stylesheet" href="style.css?r38=4a28a18bfbdf" integrity="sha384-dmfdm0NSfvXxcwIi22DemyyJ6AILH897T96YVSXVKU3V+DlX8AAKUvdo1fx3FlCZ" crossorigin="anonymous" id="table-boot-style"><link rel="stylesheet" href="native-tutorial.css"><link rel="stylesheet" href="native-quiet-story.css"><link rel="stylesheet" href="youtube-music.css?r34=978f74bf5d11" integrity="sha384-BzsHLpaMJ+eT+Wl5afgIvszJYFmCTLIlnCy0EG1DN6q86e1zp0+wuRpacDHzCWqz" crossorigin="anonymous"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="effect-text.css"><link rel="stylesheet" href="five-jokers.css"><link rel="stylesheet" href="daily-streak.css"><link rel="stylesheet" href="stock-market.css"><link rel="stylesheet" href="faucet-activity.css"><link rel="stylesheet" href="potions.css"><link rel="stylesheet" href="surveys.css"><link rel="stylesheet" href="custom-images.css"><link rel="stylesheet" href="joker-art.css"><link rel="stylesheet" href="moving-panels.css"><link rel="stylesheet" href="cap-levels.css"><link rel="stylesheet" href="crit-effects.css"><link rel="stylesheet" href="emerald.css?r45q11=55f21c2c97e1" integrity="sha384-tTpnqB2h3hRzRncZ+6Hhka54G7+6RattAJMSD/d3k/yr9ppSHn45meJzQr9QPepX" crossorigin="anonymous"><link rel="stylesheet" href="yanma-companion.css?r45q11=a3835d3be65a" integrity="sha384-yq5lqhbOJ5sXUhPXzAEYol3szchR+jeOAJJRT68g5HJ2iq3HfvZVBnU6nQ0HckDl" crossorigin="anonymous"><link rel="stylesheet" href="emerald-blackjack.css"><link rel="stylesheet" href="emerald-survey.css"><link rel="stylesheet" href="emerald-chill.css"><link rel="stylesheet" href="emerald-poker.css"><link rel="stylesheet" href="emerald-attentive.css"><link rel="stylesheet" href="battery.css"><link rel="stylesheet" href="power-settings-ui.css"><link rel="stylesheet" href="emerald-strict-poker.css"><link rel="stylesheet" href="emerald-slots.css"><link rel="stylesheet" href="game-offers.css"><link rel="stylesheet" href="levels-expansion.css"><link rel="stylesheet" href="expansion.css"><link rel="stylesheet" href="late-levels.css"><link rel="stylesheet" href="foods.css"><link rel="stylesheet" href="game-polish.css"><link rel="stylesheet" href="game-speed.css?gs50=3f35a053032d" integrity="sha384-sfmYlcaYzkdBZhiW+zjlZsPTUSCTvQkS87O25UPZ8FJkxeWJ8IU8s/AkN0thAyBu" crossorigin="anonymous"><link rel="stylesheet" href="interest-graphs.css?r32=8c90f5035c2b" integrity="sha384-G8ShGHyUAanXTLibD1+6ip8PRoWKgMtTPbXaaqWf+tOc9aYqcW8AINcxDkwvRBwm" crossorigin="anonymous">
+</style><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b2427"><title>Balatro Online — Poker Table</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b2427'/%3E%3Ctext x='32' y='49' font-size='48' text-anchor='middle' fill='%23edc878'%3E♠%3C/text%3E%3C/svg%3E"><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Poker Table"><link rel="apple-touch-icon" sizes="180x180" href="icon-apple-180.png"><link rel="stylesheet" href="style-r168.css" integrity="sha384-yspHD+UVQ4QSgDzl2llGB3bAMeZFm4qHgxaP3q1TO9LVtqU6oIMTxHA0jtM5s4o2" crossorigin="anonymous" id="table-boot-style"><link rel="stylesheet" href="native-tutorial.css"><link rel="stylesheet" href="native-quiet-story.css"><link rel="stylesheet" href="youtube-music.css?r34=978f74bf5d11" integrity="sha384-BzsHLpaMJ+eT+Wl5afgIvszJYFmCTLIlnCy0EG1DN6q86e1zp0+wuRpacDHzCWqz" crossorigin="anonymous"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="effect-text.css"><link rel="stylesheet" href="five-jokers.css"><link rel="stylesheet" href="daily-streak.css"><link rel="stylesheet" href="stock-market.css"><link rel="stylesheet" href="faucet-activity.css"><link rel="stylesheet" href="potions.css"><link rel="stylesheet" href="surveys.css"><link rel="stylesheet" href="custom-images.css"><link rel="stylesheet" href="joker-art.css"><link rel="stylesheet" href="moving-panels.css"><link rel="stylesheet" href="cap-levels.css"><link rel="stylesheet" href="crit-effects.css"><link rel="stylesheet" href="emerald.css?r45q11=55f21c2c97e1" integrity="sha384-tTpnqB2h3hRzRncZ+6Hhka54G7+6RattAJMSD/d3k/yr9ppSHn45meJzQr9QPepX" crossorigin="anonymous"><link rel="stylesheet" href="yanma-companion.css?r45q11=a3835d3be65a" integrity="sha384-yq5lqhbOJ5sXUhPXzAEYol3szchR+jeOAJJRT68g5HJ2iq3HfvZVBnU6nQ0HckDl" crossorigin="anonymous"><link rel="stylesheet" href="emerald-blackjack.css"><link rel="stylesheet" href="emerald-survey.css"><link rel="stylesheet" href="emerald-chill.css"><link rel="stylesheet" href="emerald-poker.css"><link rel="stylesheet" href="emerald-attentive.css"><link rel="stylesheet" href="battery.css"><link rel="stylesheet" href="power-settings-ui.css"><link rel="stylesheet" href="emerald-strict-poker.css"><link rel="stylesheet" href="emerald-slots.css"><link rel="stylesheet" href="game-offers.css"><link rel="stylesheet" href="levels-expansion.css"><link rel="stylesheet" href="expansion.css"><link rel="stylesheet" href="late-levels.css"><link rel="stylesheet" href="foods.css"><link rel="stylesheet" href="game-polish.css"><link rel="stylesheet" href="game-speed.css?gs50=3f35a053032d" integrity="sha384-sfmYlcaYzkdBZhiW+zjlZsPTUSCTvQkS87O25UPZ8FJkxeWJ8IU8s/AkN0thAyBu" crossorigin="anonymous"><link rel="stylesheet" href="interest-graphs.css?r32=8c90f5035c2b" integrity="sha384-G8ShGHyUAanXTLibD1+6ip8PRoWKgMtTPbXaaqWf+tOc9aYqcW8AINcxDkwvRBwm" crossorigin="anonymous">
 <style id="fps-boost-decoration">
 /* Boost-only decoration; existing text, controls and clocks stay intact. */
 html.fps-boost #level-hud.enhanced-levels-ui .xp-shine {
@@ -214,7 +215,7 @@ html.fps-boost .passive-money-button .passive-money-symbol {
 }
 </style>
 </head><body>
-<div class="grain" aria-hidden="true"></div><header class="topbar"><button class="wordmark" id="home" aria-label="Main menu"><span class="logo">♠</span> BALATRO <em>ONLINE</em></button><button id="passive-xp-button" class="passive-xp-button" data-action="start-passive-xp" hidden>Start Passive Exp</button><button id="passive-money-button" class="passive-xp-button passive-money-button" data-action="start-passive-money" hidden>Start Passive Money</button><div class="header-right"><span class="local-badge">● LOCAL-FIRST</span><button class="icon-button" id="audio-toggle" aria-label="Enable sound and music" title="Tap to enable audio">♪</button><button class="icon-button" id="help" aria-label="How to play">?</button><button class="icon-button" id="settings" aria-label="Settings">⚙</button></div></header>
+<div class="grain" aria-hidden="true"></div><header class="topbar"><button class="wordmark" id="home" aria-label="Main menu"><span class="logo">♠</span> BALATRO <em>ONLINE</em></button><button id="passive-xp-button" class="passive-xp-button" data-action="start-passive-xp" hidden>Start Passive Exp</button><button id="passive-money-button" class="passive-xp-button passive-money-button" data-action="start-passive-money" hidden>Start Passive Money</button><div class="header-right"><span class="local-badge">● LOCAL-FIRST</span><button class="icon-button" id="audio-toggle" aria-label="Enable sound and music" title="Tap to enable audio">♪</button><button class="icon-button" id="help" data-view-part="howToPlay" aria-label="How to play">?</button><button class="icon-button" id="settings" aria-label="Settings">⚙</button></div></header>
 <section id="level-hud" class="level-hud" aria-label="Player level and experience"></section>
 <section id="fictional-battery-dock" hidden aria-label="Fictional game battery"></section><div id="fictional-battery-shade" hidden aria-hidden="true"></div><section id="table-boot" aria-labelledby="table-boot-label">
 <label id="table-boot-label" for="table-boot-bar">Preparing your table…</label>
@@ -240,132 +241,133 @@ try {
  /*R4_CONFIG_BEGIN*/
  var C = {
  "files": [
-  null,
-  "manual-restoration-model.js",
-  "i18n-en-US.js",
-  "i18n-es.js",
-  "i18n-fr.js",
-  "i18n-bindings.js",
-  "i18n.js",
-  "i18n-authored.js?i18nc=0e98b723ccf3f725",
-  "emerald-typewriter.js",
-  "emerald-text-quirks.js",
-  "effect-text.js",
-  "emerald-poker.js",
-  "emerald-poker-events.js",
-  "emerald-friendship.js",
-  "poker-levels.js",
-  "emerald-strict-poker.js",
-  "xp-cost-policy.js?all3=9930127b95f7817d",
-  "emerald-slots.js",
-  "originalgames/game-engine.js",
-  "arcade-cycle-data.js",
-  "game-offers.js",
-  "expansion-rewards.js",
-  "expansion-profile.js",
-  "emerald-poker-profile.js",
-  "potions.js",
-  "feature-power.js",
-  "battery-display.js",
-  "battery.js",
-  "battery-controller.js",
-  "battery-ui.js",
-  "passive-money.js",
-  "passive-money-controller.js",
-  "run-wallet.js",
-  "frenzy.js",
-  "food-catalog.js",
-  "food-effects.js",
-  "food-bar.js",
-  "tutorial-native-policy.js",
-  "engine.js",
-  "achievements-data.js",
-  "late-level-costs.js",
-  "late-level-rules.js",
-  "progression.js",
-  "passive-xp.js",
-  "interest-settings.js",
-  "power-boundary.js",
-  "power-settings-ui.js",
-  "interest-legacy.js",
-  "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js",
-  "exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js",
-  "faucet-graph.js",
-  "levels-enhancements.js",
-  "levels-ui.js",
-  "collection-tracking.js",
-  "music-assets.js",
-  "late-music-data.js",
-  "music-data.js",
-  "game-audio-data.js",
-  "table-audio-r156.js",
-  "motion.js",
-  "stats.js",
-  "stock-market.js",
-  "stock-market-data.js",
-  "stock-market-ui.js",
-  "potions-ui.js",
-  "daily-streak.js",
-  "daily-tasks.js",
-  "daily-tasks-ui.js",
-  "daily-streak-ui.js",
-  "surveys.js",
-  "survey-videos.js",
-  "player-identity.js",
-  "survey-runner.js",
-  "surveys-ui.js",
-  "custom-images.js",
-  "moving-panels.js",
-  "text-customization.js",
-  "emerald-progress.js",
-  "emerald-blackjack.js",
-  "emerald-roadmap.js",
-  "emerald-workshop.js",
-  "emerald-runtime.js",
-  "native-feature-transaction.js",
-  "tutorial-native-model.js",
-  "native-quiet-story.js",
-  "native-tutorial-ui.js",
-  "emerald-actions.js",
-  "emerald-blackjack-actions.js",
-  "emerald-cardgame-dialogue.js",
-  "emerald-blackjack-ui.js",
-  "emerald-chill-games.js",
-  "emerald-chill-actions.js",
-  "emerald-chill-ui.js",
-  "darts-501.js",
-  "darts-native.js",
-  "darts-ui.js",
-  "native-speech.js?three=47923d657b1aa91b",
-  "cloud-save.js",
-  "save-slots.js",
-  "native-ending-recovery.js",
-  "native-quiet-story-ui.js",
-  "joker-art.js",
-  "emerald-asset.js",
-  "emerald-adviser.js",
-  "emerald-conduct.js",
-  "emerald-chat.js",
-  "emerald-attentive.js",
-  "emerald-card-frames.js",
-  "emerald-ui.js",
-  "emerald-survey.js",
-  "emerald-poker-actions.js",
-  "emerald-poker-ui.js",
-  "emerald-strict-poker-actions.js",
-  "emerald-strict-poker-ui.js",
-  "emerald-slots-actions.js",
-  "emerald-slots-ui.js",
-  "game-offers-ui.js",
-  "emerald-slots-lock-audio.js",
-  "expansion-host.js",
-  "level100-choice.js",
-  "native-player-xp.js",
-  "achievement-xp.js",
-  "native-profile-host.js",
-  "table-app-r167.js",
-  "pwa.js"
- ],
+   null,
+   "manual-restoration-model.js",
+   "i18n-en-US.js",
+   "i18n-es.js",
+   "i18n-fr.js",
+   "i18n-bindings.js",
+   "i18n-r168.js",
+   "i18n-authored.js?i18nc=0e98b723ccf3f725",
+   "emerald-typewriter.js",
+   "emerald-text-quirks.js",
+   "effect-text.js",
+   "emerald-poker.js",
+   "emerald-poker-events.js",
+   "emerald-friendship.js",
+   "poker-levels.js",
+   "emerald-strict-poker.js",
+   "xp-cost-policy.js?all3=9930127b95f7817d",
+   "emerald-slots.js",
+   "originalgames/game-engine.js",
+   "arcade-cycle-data.js",
+   "game-offers.js",
+   "expansion-rewards.js",
+   "expansion-profile.js",
+   "emerald-poker-profile.js",
+   "potions.js",
+   "feature-power-r168.js",
+   "battery-display.js",
+   "battery.js",
+   "battery-controller.js",
+   "battery-ui.js",
+   "passive-money.js",
+   "passive-money-controller-r168.js",
+   "run-wallet.js",
+   "frenzy.js",
+   "food-catalog.js",
+   "food-effects.js",
+   "food-bar.js",
+   "tutorial-native-policy.js",
+   "engine.js",
+   "achievements-data.js",
+   "late-level-costs.js",
+   "late-level-rules-r168.js",
+   "progression.js",
+   "passive-xp.js",
+   "interest-settings.js",
+   "power-boundary.js",
+   "power-settings-ui-r168.js",
+   "interest-legacy.js",
+   "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js",
+   "exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js",
+   "faucet-graph.js",
+   "levels-enhancements-r168.js",
+   "levels-ui-r168.js",
+   "collection-tracking.js",
+   "music-assets.js",
+   "late-music-data.js",
+   "music-data.js",
+   "game-audio-data.js",
+   "table-audio-r156.js",
+   "motion.js",
+   "stats.js",
+   "stock-market.js",
+   "stock-market-data.js",
+   "stock-market-ui.js",
+   "potions-ui-r168.js",
+   "daily-streak.js",
+   "daily-tasks.js",
+   "daily-tasks-ui-r168.js",
+   "daily-streak-ui-r168.js",
+   "surveys.js",
+   "survey-videos.js",
+   "player-identity.js",
+   "survey-runner.js",
+   "surveys-ui-r168.js",
+   "custom-images.js",
+   "moving-panels-r168.js",
+   "text-customization.js",
+   "emerald-progress.js",
+   "emerald-blackjack.js",
+   "emerald-roadmap.js",
+   "emerald-workshop.js",
+   "emerald-runtime.js",
+   "native-feature-transaction.js",
+   "tutorial-native-model.js",
+   "native-quiet-story.js",
+   "native-tutorial-ui.js",
+   "emerald-actions.js",
+   "emerald-blackjack-actions.js",
+   "emerald-cardgame-dialogue.js",
+   "emerald-blackjack-ui.js",
+   "emerald-chill-games.js",
+   "emerald-chill-actions.js",
+   "emerald-chill-ui.js",
+   "darts-501.js",
+   "darts-native.js",
+   "darts-ui.js",
+   "native-speech.js?three=47923d657b1aa91b",
+   "cloud-save-r168.js",
+   "save-slots-r168.js",
+   "native-ending-recovery.js",
+   "native-quiet-story-ui.js",
+   "joker-art.js",
+   "emerald-asset.js",
+   "emerald-adviser.js",
+   "emerald-conduct.js",
+   "emerald-chat.js",
+   "emerald-attentive.js",
+   "emerald-card-frames.js",
+   "emerald-ui-r168.js",
+   "emerald-survey.js",
+   "emerald-poker-actions.js",
+   "emerald-poker-ui.js",
+   "emerald-strict-poker-actions.js",
+   "emerald-strict-poker-ui.js",
+   "emerald-slots-actions.js",
+   "emerald-slots-ui.js",
+   "game-offers-ui-r168.js",
+   "emerald-slots-lock-audio.js",
+   "expansion-host-r168.js",
+   "level100-choice.js",
+   "native-player-xp-r168.js",
+   "achievement-xp.js",
+   "native-profile-host-r168.js",
+   "table-app-r168-r3.js",
+   "pwa.js",
+   "view-options-r168.js"
+  ],
  "phases": [
   "A000",
   "A002_ENTER",
@@ -436,364 +438,7 @@ try {
   "A590_READ",
   "A590_WAIT"
  ],
- "columns": [
-   [7,791,210],
-  [
-   2,
-   32,
-   929
-  ],
-  [
-   6,
-   281,
-   60
-  ],
-  [
-   14,
-   1,
-   63
-  ],
-  [
-   14,
-   224,
-   60
-  ],
-  [
-   51,
-   1,
-   63
-  ],
-  [
-   51,
-   269,
-   60
-  ],
-  [
-   58,
-   1,
-   63
-  ],
-  [
-   58,
-   207,
-   60
-  ],
-  [
-   59,
-   254,
-   60
-  ],
-  [
-   63,
-   22,
-   71
-  ],
-  [
-   63,
-   100,
-   49
-  ],
-  [
-   68,
-   220,
-   60
-  ],
-  [
-   125,
-   1,
-   63
-  ],
-  [
-   125,
-   2455,
-   60
-  ],
-  [
-   352,
-   78,
-   74
-  ],
-  [
-   352,
-   159,
-   51
-  ],
-  [
-   368,
-   82,
-   74
-  ],
-  [
-   368,
-   163,
-   51
-  ],
-  [
-   567,
-   90,
-   87
-  ],
-  [
-   568,
-   1,
-   90
-  ],
-  [
-   569,
-   131,
-   92
-  ],
-  [
-   569,
-   230,
-   63
-  ],
-  [
-   569,
-   441,
-   90
-  ],
-  [
-   569,
-   550,
-   88
-  ],
-  [
-   569,
-   657,
-   58
-  ],
-  [
-   569,
-   729,
-   87
-  ],
-  [
-   569,
-   835,
-   108
-  ],
-  [
-   573,
-   310,
-   66
-  ],
-  [
-   573,
-   395,
-   60
-  ],
-  [
-   574,
-   195,
-   60
-  ],
-  [
-   575,
-   45,
-   60
-  ],
-  [
-   576,
-   1,
-   63
-  ],
-  [
-   576,
-   197,
-   84
-  ],
-  [
-   576,
-   304,
-   60
-  ],
-  [
-   576,
-   404,
-   71
-  ],
-  [
-   576,
-   482,
-   73
-  ],
-  [
-   577,
-   1,
-   63
-  ],
-  [
-   577,
-   862,
-   60
-  ],
-  [
-   577,
-   957,
-   60
-  ],
-  [
-   577,
-   1027,
-   66
-  ],
-  [
-   577,
-   1110,
-   60
-  ],
-  [
-   584,
-   1,
-   63
-  ],
-  [
-   584,
-   209,
-   60
-  ],
-  [
-   584,
-   387,
-   60
-  ],
-  [
-   584,
-   462,
-   66
-  ],
-  [
-   584,
-   789,
-   60
-  ],
-  [
-   584,
-   857,
-   60
-  ],
-  [
-   588,
-   5,
-   60
-  ],
-  [
-   588,
-   635,
-   107
-  ],
-  [
-   588,
-   771,
-   84
-  ],
-  [
-   588,
-   889,
-   81
-  ],
-  [
-   588,
-   1002,
-   92
-  ],
-  [
-   588,
-   1101,
-   94
-  ],
-  [
-   588,
-   1209,
-   101
-  ],
-  [
-   588,
-   1329,
-   81
-  ],
-  [
-   590,
-   1,
-   60
-  ],
-  [
-   590,
-   113,
-   60
-  ],
-  [
-   590,
-   195,
-   71
-  ],
-  [
-   590,
-   273,
-   49
-  ],
-  [
-   590,
-   1257,
-   60
-  ],
-  [
-   1933,
-   1,
-   66
-  ],
-  [
-   1933,
-   2845,
-   63
-  ],
-  [
-   1970,
-   1,
-   66
-  ],
-  [
-   1970,
-   343,
-   63
-  ],
-  [
-   1996,
-   1,
-   63
-  ],
-  [
-   1996,
-   97,
-   63
-  ],
-  [
-   1997,
-   1,
-   63
-  ],
-  [
-   1997,
-   94,
-   63
-  ],
-  [
-   1998,
-   1,
-   66
-  ],
-  [
-   1998,
-   76,
-   63
-  ],
-  [
-   2007,
-   1,
-   63
-  ]
- ],
+ "columns": [],
  "critical": [
   2,
   55,
@@ -957,7 +602,7 @@ try {
   var old=col,j,r,file,columns;
   if(!id||!integer(line)||!integer(col))return "unknown I?:? O?";
   file=fileName(id);
-  if(file==="table-app-r167.js")columns=C.columns;else if(file==="exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js"){if(line===4||line===213)return file+" I"+line+":"+col+" O?";columns=C.writerColumns;}else return file+" O"+line+":"+col;
+  if(file==="cloud-save-r168.js"||file==="daily-streak-ui-r168.js"||file==="daily-tasks-ui-r168.js"||file==="emerald-ui-r168.js"||file==="expansion-host-r168.js"||file==="feature-power-r168.js"||file==="game-offers-ui-r168.js"||file==="i18n-r168.js"||file==="late-level-rules-r168.js"||file==="levels-enhancements-r168.js"||file==="levels-ui-r168.js"||file==="moving-panels-r168.js"||file==="native-player-xp-r168.js"||file==="native-profile-host-r168.js"||file==="passive-money-controller-r168.js"||file==="potions-ui-r168.js"||file==="power-settings-ui-r168.js"||file==="save-slots-r168.js"||file==="surveys-ui-r168.js"||file==="table-app-r168-r3.js"||file==="view-options-r168.js")return file+" I"+line+":"+col+" O?";else if(file==="exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js"){if(line===4||line===213)return file+" I"+line+":"+col+" O?";columns=C.writerColumns;}else return file+" O"+line+":"+col;
   for(j=0;j<columns.length;j++){r=columns[j];if(r[0]===line){if(col>=r[1]&&col<r[1]+r[2])return file+" I"+line+":"+col+" O?";if(col>=r[1]+r[2])old-=r[2];}}
   return file+" I"+line+":"+col+" O"+line+":"+old;
  }
@@ -1067,11 +712,11 @@ try {
 })(typeof window==='object'?window:globalThis);
 </script>
 <script src="game-speed.js?gs50=8ea1b7f7523e" integrity="sha384-R1FTSfSO0ruQesvUoC1djAiy2+pC6Zgpa7DHp54njEDQo/l+EHeExnNVstv73FJ/" crossorigin="anonymous"></script><script src="native-observed-work.js?r139=dfc3a5be0634" integrity="sha384-8lPdP2Fv0fWH5T0pDOUnfaOQI5o1s1116JFIdj1npUt93BUSv3wIQrH1DJZcMiNq" crossorigin="anonymous"></script><script src="game-speed-presentation.js?gs50=47477681c6d8" integrity="sha384-SpgdJ8utu3OvtXregP+HmLvICKJ0hxdHeTQeVaH+6DGi2CC+OTp6kNrW6TpZYcFP" crossorigin="anonymous"></script>
-<script id="bo-r4-s-2-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S2 before (not completion)";}catch(ignored){}})();</script><!--R3:E:HUD--><script src="manual-restoration-model.js"></script><!--R3:I:S_A2--><script id="bo-r4-s-2-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S2 "+(c.getAttribute("data-r4-failed")==="2"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A2--><script src="i18n-en-US.js?r32=f3e8fb18ec8f" integrity="sha384-mlyqDbV/Gf0TFGWwdZggQ6KIpK+UN9oVSVyGHu36eW9Rlo1GMG/ynhT7yOYhEzy8" crossorigin="anonymous"></script><script src="i18n-es.js?r32=ca3d977e5afe" integrity="sha384-lknYujCLLv8qOLBZ0s2PqDcnX9kApoeXNrtk9ncV1tURf1KFhgRI6pZmF9sSa4c/" crossorigin="anonymous"></script><script src="i18n-fr.js?r32=6cedd33e6c0c" integrity="sha384-9+qdH2r4NIdOY/wSjnFSbDe8ks7/9iIZlUQgnlr6/oPWaZ4aXl24J4goIMWqHi/+" crossorigin="anonymous"></script><script src="i18n-bindings.js"></script><script src="i18n.js"></script><script src="i18n-authored.js?i18nc=0e98b723ccf3f725" integrity="sha384-r+W5UUIxt4gmhcDPYnWRIgZm5x5RRHL+Q0TFZfWDcKMGwL4QMJ31FIA2U2E0S/yf" crossorigin="anonymous" data-sha256="0e98b723ccf3f7254fe2712bd05335ac3a3a21cb8082a31b87d5b9646e434067"></script><script src="emerald-typewriter.js?r38=2e312aeb0857" integrity="sha384-LbuYbTl96tP6FJ5SVhyxFaYXYtZF0Qmkw3fzGKG0YXirFm2Udbr+vcU2+wYEGhpD" crossorigin="anonymous"></script><script src="emerald-text-quirks.js?r34=95610b5b86b1" integrity="sha384-bE1pgJRCljpYoLO9d1fDj6tmy9rMvC28m67C2z1q+mS/qmntrCDQWp67hMBoQ/Xm" crossorigin="anonymous"></script><script src="effect-text.js"></script><script src="emerald-poker.js"></script><script src="emerald-poker-events.js"></script><script src="emerald-friendship.js"></script><script src="poker-levels.js"></script><script src="emerald-strict-poker.js"></script><script src="xp-cost-policy.js?all3=9930127b95f7817d" integrity="sha384-zJ/OCb4iSXZ2kddJ5UOJ4NGInxIq4NQ9MPtc9SZJMXY/n22krkJb5J1I3JTk12TP" crossorigin="anonymous" data-sha256="9930127b95f7817d52ef2346ca122100c1a518ea16e1cd5b5d09d26289d46dec"></script>
-<script src="emerald-slots.js"></script><script src="originalgames/game-engine.js"></script><script src="arcade-cycle-data.js"></script><script src="game-offers.js"></script><script src="expansion-rewards.js"></script><script src="expansion-profile.js"></script><script src="emerald-poker-profile.js"></script><script src="potions.js"></script><script src="feature-power.js"></script><script src="battery-display.js"></script><script src="battery.js"></script><script src="battery-controller.js"></script><script src="battery-ui.js"></script><script src="passive-money.js?gs50=0937ccd394de" integrity="sha384-daZZ/zA5XNdiqrEFt3T9qGkPj1WRqhzlMhM6wffu+5zcfmKcHYl7NTUUYxJJHGFq" crossorigin="anonymous"></script><script src="passive-money-controller.js?gs50=0c71c9c89dac" integrity="sha384-rCZ2zKk7xXzb52XLtWcfNPWkct7Q/aQ6t+qclnzoPcRkVQaNgMh1CwYi/G+kmjpm" crossorigin="anonymous"></script><script src="run-wallet.js"></script><script src="frenzy.js"></script><script src="food-catalog.js"></script><script src="food-effects.js"></script><script src="food-bar.js"></script><script src="tutorial-native-policy.js"></script><script src="yanma-anorith.js?ya=ba4b4a162062"></script>
+<script id="bo-r4-s-2-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S2 before (not completion)";}catch(ignored){}})();</script><!--R3:E:HUD--><script src="manual-restoration-model.js"></script><!--R3:I:S_A2--><script id="bo-r4-s-2-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S2 "+(c.getAttribute("data-r4-failed")==="2"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A2--><script src="i18n-en-US.js?r32=f3e8fb18ec8f" integrity="sha384-mlyqDbV/Gf0TFGWwdZggQ6KIpK+UN9oVSVyGHu36eW9Rlo1GMG/ynhT7yOYhEzy8" crossorigin="anonymous"></script><script src="i18n-es.js?r32=ca3d977e5afe" integrity="sha384-lknYujCLLv8qOLBZ0s2PqDcnX9kApoeXNrtk9ncV1tURf1KFhgRI6pZmF9sSa4c/" crossorigin="anonymous"></script><script src="i18n-fr.js?r32=6cedd33e6c0c" integrity="sha384-9+qdH2r4NIdOY/wSjnFSbDe8ks7/9iIZlUQgnlr6/oPWaZ4aXl24J4goIMWqHi/+" crossorigin="anonymous"></script><script src="i18n-bindings.js"></script><script src="i18n-r168.js" integrity="sha384-C8OdkhGz5eR6X8GKgWiE770htPSH+vvyH1dyZUsKnqH60Ttnv4/DToaY003VsC/4" crossorigin="anonymous"></script><script src="i18n-authored.js?i18nc=0e98b723ccf3f725" integrity="sha384-r+W5UUIxt4gmhcDPYnWRIgZm5x5RRHL+Q0TFZfWDcKMGwL4QMJ31FIA2U2E0S/yf" crossorigin="anonymous" data-sha256="0e98b723ccf3f7254fe2712bd05335ac3a3a21cb8082a31b87d5b9646e434067"></script><script src="emerald-typewriter.js?r38=2e312aeb0857" integrity="sha384-LbuYbTl96tP6FJ5SVhyxFaYXYtZF0Qmkw3fzGKG0YXirFm2Udbr+vcU2+wYEGhpD" crossorigin="anonymous"></script><script src="emerald-text-quirks.js?r34=95610b5b86b1" integrity="sha384-bE1pgJRCljpYoLO9d1fDj6tmy9rMvC28m67C2z1q+mS/qmntrCDQWp67hMBoQ/Xm" crossorigin="anonymous"></script><script src="effect-text.js"></script><script src="emerald-poker.js"></script><script src="emerald-poker-events.js"></script><script src="emerald-friendship.js"></script><script src="poker-levels.js"></script><script src="emerald-strict-poker.js"></script><script src="xp-cost-policy.js?all3=9930127b95f7817d" integrity="sha384-zJ/OCb4iSXZ2kddJ5UOJ4NGInxIq4NQ9MPtc9SZJMXY/n22krkJb5J1I3JTk12TP" crossorigin="anonymous" data-sha256="9930127b95f7817d52ef2346ca122100c1a518ea16e1cd5b5d09d26289d46dec"></script>
+<script src="emerald-slots.js"></script><script src="originalgames/game-engine.js"></script><script src="arcade-cycle-data.js"></script><script src="game-offers.js"></script><script src="expansion-rewards.js"></script><script src="expansion-profile.js"></script><script src="emerald-poker-profile.js"></script><script src="potions.js"></script><script src="feature-power-r168.js" integrity="sha384-9sW5+39CETvuHEx0JFJ0MzrdHRDsoCHsDvUCxPXP0Gi46kif8S4pC/e7W7q8XUyS" crossorigin="anonymous"></script><script src="battery-display.js"></script><script src="battery.js"></script><script src="battery-controller.js"></script><script src="battery-ui.js"></script><script src="passive-money.js?gs50=0937ccd394de" integrity="sha384-daZZ/zA5XNdiqrEFt3T9qGkPj1WRqhzlMhM6wffu+5zcfmKcHYl7NTUUYxJJHGFq" crossorigin="anonymous"></script><script src="passive-money-controller-r168.js" integrity="sha384-MD0aGq3gR/6TnyMBfPhgSrMYLzHoSCzWf9WWa18rmIm+FLKN0aCclq4OrrdL1G0Y" crossorigin="anonymous"></script><script src="run-wallet.js"></script><script src="frenzy.js"></script><script src="food-catalog.js"></script><script src="food-effects.js"></script><script src="food-bar.js"></script><script src="tutorial-native-policy.js"></script><script src="yanma-anorith.js?ya=ba4b4a162062"></script>
 <script src="yanma-anorith-native.js?r32=dbc253c17bc4" integrity="sha384-PFG/ocAlb3iMKULK9xxQ9DIVtcUuLvAGUS6BmAZ6oIfz7E6tZaGz6Cw2bbwmH/44"></script>
 <script src="yanma-anorith-ui.js?r45q11=c504ea82625b" integrity="sha384-j9bX9kF4eKHp2W7wUYZQNNL7fwpdRF4CtrIWzDee+zNvO9lMjdzhWQ12ip+TTTmh" crossorigin="anonymous"></script>
-<script src="engine.js?r32=8004a05b0d86" integrity="sha384-6jkxNY3PfLwcPZ6NNdWAKJWpuCZfzQ5tRmMOK7aLb6/V1BSzeXK4q6b+DwDU5807" crossorigin="anonymous" id="table-boot-engine"></script><script src="achievements-data.js"></script><script src="late-level-costs.js"></script><script src="late-level-rules.js"></script><script src="progression.js?ya=ebc4effd5598" integrity="sha384-8VeWdk57/Pmm9H9sZzMKjrG2Hq/PT1UOLAukVHlh8sljHkvjGr+UoU8RCmhTBJ1L" crossorigin="anonymous" id="table-boot-levels"></script><script src="passive-xp.js?gs50=e750e5d70329" integrity="sha384-f9QZvAN/lgqaGK3uc74rX+9IQj4QfNh/YR4y9AvgFCPErm3O3HOb51uhHbkoJxZI" crossorigin="anonymous"></script><script src="interest-settings.js"></script><script src="power-boundary.js"></script><script src="power-settings-ui.js"></script><script src="interest-legacy.js"></script><script src="compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js" integrity="sha384-RlUa7UYF7er/Q7zbnmgbQJRQmqGy1eaANirP/Kd5gXagkR1F16lVdqgHQOy+KhYp" crossorigin="anonymous" id="table-boot-proof"></script><script src="exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js" integrity="sha384-10tRO1Ay0Y0wQYIQzrwijos/yuRquHACCZBVd1REMCCJpanZjA5X6tPn4xYdr+ay" crossorigin="anonymous" id="table-boot-interest"></script><script src="faucet-graph.js"></script><script src="levels-enhancements.js?r32=b2df44ee647f" integrity="sha384-6dpLgPtLgMIjnjL1HiSpkYZBzZ/7kCLYRNKgYd6890CP9sCmShIo6HNcbDcyJyOn" crossorigin="anonymous"></script>
-<script src="levels-ui.js?r110=6b77340316d6" integrity="sha384-U1doVRKST8ZX4edj7OKUgJ7Hx7Ma5PRGohmKgiNgl9tGXaiJWTW9YQtAF9RHddy8" crossorigin="anonymous"></script><script src="collection-tracking.js"></script><!--R3:I:S_B55--><script id="bo-r4-s-55-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S55 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B55--><script src="music-assets.js" id="table-boot-music"></script><!--R3:I:S_A55--><script id="bo-r4-s-55-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S55 "+(c.getAttribute("data-r4-failed")==="55"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A55--><script src="late-music-data.js"></script><script src="music-data.js" integrity="sha384-ja/RE+KgMTH2cJ/RbcbtOFTeM4guv2cCFmwCWkBurWOdr9OmIXZ3HTzYZwaBy8Ts" crossorigin="anonymous"></script><script src="game-audio-data.js"></script><script src="table-audio-r156.js" integrity="sha384-0FTT93gVOoPsHzhcyqjZJRiqiyZgxNNQuK602mDOIivhTpPxdD4F/CNBRUTsEkhC" crossorigin="anonymous"></script><script src="youtube-music.js?r34=881c25efed14" integrity="sha384-tsj4f8PYYZxw8ElKxqT5YHzfWU9a/aVs/ZJwDq/ZgP/URhEUiGzoUGlXcx3fcarq" crossorigin="anonymous"></script><script src="motion.js?gs50=264f0a4da8e2" integrity="sha384-FHeKt/7TwZk9vuhu0OdAA3oDVcP9vfghGVksr6QnbjbOo2on/ZgpuCuv05I1ntW1" crossorigin="anonymous"></script><script src="stats.js"></script><script src="stock-market.js"></script><script src="stock-market-data.js"></script><script src="stock-market-ui.js"></script><script src="potions-ui.js"></script><script src="daily-streak.js"></script><script src="daily-tasks.js"></script><script src="daily-tasks-ui.js"></script><script src="daily-streak-ui.js"></script><script src="surveys.js"></script><script src="survey-videos.js"></script><script src="player-identity.js"></script><script src="survey-runner.js"></script><script src="surveys-ui.js"></script><script src="custom-images.js"></script><script src="moving-panels.js"></script><script src="text-customization.js"></script><script src="emerald-progress.js?r45=78e8af53f715" integrity="sha384-6xEUbiWjaPyWR385qERdBluKuubl6PgL4ic1CHrXbuNc2ckx/iW6UXDEu6wjwRA8" crossorigin="anonymous"></script><script src="emerald-blackjack.js"></script><script src="emerald-roadmap.js?r45=dc3ea1d89b23" integrity="sha384-u8hVhWukFWHVPR18f8UrFdAot128XCgXutW2LLyzMnoNOtvy1LwwbnETtO3muJ5D" crossorigin="anonymous"></script><script src="emerald-workshop.js"></script><script src="emerald-runtime.js?r32=130ef85d8633" integrity="sha384-ft+tsGbohN9uEPohMREC+nO5W5PCH4V+vi7tn43q5xrYwoh9vXwpGNfkb8X1CdKk" crossorigin="anonymous"></script><!--R3:I:S_B83--><script id="bo-r4-s-83-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S83 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B83--><script src="native-feature-transaction.js"></script><!--R3:I:S_A83--><script id="bo-r4-s-83-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S83 "+(c.getAttribute("data-r4-failed")==="83"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A83--><script src="tutorial-native-model.js"></script><script src="native-quiet-story.js"></script><script src="native-tutorial-ui.js"></script><script src="emerald-actions.js"></script><script src="emerald-blackjack-actions.js"></script><script src="emerald-cardgame-dialogue.js"></script><script src="emerald-blackjack-ui.js?r45=ae97751ed330" integrity="sha384-mpzCl1JuGGImz4uu/+8xCt7b3nznDmQ11qMqJv/odVtjfAJ86j92etlpAbQm6FKM" crossorigin="anonymous"></script><script src="emerald-chill-games.js"></script><script src="emerald-chill-actions.js"></script><script src="emerald-chill-ui.js?r45=5a2ff8fdfc02" integrity="sha384-9a5EfoNtg3EzRu2GyX4ceCx/QLD02DFP/+96VNUlEgG8uLoQ5kMilLpUzjQNN/fx" crossorigin="anonymous"></script><script src="darts-501.js"></script><script src="darts-native.js"></script><script src="darts-ui.js"></script><script src="native-speech.js?three=47923d657b1aa91b" integrity="sha384-ot/dS2a174m8x2SCpXEQ1AI5za9EUEUYZYcns+oOzQaBFH7oPFfAYlWeDknf8GiA" crossorigin="anonymous" data-sha256="47923d657b1aa91b152f58708cb70bf3fbed1901f4bfb54a6928cc93f47f1769"></script>
-<script src="cloud-save.js?r32=18c45155514b" integrity="sha384-Y9UX86Wyd6FyrbuHcCwViQHBbNZ7/xTGhYS/LNhABsDmxTZrqKT33InwTB2s5qsi" crossorigin="anonymous"></script><script src="save-slots.js" id="table-boot-slots"></script><script src="native-ending-recovery.js"></script><script src="native-quiet-story-ui.js"></script><script src="joker-art.js"></script><script src="emerald-asset.js?r45=42ac7cfebb19" integrity="sha384-j69i+ti8KqJMUdsObdyL4292kzTh24XriCnV3MS/cJhGYwfAdY6bVYsIIqPltaxd" crossorigin="anonymous"></script><script src="emerald-adviser.js?r32=5496afe74493" integrity="sha384-xmKdUuDPGk7/GpAAvSkP0PVHij56lCQOeIzWMGHGTeLkIUJCY538ubKyRVgPbL+K" crossorigin="anonymous"></script><script src="emerald-conduct.js"></script><script src="emerald-chat.js?r32=dcb2d6f6ff3c" integrity="sha384-ws3tGnDncL9N050Z9zUwFP8Tyk/QwT17b1rKyS9bb2vxUn8JZq3KMITyKhAnunri" crossorigin="anonymous"></script><script src="emerald-attentive.js"></script><script src="emerald-card-frames.js"></script><script src="emerald-ui.js?r121=b8baa42975f0" integrity="sha384-dYhvRwC7Y/JuDivRs+1+MPJp6zC+gNh7O1ZcpjyZK8MIm04MRptqkjjK8R9Qr5Mi" crossorigin="anonymous"></script><script src="emerald-survey.js"></script><script src="emerald-poker-actions.js"></script><script src="emerald-poker-ui.js?r32=c07b9101ec56" integrity="sha384-5vYNfXt5dXUCrFj99sxmJq7Wp9lQi+IcOOZjBUHgDh+tRH82XzGjQFJaPhcdyFk2" crossorigin="anonymous"></script><script src="emerald-strict-poker-actions.js"></script><script src="emerald-strict-poker-ui.js"></script><script src="emerald-slots-actions.js?r32=e534bc1b2c5e" integrity="sha384-NxDu3VapSP2Q451q3XE2EIpa0XZ3SnSBaLePvDkFtVvyhC+uCqENB3E+boLG8sWt" crossorigin="anonymous"></script><script src="emerald-slots-ui.js?r32=c1e565c8efaa" integrity="sha384-mQbPe3Ktlk/DRImlhlYWlgJ0lDFFEcfefmdRwcv526MDEkIyal7XMqxEshq/ISTk" crossorigin="anonymous"></script><script src="game-offers-ui.js"></script><script src="emerald-slots-lock-audio.js"></script><script src="expansion-host.js"></script><script src="level100-choice.js"></script><script src="native-player-xp.js?gs50=6e084df5f7ef" integrity="sha384-xs0vsnelsvKJBXaujkV/QKSvl78P2qty2r8OEd396rROJeIODTX8NW449quUfMnx" crossorigin="anonymous"></script><script src="achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script><!--R3:I:S_B123--><script id="bo-r4-s-123-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B123--><script src="native-profile-host.js?r32=027e834980c2" integrity="sha384-BcXs2QkY7Q94SZrTeEOlWIk1BnzANw+Jbg3Uz1PRdkNNLJ7XY3kDlaT+Px0t4XSP" crossorigin="anonymous"></script><!--R3:I:S_A123--><script id="bo-r4-s-123-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 "+(c.getAttribute("data-r4-failed")==="123"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-124-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A123--><script src="table-app-r167.js" integrity="sha384-kYJEFjKWcRn/Me3hXnv0jqBb5LBFxoBxMJtBFOi1sk078ZHzjyoAgtBr+dJ72eJ+" crossorigin="anonymous" id="table-boot-entry"></script><!--R3:I:S_A124--><script id="bo-r4-s-124-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 "+(c.getAttribute("data-r4-failed")==="124"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-125-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A124--><script src="pwa.js"></script><!--R3:I:S_A125--><script id="bo-r4-s-125-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 "+(c.getAttribute("data-r4-failed")==="125"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A125--><script defer src="interest-graphs.js?r32=ce1b84e442ab" integrity="sha384-n3cdK9lJBkfH5/P7QwQKLxZ1+JmT8kZdjlS4Xdm3fA3gWk8WPKhR0c2mn2m3ojIA" crossorigin="anonymous"></script><script defer src="session-fps.js?r38=ea3a54b450c2" integrity="sha384-0RtshQIWjpJny7fY2zu1jBg0AmqZVQ5MsGhEhpnbENn4Y1t6sfFN0ELlvytTxfMS" crossorigin="anonymous"></script>
+<script src="engine.js?r32=8004a05b0d86" integrity="sha384-6jkxNY3PfLwcPZ6NNdWAKJWpuCZfzQ5tRmMOK7aLb6/V1BSzeXK4q6b+DwDU5807" crossorigin="anonymous" id="table-boot-engine"></script><script src="achievements-data.js"></script><script src="late-level-costs.js"></script><script src="late-level-rules-r168.js" integrity="sha384-Yw3Q5zEeKfwXWjknSlpJkTyta9kpV1rLHHV7mDJjv2bnA7LAXp67pl0Bpg6wbt81" crossorigin="anonymous"></script><script src="progression.js?ya=ebc4effd5598" integrity="sha384-8VeWdk57/Pmm9H9sZzMKjrG2Hq/PT1UOLAukVHlh8sljHkvjGr+UoU8RCmhTBJ1L" crossorigin="anonymous" id="table-boot-levels"></script><script src="passive-xp.js?gs50=e750e5d70329" integrity="sha384-f9QZvAN/lgqaGK3uc74rX+9IQj4QfNh/YR4y9AvgFCPErm3O3HOb51uhHbkoJxZI" crossorigin="anonymous"></script><script src="interest-settings.js"></script><script src="power-boundary.js"></script><script src="power-settings-ui-r168.js" integrity="sha384-Rnp96FRkYmGGShIK6OZyAOoODM9aqnXNdaXpXavptdEPvRkUfgoJUHutchrq7Wpv" crossorigin="anonymous"></script><script src="interest-legacy.js"></script><script src="compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js" integrity="sha384-RlUa7UYF7er/Q7zbnmgbQJRQmqGy1eaANirP/Kd5gXagkR1F16lVdqgHQOy+KhYp" crossorigin="anonymous" id="table-boot-proof"></script><script src="exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js" integrity="sha384-10tRO1Ay0Y0wQYIQzrwijos/yuRquHACCZBVd1REMCCJpanZjA5X6tPn4xYdr+ay" crossorigin="anonymous" id="table-boot-interest"></script><script src="faucet-graph.js"></script><script src="levels-enhancements-r168.js" integrity="sha384-2c/x43uW+GB46n5dBA6VKVRCNWDqH0rzE+ckrZIyfEW0m4P1hHkraRLt1yZLzjHW" crossorigin="anonymous"></script>
+<script src="levels-ui-r168.js" integrity="sha384-CvJfnGBld91QeIg8LtFw7xbhRa9MbzZW4IoGe1R5rCvalF1jcoaARC5vFRZuVcVn" crossorigin="anonymous"></script><script src="collection-tracking.js"></script><!--R3:I:S_B55--><script id="bo-r4-s-55-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S55 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B55--><script src="music-assets.js" id="table-boot-music"></script><!--R3:I:S_A55--><script id="bo-r4-s-55-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S55 "+(c.getAttribute("data-r4-failed")==="55"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A55--><script src="late-music-data.js"></script><script src="music-data.js" integrity="sha384-ja/RE+KgMTH2cJ/RbcbtOFTeM4guv2cCFmwCWkBurWOdr9OmIXZ3HTzYZwaBy8Ts" crossorigin="anonymous"></script><script src="game-audio-data.js"></script><script src="table-audio-r156.js" integrity="sha384-0FTT93gVOoPsHzhcyqjZJRiqiyZgxNNQuK602mDOIivhTpPxdD4F/CNBRUTsEkhC" crossorigin="anonymous"></script><script src="youtube-music.js?r34=881c25efed14" integrity="sha384-tsj4f8PYYZxw8ElKxqT5YHzfWU9a/aVs/ZJwDq/ZgP/URhEUiGzoUGlXcx3fcarq" crossorigin="anonymous"></script><script src="motion.js?gs50=264f0a4da8e2" integrity="sha384-FHeKt/7TwZk9vuhu0OdAA3oDVcP9vfghGVksr6QnbjbOo2on/ZgpuCuv05I1ntW1" crossorigin="anonymous"></script><script src="stats.js"></script><script src="stock-market.js"></script><script src="stock-market-data.js"></script><script src="stock-market-ui.js"></script><script src="potions-ui-r168.js" integrity="sha384-0ysiBX7of0nDgcYAmZCq74QTnk3XHZkgzfRhtaNL8u5N7yrs3iOBJPptZT1RQMCL" crossorigin="anonymous"></script><script src="daily-streak.js"></script><script src="daily-tasks.js"></script><script src="daily-tasks-ui-r168.js" integrity="sha384-wWeQzQrh6eISbYo9rfZO+dckx06jJ0L8n6tdw5WUh6F4EYnLA0HMmcB666RRsQig" crossorigin="anonymous"></script><script src="daily-streak-ui-r168.js" integrity="sha384-sq9+OfMzBI408p2KhDZKTJt4eOIbSauLRQrTwtfEPkOfLMnAs/twXoxrkJDBSCaF" crossorigin="anonymous"></script><script src="surveys.js"></script><script src="survey-videos.js"></script><script src="player-identity.js"></script><script src="survey-runner.js"></script><script src="surveys-ui-r168.js" integrity="sha384-ONLzwtNyk035eDjeY8dAKssXOsGqShevloDXw62lsgfoCb7PxEGlPoKeZ1Z47+hL" crossorigin="anonymous"></script><script src="custom-images.js"></script><script src="moving-panels-r168.js" integrity="sha384-tZ84l3YCMJXiwPb6d/W/A6RkFA4XSqTZbhP6ZDw+ZLyhukun9m2ZsH/d6zoKXpDG" crossorigin="anonymous"></script><script src="text-customization.js"></script><script src="emerald-progress.js?r45=78e8af53f715" integrity="sha384-6xEUbiWjaPyWR385qERdBluKuubl6PgL4ic1CHrXbuNc2ckx/iW6UXDEu6wjwRA8" crossorigin="anonymous"></script><script src="emerald-blackjack.js"></script><script src="emerald-roadmap.js?r45=dc3ea1d89b23" integrity="sha384-u8hVhWukFWHVPR18f8UrFdAot128XCgXutW2LLyzMnoNOtvy1LwwbnETtO3muJ5D" crossorigin="anonymous"></script><script src="emerald-workshop.js"></script><script src="emerald-runtime.js?r32=130ef85d8633" integrity="sha384-ft+tsGbohN9uEPohMREC+nO5W5PCH4V+vi7tn43q5xrYwoh9vXwpGNfkb8X1CdKk" crossorigin="anonymous"></script><!--R3:I:S_B83--><script id="bo-r4-s-83-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S83 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B83--><script src="native-feature-transaction.js"></script><!--R3:I:S_A83--><script id="bo-r4-s-83-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S83 "+(c.getAttribute("data-r4-failed")==="83"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A83--><script src="tutorial-native-model.js"></script><script src="native-quiet-story.js"></script><script src="native-tutorial-ui.js"></script><script src="emerald-actions.js"></script><script src="emerald-blackjack-actions.js"></script><script src="emerald-cardgame-dialogue.js"></script><script src="emerald-blackjack-ui.js?r45=ae97751ed330" integrity="sha384-mpzCl1JuGGImz4uu/+8xCt7b3nznDmQ11qMqJv/odVtjfAJ86j92etlpAbQm6FKM" crossorigin="anonymous"></script><script src="emerald-chill-games.js"></script><script src="emerald-chill-actions.js"></script><script src="emerald-chill-ui.js?r45=5a2ff8fdfc02" integrity="sha384-9a5EfoNtg3EzRu2GyX4ceCx/QLD02DFP/+96VNUlEgG8uLoQ5kMilLpUzjQNN/fx" crossorigin="anonymous"></script><script src="darts-501.js"></script><script src="darts-native.js"></script><script src="darts-ui.js"></script><script src="native-speech.js?three=47923d657b1aa91b" integrity="sha384-ot/dS2a174m8x2SCpXEQ1AI5za9EUEUYZYcns+oOzQaBFH7oPFfAYlWeDknf8GiA" crossorigin="anonymous" data-sha256="47923d657b1aa91b152f58708cb70bf3fbed1901f4bfb54a6928cc93f47f1769"></script>
+<script src="view-options-r168.js" integrity="sha384-Uj/3pnYta3D3kshO7+nErE0oycHlJ77HAmZMSwZYSqa/FqNNsKXQwlPsvoJogNdd" crossorigin="anonymous" id="table-boot-views"></script><script src="cloud-save-r168.js" integrity="sha384-nLTR+aOVIkI4nK48jmTRnBmhdtEzxy8nkew46VEZJEhxiGVTtG7uOukDqGkntMu0" crossorigin="anonymous"></script><script src="save-slots-r168.js" id="table-boot-slots" integrity="sha384-OHEBwwFQr8EmrimjP4nWIAiwES476NY01M2kKJrD9m3rEzSkgaXvwuUZkwoMSIVz" crossorigin="anonymous"></script><script src="native-ending-recovery.js"></script><script src="native-quiet-story-ui.js"></script><script src="joker-art.js"></script><script src="emerald-asset.js?r45=42ac7cfebb19" integrity="sha384-j69i+ti8KqJMUdsObdyL4292kzTh24XriCnV3MS/cJhGYwfAdY6bVYsIIqPltaxd" crossorigin="anonymous"></script><script src="emerald-adviser.js?r32=5496afe74493" integrity="sha384-xmKdUuDPGk7/GpAAvSkP0PVHij56lCQOeIzWMGHGTeLkIUJCY538ubKyRVgPbL+K" crossorigin="anonymous"></script><script src="emerald-conduct.js"></script><script src="emerald-chat.js?r32=dcb2d6f6ff3c" integrity="sha384-ws3tGnDncL9N050Z9zUwFP8Tyk/QwT17b1rKyS9bb2vxUn8JZq3KMITyKhAnunri" crossorigin="anonymous"></script><script src="emerald-attentive.js"></script><script src="emerald-card-frames.js"></script><script src="emerald-ui-r168.js" integrity="sha384-0DqUJ47f3WdVCovogkUaGWWMch5694+fok9RXwU95mbudMPQbicV50CP3S+xLi5A" crossorigin="anonymous"></script><script src="emerald-survey.js"></script><script src="emerald-poker-actions.js"></script><script src="emerald-poker-ui.js?r32=c07b9101ec56" integrity="sha384-5vYNfXt5dXUCrFj99sxmJq7Wp9lQi+IcOOZjBUHgDh+tRH82XzGjQFJaPhcdyFk2" crossorigin="anonymous"></script><script src="emerald-strict-poker-actions.js"></script><script src="emerald-strict-poker-ui.js"></script><script src="emerald-slots-actions.js?r32=e534bc1b2c5e" integrity="sha384-NxDu3VapSP2Q451q3XE2EIpa0XZ3SnSBaLePvDkFtVvyhC+uCqENB3E+boLG8sWt" crossorigin="anonymous"></script><script src="emerald-slots-ui.js?r32=c1e565c8efaa" integrity="sha384-mQbPe3Ktlk/DRImlhlYWlgJ0lDFFEcfefmdRwcv526MDEkIyal7XMqxEshq/ISTk" crossorigin="anonymous"></script><script src="game-offers-ui-r168.js" integrity="sha384-4D1mx6WwHsEqOktEsg/FXguOZOGJbXIr+DP8D85CDS7QsfeQ+QNCV0cgcj+Xwftn" crossorigin="anonymous"></script><script src="emerald-slots-lock-audio.js"></script><script src="expansion-host-r168.js" integrity="sha384-Fc/XMwgr5pkuwsAojbbe+Z/db4/OwE01jvHS2Q75gBFWyXF9w3EqAX+JUC5oa6un" crossorigin="anonymous"></script><script src="level100-choice.js"></script><script src="native-player-xp-r168.js" integrity="sha384-auExPUQrDGZYMhRIdzHUMRRG1S+mw5S/iD0Elx7Ppa3VfG+HCxZeiPAObw/qevJS" crossorigin="anonymous"></script><script src="achievement-xp.js" integrity="sha384-uHiSLKM2iDUSiAlEAZd0HlJvF6Sszp3Oh6LSB1tx+DpC7AbKmj15alFVitLSALmc" crossorigin="anonymous"></script><!--R3:I:S_B123--><script id="bo-r4-s-123-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_B123--><script src="native-profile-host-r168.js" integrity="sha384-gzVBXzls6W05j9H0KyX3F7IiBeoMzu+UEnZT5HUZ3zrI95MpRO+K6dHVKMLXZ4Iv" crossorigin="anonymous"></script><!--R3:I:S_A123--><script id="bo-r4-s-123-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S123 "+(c.getAttribute("data-r4-failed")==="123"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-124-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A123--><script src="table-app-r168-r3.js" integrity="sha384-jB18maUsoIJSmMFKtseollEDihGRVdyNT8ZXTNZl17PjUn9bLC1IFFs4Ibg875/0" crossorigin="anonymous" id="table-boot-entry"></script><!--R3:I:S_A124--><script id="bo-r4-s-124-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S124 "+(c.getAttribute("data-r4-failed")==="124"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><script id="bo-r4-s-125-b">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 before (not completion)";}catch(ignored){}})();</script><!--R3:E:S_A124--><script src="pwa.js"></script><!--R3:I:S_A125--><script id="bo-r4-s-125-a">(function(){try{var r=document.getElementById("bo-r4-hud"),c=document.getElementById("bo-r4-script");if(!r||!c||r.getAttribute("data-r4-active")!=="1")return;var a=Object.getOwnPropertyDescriptor(window,"__BO_STARTUP_TRACE_R4__"),b=r&&Object.getOwnPropertyDescriptor(r,"__BO_STARTUP_TRACE_R4__"),h=c&&Object.getOwnPropertyDescriptor(c,"__BO_STARTUP_TRACE_R4__");if(r&&c&&a&&a.value&&b&&h&&b.value===a.value&&h.value===a.value&&r.getAttribute("data-r4-active")==="1")c.textContent="SCRIPT S125 "+(c.getAttribute("data-r4-failed")==="125"?"failed boundary":"after boundary (not async done)");}catch(ignored){}})();</script><!--R3:E:S_A125--><script defer src="interest-graphs-r168.js" integrity="sha384-7xPYFzQuaMKgSWcbjZBFeKdhtnbBDnUAygFdeON//LDkpHzp/gnzbc4QL64GCrp5" crossorigin="anonymous"></script><script defer src="session-fps-r168.js" integrity="sha384-yRvsJbkQMiijaoGewjESQf8zgCSshFz3J/F42/ylNo5iX7aG5hoUklCr9+IeM2Yn" crossorigin="anonymous"></script>
 </body></html>

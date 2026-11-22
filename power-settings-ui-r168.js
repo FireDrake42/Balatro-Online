@@ -1,0 +1,143 @@
+/* Pure Settings presentation. The parent owns all policy writes, verified
+ * save boundaries and delegated input handlers. No listeners, clocks or timers. */
+(function (root, factory) {
+  'use strict';
+  const node = typeof module === 'object' && module.exports;
+  const api = factory(node ? require('./feature-power-r168') : root.BOFeaturePower,
+    node ? require('./interest-settings') : root.BOInterestSettings, root);
+  if (node) module.exports = api;
+  else root.BOPowerSettingsUI = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (FP, IS, root) {
+  'use strict';
+  const ID = 'power-settings-controls';
+  const EN = Object.freeze({
+    title: 'Interest and feature power',
+    interestRulesLate: 'One saved compound interest stream: current unspent bank × actual rate × earned/Joker/Poker boosts, with no payment ceiling. One replay-stable roll per genuine payment: ×2 from50; 10% chance of×3 from62. At80 earned cadence takes over; the saved choice remains.',
+    interestTitle: 'Compound Interest · one saved stream',
+    interestRules: 'These rows edit one compound interest stream, not separate payments. Each payment uses the current bank and its actual rate, before earned/Joker/Poker boosts. No payment ceiling.',
+    fullUnlock: 'Full interval/rate choice unlocks at Level 44. Until then, the native timing and rate stay unchanged.',
+    row: 'Level {level} · Compound Interest',
+    rowLocked: 'This row unlocks at actual Level {level}; it will edit the same saved choice.',
+    rowShared: 'Mirrors the same saved interval/rate choice as every other unlocked row.',
+    native: 'Native · {ms} ms · {percent}% per payment',
+    choice: '{ms} ms · {percent}% per payment',
+    zero: 'Actual Level 100 earns 0 XP from interest. Your saved interval/rate choice is retained.',
+    featureTitle: 'Feature power · Level 20',
+    featureLocked: 'Feature switches unlock at Level 20. Saved choices are retained while locked.',
+    featureHelp: 'Checked means explicitly enabled in your saved choices. Low Power may pause background activity without unchecking these switches.',
+    featureInterest: 'Compound Interest',
+    featurePassiveMoney: 'Passive Money',
+    featurePassiveXp: 'Passive XP',
+    featureUsername: 'Username display',
+    featureCardGames: 'Card games',
+    featureStatistics: 'Statistics',
+    featureSurveys: 'Surveys',
+    featureMarket: 'Market',
+    life: 'Game battery: {count}/8 disabled · +{percent}% fictional duration · ×{factor}',
+    lifeRules: 'From Level 51, these eight switches can slow the fictional game battery drain (3% each, up to 24%). No effect on device charge or charging speed.',
+    lowPowerOn: 'Low Power is on.',
+    lowPowerOff: 'Low Power is off.',
+    lowPowerRules: 'Low Power pauses Compound Interest, Passive Money, Passive XP and background Market activity. It keeps your saved choices and history.',
+    essentials: 'These switches never disable essential charging, battery drain, saving or recovery. Their existing timing rules still apply; no history is deleted.'
+  });
+  const UPDATED=Object.freeze(['featureTitle','featureLocked','life','lifeRules']);
+  const FEATURES = Object.freeze({
+    interest: 'featureInterest', passiveMoney: 'featurePassiveMoney', passiveXp: 'featurePassiveXp',
+    username: 'featureUsername', cardGames: 'featureCardGames', statistics: 'featureStatistics',
+    surveys: 'featureSurveys', market: 'featureMarket'
+  });
+  const esc = value => String(value ?? '').replace(/[&<>"']/g,
+    char => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char]));
+  function label(key, params = {}) {
+    const full = 'powerSettings.' + key;
+    const translated = UPDATED.includes(key) ? null : root.BOTranslation?.t?.(full, params);
+    const source = typeof translated === 'string' && translated && translated !== full ? translated : EN[key];
+    return source.replace(/\{([A-Za-z][A-Za-z0-9_]*)\}/g,
+      (all, name) => Object.prototype.hasOwnProperty.call(params, name) ? String(params[name]) : all);
+  }
+  function binding(key, params) {
+    return UPDATED.includes(key)?'':' data-i18n="powerSettings.' + key + '"' +
+      (params ? ' data-i18n-params="' + esc(JSON.stringify(params)) + '"' : '');
+  }
+    const _powerNumericFields=Object.freeze({"row":["level"],"rowLocked":["level"],"native":["ms","percent"],"choice":["ms","percent"],"life":["count","percent","factor"]});
+  function powerDisplayParams(key,params){const fields=_powerNumericFields[key],H=root.BOI18nAuthored;if(!fields||!params||typeof H?.numberParameter!=='function'||root.BOI18nCatalogs?.['en-US']?.['powerSettings.'+key]!==EN[key])return params;const out={...params};for(const field of fields){const value=params[field];if((typeof value!=='number'||!Number.isFinite(value))&&(typeof value!=='string'||!/^\d+(?:\.\d+)?$/.test(value)))return params;const number=H.numberParameter(value);if(!number||typeof number!=='object'||number.kind!=='authored-number')return params;out[field]=number}return out}
+function message(tag, key, params, attrs = '') {
+    params = powerDisplayParams(key, params);
+    return '<' + tag + attrs + binding(key, params) + '>' + esc(label(key, params)) + '</' + tag + '>';
+  }
+  function project(profile, prefs) {
+    // The helpers inspect only known own data fields; unrelated prefs, charge,
+    // XP, usernames and autosave revisions are neither serialized nor read.
+    const level = FP.level(profile), power = FP.settings(prefs), choice = IS.read(prefs);
+    const lowPower = FP.lowPower(profile), disabledCount = FP.disabledCount(profile, prefs);
+    const policy = [power, choice];
+    return {level, power, choice, lowPower, disabledCount, effective: IS.effective(level, prefs),
+      policySignature: JSON.stringify(policy), signature: JSON.stringify([level, policy, lowPower])};
+  }
+  function stamp(view) {
+    return ' data-player-level="' + view.level + '" data-power-signature="' + esc(view.policySignature) + '"';
+  }
+  function interestRows(view) {
+    const explicit = view.level >= 44 && view.choice !== null;
+    return IS.UNLOCK_ROWS.map(level => {
+      const id = 'power-interest-choice-' + level;
+      const locked = view.level < level, disabled = locked || view.level < 44;
+      let options = explicit ? '' : message('option', 'native',
+        {ms: view.effective.intervalMs, percent: view.effective.percent}, ' value="native" disabled selected');
+      if (view.level >= 44) options += IS.CHOICES.map(choice =>
+        message('option', 'choice', {ms: choice.intervalMs, percent: choice.percent},
+          ' value="' + choice.index + '"' + (explicit && view.choice.index === choice.index ? ' selected' : ''))).join('');
+      return '<div class="power-interest-row">' +
+        message('label', 'row', {level}, ' for="' + id + '"') +
+        '<select id="' + id + '" data-interest-choice="' + level + '"' + stamp(view) +
+        ' aria-describedby="power-interest-rules power-interest-row-' + level + '-note"' +
+        (disabled ? ' disabled' : '') + '>' + options + '</select>' +
+        message('small', locked ? 'rowLocked' : view.level < 44 ? 'fullUnlock' : 'rowShared',
+          locked ? {level} : undefined, ' id="power-interest-row-' + level + '-note"') + '</div>';
+    }).join('');
+  }
+  function featureSwitches(view) {
+    return FP.KEYS.map(key => {
+      const id = 'power-feature-' + key, checked = !view.power.disabled.includes(key);
+      return '<label class="power-feature-row" for="' + id + '">' +
+        '<input id="' + id + '" type="checkbox" data-feature-power="' + key + '"' + stamp(view) +
+        ' aria-describedby="power-feature-help power-feature-life-rules"' +
+        (checked ? ' checked' : '') + (view.level < FP.POLICY_LEVEL ? ' disabled' : '') + '>' +
+        message('span', FEATURES[key]) + '</label>';
+    }).join('');
+  }
+  function contents(view) {
+    const count = view.disabledCount, factor = (1 + .03 * count).toFixed(2);
+    return message('h3', 'title', undefined, ' id="power-settings-title"') +
+      (view.level>=80?'':'<fieldset class="power-interest-settings">' + message('legend', 'interestTitle') +
+      message('p', view.level>=50?'interestRulesLate':'interestRules', undefined, ' id="power-interest-rules"') +
+      (view.level < 44 ? message('p', 'fullUnlock') : '') +
+      (view.level === 100 ? message('p', 'zero', undefined, ' class="power-interest-zero"') : '') +
+      '<div class="power-interest-rows">' + interestRows(view) + '</div></fieldset>') +
+      '<fieldset class="power-feature-settings">' + message('legend', 'featureTitle') +
+      (view.level < FP.POLICY_LEVEL ? message('p', 'featureLocked') : '') +
+      message('p', 'featureHelp', undefined, ' id="power-feature-help"') +
+      '<div class="power-feature-rows">' + featureSwitches(view) + '</div>' +
+      message('output', 'life', {count, percent: count * 3, factor},
+        ' id="power-feature-life" data-disabled-feature-count="' + count + '" data-battery-life-factor="' + factor + '"') +
+      message('p', 'lifeRules', undefined, ' id="power-feature-life-rules"') + '</fieldset>' +
+      '<div class="power-policy-notes">' + message('p', view.lowPower ? 'lowPowerOn' : 'lowPowerOff') +
+      message('p', 'lowPowerRules') + message('p', 'essentials') + '</div>';
+  }
+  function render(profile, prefs) {
+    const view = project(profile, prefs);
+    return '<section id="' + ID + '" class="power-settings-controls" aria-labelledby="power-settings-title"' +
+      ' data-power-ui-signature="' + esc(view.signature) + '">' + contents(view) + '</section>';
+  }
+  function paint(container, profile, prefs) {
+    const view = project(profile, prefs);
+    const section = container?.id === ID ? container : container?.querySelector?.('#' + ID);
+    // Parent inserts render() into Settings; never replace an unrelated surface.
+    if (!section || section.getAttribute('data-power-ui-signature') === view.signature) return false;
+    const html = contents(view);
+    section.innerHTML = html;
+    section.setAttribute('data-power-ui-signature', view.signature);
+    return true;
+  }
+  return Object.freeze({render, paint, EN, label});
+});
