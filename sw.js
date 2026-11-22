@@ -1,6 +1,6 @@
 /* Poker Table offline worker. Stamped by tools/stamp-offline-cache.cjs; preserve runtime guards. */
 'use strict';
-const VERSION = 'private-start-claim-r173-r1-fec1ed523a02';
+const VERSION = 'private-poker-audio-r174-r1-18e7b0c7dcd9';
 const EXPECTED_HASHES = Object.freeze({
   "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js": "f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f",
   "exp-interest-r167-1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6.js": "1fe45d8a96c8d32bcf809b75bf243011472f9befbb1c4aa5b09f0581ac6481a6",
@@ -22,7 +22,7 @@ const EXPECTED_HASHES = Object.freeze({
   "assets/fonts/LiberationSerif-Regular.ttf": "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65",
   "assets/fonts/manifest.json": "d1221e5772bb220541a1e33340abc3903f8826699ae3dbac6dbdf895a84c9016",
   "audio.js": "f7bc86552808eacaf573d5ff5bfed9235192abc77e058ec4d402f2ae5c50bb48",
-  "table-audio-r156.js": "665d614716215e8fa52d0f73310d8437fd764c6712b817e5afb6538e97a972e5",
+  "table-audio-r156.js": "e6c392bad685c4395f14162cd4aca03ee7cbc4536f3730f6f0b980fafa02f1b7",
   "battery-controller.js": "d0200293eaa25215692ac4e5cd46170bb3714f3268def4e670ec08e9b61d4304",
   "battery-display.js": "a21302fed85e56666be6e4b1a16ae9da32ef86275c7ec8264daf5ef638e497c5",
   "battery-ui.js": "f2c9a69c0ae5ecb6a4873de69ed7476d27eb7ecb2e0c0ef441d2794d50111705",
@@ -126,7 +126,7 @@ const EXPECTED_HASHES = Object.freeze({
   "icon-512.png": "6bcc710c835288fe8fddc744a503d7450bf2b571c35624612f1a1175bbb23711",
   "icon-apple-180.png": "6bd472219ed1a48c861b210e2b691d84a06ee01b972d058e45a9124d2b352d59",
   "icon.svg": "747f8f0630a98052f849ea609413065c02dc3f6fcc13cd888a3476351b1d3880",
-  "index.html": "33a30bc6efdb7f9c8357032529471539d08a9e9ba8b86c5decc18d08ee42c972",
+  "index.html": "01b3cf56cac29b7f47bd90377f98cc4a4734119ff0456e41729cbd8139d44115",
   "interest-legacy.js": "18563f1d3218eec98c39cf987c9169eceed635e8ec67e0e3fb7dee2d2875d38e",
   "interest-settings.js": "dbff95ae2e3cf7ec0eb81d5ba2fc2c98dbcb6201cc1f7cef416df9679997f602",
   "joker-art.css": "b9f66357fb3dfe99b12ca16064a5e65113b562b9e504aeafb79ec26075f1ae7c",
@@ -151,7 +151,7 @@ const EXPECTED_HASHES = Object.freeze({
   "moving-panels.css": "107571e69768040680c3a32770471e11f4e8a78331e44c0a0dcc5b8905c08398",
   "moving-panels.js": "6dda66dc4d2ee6aede602696d21f858c93e90aefdcc2a4138f967e9ca31123aa",
   "music-assets.js": "df0e4458f9f75bf6426cfee39b126797d3c9986b2ad59e333abad723ca0c7c9d",
-  "music-data.js": "512a917bdfd162748010d6431343f6bb5b9080448f3cab30c04b78227c076987",
+  "music-data.js": "5b8e82045d03315914a75c6fb0bde5fd882180efe23fbdcf97318b4f30e50d1f",
   "native-ending-recovery.js": "8438df44ce6d626ddb8a0eef039d60216b0727e4a27685777a34e32e6849d9d8",
   "native-feature-transaction.js": "4f1ae2d80dcebefd5ec5588cd49a87448d3bde74ad2c32d7feb0257d1e452f8b",
   "native-player-xp.js": "6e084df5f7efe049456c47cc26ce8f81c84bb06c736ccc8cf0da8456f8e82fbc",
@@ -261,8 +261,13 @@ const EXPECTED_HASHES = Object.freeze({
   "surveys-ui-r172.js": "35ae73e349289506d445c5bd66b2eeb45e1d1b81c8d87ee115c0b77b019522d2",
   "table-app-r168.js": "55f2fd1539908e6c49a29a82a202394bca78c1e47e088d178c54547d98fc6761",
   "view-options-r172.js": "3de0feed991050e117bb3014428758a3092b41994bf68a2209b3008342869e4c",
-  "table-app-r172.js": "7e9c7d29be37f3afa2a34961d69b7329bee8e90eb21dfa2f24b4d5b02ac94bf2",
-  "power-settings-ui-r170.js": "7fbc9c73ab38f4c03e6365cc0d9c2977e44559f4951d48b4723d6c8359cc603d"
+  "table-app-r172.js": "34e26019321eba5f570d09f312d94de37b66e03dd3a813f62882dd9872176f60",
+  "power-settings-ui-r170.js": "7fbc9c73ab38f4c03e6365cc0d9c2977e44559f4951d48b4723d6c8359cc603d",
+  "audio-additions-r174.js": "1fe7f17560c8abaca3c767ed85aa2317674ff83ae2eafa655cd2db424d79ae58",
+  "poker-commit-audio-r174.js": "a6746076a2e72d7c6c92a9bd25f58fadbe9bbf6fdf2b148a50afc65156a0f2fc",
+  "audio/r174/card-draw.mp3": "61901cddb13ed3cb0833593a0e9f15df8f484081c2856542b4f4e69ec3304fe8",
+  "audio/r174/chip-bet.mp3": "318a502e57c5daecdcb120efc74310226ebe41c80f2ef5b29271dea45c0dbef8",
+  "audio/r174/chip-stack.mp3": "2d4acb8991d76be87dddc46dcba0e9ad549621eacb637afa71d0e664e6d4b524"
 });
 const FILES = Object.freeze([
   "compound-interest-proof-r167-f8e939515b077012d92e67266738f945af12222fca079fe63b221b9446992f9f.js",
@@ -525,7 +530,12 @@ const FILES = Object.freeze([
   "table-app-r168.js",
   "view-options-r172.js",
   "table-app-r172.js",
-  "power-settings-ui-r170.js"
+  "power-settings-ui-r170.js",
+  "audio-additions-r174.js",
+  "poker-commit-audio-r174.js",
+  "audio/r174/card-draw.mp3",
+  "audio/r174/chip-bet.mp3",
+  "audio/r174/chip-stack.mp3"
 ]);
 const BASE = new URL('./', self.registration.scope);
 const PREFIX = 'poker-table-pwa-v1|' + encodeURIComponent(BASE.pathname) + '|';
@@ -536,6 +546,96 @@ const INDEX = new URL('index.html', BASE).href;
 const RECORDING_URL = new URL('your-recording-r156.m4a', BASE).href;
 const RECORDING_BYTES = 2124151;
 const RECORDING_SHA256 = '539b7a1058fba4e614e247471f0e8948ae722fa896d0ca823b9eb762dd4f883c';
+
+const ADDED_EFFECTS = new Map([["audio/r174/card-draw.mp3",{"bytes":12288,"sha256":"61901cddb13ed3cb0833593a0e9f15df8f484081c2856542b4f4e69ec3304fe8"}],["audio/r174/chip-bet.mp3",{"bytes":38400,"sha256":"318a502e57c5daecdcb120efc74310226ebe41c80f2ef5b29271dea45c0dbef8"}],["audio/r174/chip-stack.mp3",{"bytes":51456,"sha256":"2d4acb8991d76be87dddc46dcba0e9ad549621eacb637afa71d0e664e6d4b524"}]].map(([name,row])=>[new URL(name, BASE).href,Object.freeze(row)]));
+const OPTIONAL_SONGS = new Map([["audio/r174/casino-lottery.mp3",{"bytes":1331618,"sha256":"9066255ab852cf2d26de0ebde73d6d2ca934c93eab4bf9ac838448061d0dfcd9"}],["audio/r174/las-vegas.mp3",{"bytes":2341407,"sha256":"501add697ec090a62c173e5cde12611d7fd96ad9e74db9f57d5255935855cbe0"}],["audio/r174/rpg-battle.mp3",{"bytes":3732480,"sha256":"1ce70389d74b91a1bc62f0709e649ca07cd7d39a61b42c0af0546afe4f9e0b86"}],["audio/r174/epic-game.mp3",{"bytes":4235598,"sha256":"4a12a462b57e43ac0e7f38cab8c71ede193b3fa9ef67df59f0b44ae672a43a29"}],["audio/r174/lucky-streak.mp3",{"bytes":3204075,"sha256":"1767ddede23a3122e92f20e9cec21e9de9c27e53d4d8a659f2fa2381d253e49e"}],["audio/r174/upbeat-game-loop.mp3",{"bytes":1229635,"sha256":"e4ddf33adbc06904080b9cb21be8862f503393ced7a2a13bd707f88f079546cd"}],["audio/r174/puzzle-game-loop.mp3",{"bytes":2363977,"sha256":"c2dab2c408de2b6ad2f6cb4df17ad3174c29c824221409f1b1d6ee871061bf57"}],["audio/r174/gameboy.mp3",{"bytes":3963423,"sha256":"ba80a9a3bc1b7399c9520c3753785b6b9dfe602ef02b85491a159dbec40f5d95"}],["audio/r174/breath.mp3",{"bytes":6725100,"sha256":"95828425b68876a2988b9a868eb8c8bf8a66fe7c633a803510bb08b010384c8e"}],["audio/r174/poker-game-night.mp3",{"bytes":4392960,"sha256":"02435a6f057c0468b365ffac87daf972314901674702fb73b464f5698d0d89b4"}],["audio/r174/casino-jazz-intro.mp3",{"bytes":2858840,"sha256":"856579d5105ed308389dcfe8bee2c5c735a419a75fce5747c31de23fb3bb0b09"}],["audio/r174/casino.mp3",{"bytes":2089795,"sha256":"999c9c06c586f5d18a81f72b44c26a7a8466e9259d3a7247abe4b30114ee3af1"}],["audio/r174/vip-casino-7.mp3",{"bytes":3561984,"sha256":"b0bf0dcce78b58fce9bbc26c68d96e1b21325bb486c7f4546dc6b9aba96e8ddd"}]].map(([name,row])=>[new URL(name, BASE).href,Object.freeze(row)]));
+
+// R174 only. Streaming is required: arrayBuffer() on an untrusted length would be unbounded.
+async function readVerifiedMP3(response, url, metadata, signal) {
+  const size = metadata.bytes, declared = response.headers.get('content-length');
+  const encoding = response.headers.get('content-encoding');
+  if (signal.aborted) throw new Error('asset_cancelled');
+  if (response.status !== 200 || response.redirected || /^(?:opaque|opaqueredirect|error)$/.test(response.type) ||
+      (response.url && response.url !== url) || response.headers.has('content-range') ||
+      (encoding && encoding.toLowerCase() !== 'identity') || !response.body?.getReader) {
+    void response.body?.cancel().catch(() => {});
+    throw new Error('asset_read_failed');
+  }
+  if (!Number.isSafeInteger(size) || size < 1 || size > 12*1024*1024 ||
+      (declared !== null && (!/^\d+$/.test(declared) || Number(declared) !== size))) {
+    void response.body.cancel().catch(() => {});
+    throw new Error('asset_size_limit');
+  }
+  const bytes = new Uint8Array(size), reader = response.body.getReader();
+  const cancel = () => { void reader.cancel().catch(() => {}); };
+  signal.addEventListener('abort', cancel, {once:true});
+  let offset = 0, complete = false;
+  try {
+    for (;;) {
+      const {done,value} = await reader.read();
+      if (signal.aborted) throw new Error('asset_cancelled');
+      if (done) break;
+      if (!value?.byteLength || value.byteLength > size-offset) throw new Error('asset_size_limit');
+      bytes.set(value,offset); offset += value.byteLength;
+    }
+    complete = true;
+    if (offset !== size) throw new Error('asset_read_failed');
+    const hash = await globalThis.crypto.subtle.digest('SHA-256',bytes);
+    if (signal.aborted) throw new Error('asset_cancelled');
+    if (Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('') !== metadata.sha256) {
+      throw new Error('asset_integrity_mismatch');
+    }
+    return bytes.buffer;
+  } finally {
+    signal.removeEventListener('abort',cancel);
+    if (!complete) cancel();
+    reader.releaseLock();
+  }
+}
+
+// The new background allowlist is deliberately not part of install/repair FILES.
+async function addedMP3Response(response, url, metadata, signal) {
+  const bytes = await readVerifiedMP3(response,url,metadata,signal);
+  return new Response(bytes,{status:200,headers:{'Content-Type':'audio/mpeg','Content-Length':String(metadata.bytes)}});
+}
+const songUnavailable = () => new Response('Local soundtrack unavailable.',{status:503});
+let songReads = 0, songCacheWrite = null;
+function serveOptionalSong(event, url, metadata) {
+  // Bound simultaneous verified reads across tabs; no queue of full song bodies.
+  if (songReads>=2) { event.respondWith(Promise.resolve(songUnavailable())); return; }
+  songReads++;
+  const request = event.request, controller = new AbortController(), signal = controller.signal;
+  let cancelled, write = null;
+  const stopped = new Promise(resolve=>{cancelled=resolve;});
+  const abort = () => { controller.abort(); cancelled(songUnavailable()); };
+  const timer = setTimeout(abort,20000);
+  request.signal.addEventListener('abort',abort,{once:true});
+  if (request.signal.aborted) abort();
+  const work = (async () => {
+    if (signal.aborted) return songUnavailable();
+    const cache = await caches.open(CACHE).catch(()=>null);
+    if (signal.aborted) return songUnavailable();
+    const saved = await cache?.match(url).catch(()=>null);
+    if (saved) {
+      try { return await addedMP3Response(saved,url,metadata,signal); }
+      catch (_) { /* Corruption or eviction: only the exact candidate can replace it. */ }
+    }
+    if (signal.aborted) return songUnavailable();
+    const response = await fetch(new Request(url,{cache:'no-store',credentials:'omit',redirect:'error',signal}));
+    const verified = await addedMP3Response(response,url,metadata,signal);
+    if (cache && !songCacheWrite && !signal.aborted) {
+      // Cache one verified body in the background; quota or a slow store never gates playback.
+      const copy=verified.clone();
+      songCacheWrite = write = Promise.resolve().then(()=>cache.put(url,copy)).catch(()=>{}).finally(()=>{songCacheWrite=null;});
+    }
+    return verified;
+  })().catch(songUnavailable).finally(()=>{
+    songReads--; clearTimeout(timer);
+    request.signal.removeEventListener('abort',abort);
+  });
+  event.respondWith(Promise.race([work,stopped]));
+  event.waitUntil(work.then(()=>write));
+}
 
 async function digest(response, size) {
   const data = await response.clone().arrayBuffer();
@@ -548,6 +648,15 @@ async function prepareCache() {
   // Fetch and verify the whole release before writing. Mixed/partial deployments cannot install.
   const responses = await Promise.all(FILES.map(async name => {
     const url = new URL(name, BASE).href;
+    const clip = ADDED_EFFECTS.get(url);
+    if (clip) {
+      const controller = new AbortController();
+      const timeout = setTimeout(()=>controller.abort(),8000);
+      try {
+        const response = await fetch(new Request(url,{cache:'reload',credentials:'omit',redirect:'error',signal:controller.signal}));
+        return [url,await addedMP3Response(response,url,clip,controller.signal)];
+      } finally { clearTimeout(timeout); }
+    }
     const response = await fetch(new Request(url, {
       cache: 'reload', credentials: 'same-origin', redirect: 'error'
     }));
@@ -614,6 +723,12 @@ self.addEventListener('fetch', event => {
     if (!request.headers.has('range')) event.respondWith(recordingResponse(request));
     return;
   }
+  const song = OPTIONAL_SONGS.get(url.href);
+  if (song) {
+    if (!request.headers.has('range')) serveOptionalSong(event,url.href,song);
+    return;
+  }
+  if (ADDED_EFFECTS.has(url.href) && request.headers.has('range')) return;
   // Only the literal root URL aliases index.html. Unknown paths, saves, and requests are untouched.
   const key = url.href === BASE.href ? INDEX : url.href;
   if (!URLS.has(key)) return;

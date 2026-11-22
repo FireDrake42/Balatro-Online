@@ -5,10 +5,11 @@
  */
 (function (root, factory) {
   'use strict';
-  const data = factory(typeof module === 'object' && module.exports ? require('./late-music-data') : root.BOLateMusicData);
+  const data = factory(typeof module === 'object' && module.exports ? require('./late-music-data') : root.BOLateMusicData,
+    typeof module === 'object' && module.exports ? require('./audio-additions-r174') : root.BOAudioAdditions);
   if (typeof module === 'object' && module.exports) module.exports = data;
   else root.BOMusicData = data;
-})(typeof window !== 'undefined' ? window : globalThis, function (lateMusic) {
+})(typeof window !== 'undefined' ? window : globalThis, function (lateMusic, additions) {
   'use strict';
   function freeze(value) {
     if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -424,11 +425,16 @@
     integrity: 'sha256-U5t6EFj7pOYU4kdHHw6JSK5yL6iW0MqCO563Yt1PiDw='
   };
   tracks.push(userRecording);
-  const before36 = freeze(tracks.filter(track => !track.unlockPlayerLevel));
-  const from36 = freeze(tracks.filter(track => !track.retirePlayerLevel && (track.unlockPlayerLevel || 1) <= 36));
-  const from58 = freeze(tracks.filter(track => !track.retirePlayerLevel));
+  // Hide only picker entries. Their scores and internal fallback IDs are unchanged.
+  const hiddenFromPicker = new Set(['arcade_afterburn','roulette_noir','roulette_orbit','casino_neon',
+    'casino_rooftop','poker_rain','poker_smoke','blackjack_double','blackjack_midnight','baccarat_moon']);
+  const addedSoundtracks = additions?.version===1 ? additions.backgrounds : [];
+  const catalog = [...tracks.filter(track => !hiddenFromPicker.has(track.id)), ...addedSoundtracks];
+  const before36 = freeze(catalog.filter(track => !track.unlockPlayerLevel));
+  const from36 = freeze(catalog.filter(track => !track.retirePlayerLevel && (track.unlockPlayerLevel || 1) <= 36));
+  const from58 = freeze(catalog.filter(track => !track.retirePlayerLevel));
   const playerLevel = actual => Number.isInteger(actual) && actual >= 1 && actual <= 100 ? actual : 1;
   function tracksForPlayerLevel(actual) { const level=playerLevel(actual);return level>=58?from58:level>=36?from36:before36; }
   return freeze({ version: 1, scenes: ['table', 'boss', 'final_boss'], tracks, scores, licensed,
-    licensedTracks, userRecording, tracksForPlayerLevel });
+    licensedTracks, userRecording, addedSoundtracks, tracksForPlayerLevel });
 });

@@ -17,9 +17,13 @@
     description: 'Original upbeat casino lounge: warm electric piano, a bright jazz hook and plucked bass.'
   }), Object.freeze({id:'starlight_felt',name:'Starlight Felt',bpm:84,bars:16,unlockLevel:27,description:'Original spacious E-minor bell waltz-feel over a four-beat brush pulse.'}), Object.freeze({id:'copper_groove',name:'Copper Groove',bpm:124,bars:16,unlockLevel:27,description:'Original B-flat major syncopated electric-piano and walking-bass groove.'})]);
   const MUSIC_DATA = root.BOMusicData && root.BOMusicData.version === 1 ? root.BOMusicData : null;
+  const AUDIO_ADDITIONS = root.BOAudioAdditions?.version===1 ? root.BOAudioAdditions : null;
+  const ADDED_TRACKS = MUSIC_DATA?.addedSoundtracks || [];
+  const ADDED_IDS = new Set(ADDED_TRACKS.map(track=>track.id));
   const TRACKS = MUSIC_DATA ? MUSIC_DATA.tracks : LEGACY_TRACKS;
+  const TRACK_METADATA = [...TRACKS,...ADDED_TRACKS];
   const RECORDING_TRACKS = MUSIC_DATA ? [...(MUSIC_DATA.licensedTracks || [MUSIC_DATA.licensed]), MUSIC_DATA.userRecording].filter(track => track && track.verified) : [];
-  const RECORDING_BY_ID = new Map(RECORDING_TRACKS.map(track => [track.id, track]));
+  const RECORDING_BY_ID = new Map([...RECORDING_TRACKS,...ADDED_TRACKS].map(track => [track.id, track]));
   const recordingFor = id => RECORDING_BY_ID.get(id);
   const actualPlayerLevel = value => Number.isInteger(value) && value >= 1 && value <= 100 ? value : 1;
   const tracksForPlayerLevel = actual => MUSIC_DATA && MUSIC_DATA.tracksForPlayerLevel ?
@@ -463,7 +467,7 @@
     copper_groove:{score:buildNewScore(false),beat:60/124,loopBeats:64,play:newMusicEvent(false)}
   });
   const trackId = (id, level) => tracksForPlayerLevel(actualPlayerLevel(level)).some(track => track.id === id &&
-    (track !== MUSIC_DATA?.userRecording || level >= track.unlockMusicLevel)) ? id : DEFAULTS.track;
+    ((track !== MUSIC_DATA?.userRecording && !ADDED_IDS.has(track.id)) || level >= track.unlockMusicLevel)) ? id : DEFAULTS.track;
 
   function faucetTickSound(graph,at,options){
     const intensity=unit(options&&options.intensity,1),v=voice(graph,'fx',at,0,0.05);
@@ -1143,7 +1147,13 @@
   const DRAMATIC_ARRANGEMENTS=Object.freeze({boss:Object.freeze(dramaticBossCompositions),final_boss:Object.freeze(dramaticFinalCompositions)});
   function isRecording(id) { return RECORDING_BY_ID.has(id); }
   function effectiveId(id, ready) { return isRecording(id) && !ready ? recordingFor(id).fallback : id; }
+  // No new arrangement synthesized from a filename; use the existing beat grid for transport only.
+  const ADDED_COMPOSITION = Object.freeze({score:[],beat:BEAT,loopBeats:64,play(){}});
   function compositionFor(id, scene, ready, bossDrama) {
+    if (ADDED_IDS.has(id)) {
+      if (scene==='frenzy' || scene==='blackjack') id=DEFAULTS.track;
+      else if (ready && recordingScene(scene)) return ADDED_COMPOSITION;
+    }
     if (chillTableScene(scene)) return CHILL_TABLE_COMPOSITIONS[scene];
     const arrangements=bossDrama===true&&bossScene(scene)?DRAMATIC_ARRANGEMENTS:ARRANGEMENTS;
     return arrangements[scene][effectiveId(id,ready)];
@@ -1227,13 +1237,73 @@
     },error=>{if(!job.expired)fail(error);}).then(finish,finish);
     return result;
   }
+  // New MP3 path only. The protected M4A and earlier embedded/recorded loaders are unchanged.
+  function addedAssetURL(metadata) {
+    if (!/^audio\/r174\/[a-z0-9-]+\.mp3$/.test(metadata.src) || !root.document || !root.location) throw new Error('local_asset_only');
+    const url = new URL(metadata.src,root.document.baseURI);
+    if (!/^https?:$/.test(url.protocol) || url.origin!==root.location.origin || url.search || url.hash || url.username || url.password) {
+      throw new Error('local_asset_only');
+    }
+    return url.href;
+  }
+  async function loadAddedMP3(ctx, metadata, signal, valid, decoding) {
+    const short = metadata.role!=='background', maxDuration = short ? 2 : MAX_DECODE_SECONDS;
+    const maxSamples = short ? 384000 : MAX_DECODE_SAMPLES;
+    if (!Number.isFinite(ctx.sampleRate) || metadata.duration > maxDuration ||
+        (metadata.duration+.05)*ctx.sampleRate*metadata.channels > maxSamples) throw new Error('asset_decode_limit');
+    if (typeof root.fetch!=='function') throw new Error('asset_fetch_unavailable');
+    const url = addedAssetURL(metadata);
+    const response = await root.fetch(url,{method:'GET',cache:'no-store',credentials:'omit',redirect:'error',signal});
+    const bytes = await AUDIO_ADDITIONS.readVerifiedMP3(response,url,metadata,signal);
+    if (signal.aborted || !valid()) throw new Error('asset_cancelled');
+    decoding?.();
+    const buffer = await ctx.decodeAudioData(bytes);
+    if (signal.aborted || !valid()) throw new Error('asset_cancelled');
+    if (!buffer || buffer.numberOfChannels!==metadata.channels || !Number.isSafeInteger(buffer.length) || buffer.length<1 ||
+        buffer.length*buffer.numberOfChannels>maxSamples || !Number.isFinite(buffer.duration) ||
+        buffer.duration < (short?.05:1) || buffer.duration>maxDuration) throw new Error('asset_decode_limit');
+    return buffer;
+  }
+  function decodeAddedRecording(ctx, metadata, hooks) {
+    if (activeDecode) return Promise.reject(new Error('asset_decode_busy'));
+    const controller = new root.AbortController();
+    const job = {id:metadata.id,addedRealtime:!!hooks};
+    activeDecode = job;
+    let resolve,reject;
+    const result = new Promise((yes,no)=>{resolve=yes;reject=no;});
+    function fail(error) { hooks?.failure(error); reject(error); }
+    job.cancel = reason => {
+      if (controller.signal.aborted) return;
+      controller.abort(); fail(new Error(reason));
+    };
+    const timeout = root.setTimeout(()=>job.cancel('asset_timeout'),20000);
+    function finish() {
+      root.clearTimeout(timeout);
+      activeDecode = null;
+      pumpRecording(); notifyStatus();
+    }
+    loadAddedMP3(ctx,metadata,controller.signal,hooks?.valid || (()=>true),hooks?.decoding).then(buffer=>{
+      if (!controller.signal.aborted) { hooks?.success(buffer); resolve(buffer); }
+    },error=>{if (!controller.signal.aborted) fail(error);}).then(finish,finish);
+    // Timeout/transport change may reject the caller promptly, not free the native decode lease.
+    return result;
+  }
+  function decodeChosenRecording(ctx, metadata, hooks) {
+    if (!ADDED_IDS.has(metadata.id)) return decodeRecording(ctx,metadata,hooks);
+    if (typeof root.AbortController!=='function') {
+      const error = new Error('asset_fetch_unavailable');
+      hooks?.failure(error); return Promise.reject(error);
+    }
+    return decodeAddedRecording(ctx,metadata,hooks);
+  }
   function recordingRate(scene) { return (scene==='last_chance'?Math.pow(2,-5/12):scene==='final_boss'?Math.pow(2,-3/12):scene==='boss'?Math.pow(2,-2/12):1)*gameSpeed(); }
   function recordingVoice(target, buffer, at, position, scene, beat, endAt) {
     if(!recordingScene(scene)) return null;
-    if(scene==='last_chance') return lastChanceRecording(target,buffer,at,position,beat,endAt);
+    if(scene==='last_chance') { const v=lastChanceRecording(target,buffer,at,position,beat,endAt);v.recordingPCM=true;return v; }
     const rate=recordingRate(scene);
     const v=voice(target,'music',at,0,0), source=target.ctx.createBufferSource();
     source.buffer=buffer;source.loop=true;source.playbackRate.setValueAtTime(rate,at);
+    v.recordingPCM=true;
     const level=scene==='table'?.54:.30;
     v.output.gain.setValueAtTime(0,at);v.output.gain.linearRampToValueAtTime(level,at+.06);
     source.connect(v.output);
@@ -1269,8 +1339,11 @@
   let prefs = { ...DEFAULTS }, context = null, graph = null, unlocked = false;
   let scene = 'table', activeComposition = null, activeTrackId = DEFAULTS.track, transportGeneration = 0;
   // At most ONE retained decoded recording. Queued/failed descriptors contain no PCM.
-  let assetBuffer = null, assetBufferId = null, assetVoice = null, recordingDemand = null, offlinePreviewActive = false;
-  const assetStates = new Map(RECORDING_TRACKS.map(track=>[track.id,{status:'idle',error:null}]));
+  let assetBuffer = null, assetBufferId = null, assetVoice = null, recordingDemand = null, offlinePreviewActive = false, addedOfflinePreview = false;
+  const assetStates = new Map([...RECORDING_BY_ID.keys()].map(id=>[id,{status:'idle',error:null}]));
+  function cutDecodedVoices() {
+    if (graph) for (const v of graph.musicAll) if (v.recordingPCM) v.cancel(true);
+  }
   const bufferFor = id => assetBufferId===id ? assetBuffer : null;
   function evictRecording() {
     if(assetBufferId && assetStates.get(assetBufferId).status==='ready')assetStates.get(assetBufferId).status='idle';
@@ -1285,7 +1358,67 @@
   const lastCalls = new Map();
   const fxEnabled = () => prefs.sound && !prefs.muted && prefs.sfxVolume > 0;
   const musicEnabled = () => prefs.music && !prefs.muted && prefs.musicVolume > 0;
-  const musicAllowed = () => !!(!externalMusicActive && context && graph && unlocked && musicEnabled() && !hidden() && context.state === 'running');
+  const musicAllowed = () => !!(!externalMusicActive && !(pageAway && ADDED_IDS.has(prefs.track)) && context && graph && unlocked && musicEnabled() && !hidden() && context.state === 'running');
+
+  // Only one short fetch/codec lease and at most three small PCM buffers.
+  // A completed warm never schedules playback. Missing/cold clips are silent at commit time.
+  const samples = new Map(), unavailableSamples = new Set();
+  let sampleContext = null, warmingSample = null, samplesWanted = false, pageAway = false;
+  const allowPokerFX = () => !!(unlocked && graph && context?.state==='running' && fxEnabled() && !hidden() && !pageAway);
+  function quietPokerSamples(drop=false) {
+    samplesWanted = false;
+    warmingSample?.controller.abort();
+    if (graph) for (const v of graph.fxAll) if (v.pokerSample) v.cancel(true);
+    if (drop) { samples.clear(); unavailableSamples.clear(); sampleContext = null; }
+  }
+  function warmPokerSamples() {
+    if (!allowPokerFX() || !AUDIO_ADDITIONS || typeof root.AbortController!=='function') return;
+    if (sampleContext!==context) {
+      quietPokerSamples(true); sampleContext = context;
+    }
+    samplesWanted = true;
+    if (warmingSample) return; // Includes an aborted decode that hasn't actually settled.
+    const metadata = AUDIO_ADDITIONS.effects.find(row=>!samples.has(row.id) && !unavailableSamples.has(row.id));
+    if (!metadata) return;
+    const current = context, controller = new root.AbortController(), job = {controller};
+    warmingSample = job;
+    const valid = () => current===sampleContext && current===context && allowPokerFX() && samplesWanted;
+    let timedOut = false;
+    const timer = root.setTimeout(()=>{timedOut=true;controller.abort();},8000);
+    loadAddedMP3(current,metadata,controller.signal,valid).then(buffer=>{
+      if (valid() && !controller.signal.aborted) samples.set(metadata.id,buffer);
+    },()=>{
+      if (valid() && (timedOut || !controller.signal.aborted)) unavailableSamples.add(metadata.id);
+    }).finally(()=>{
+      root.clearTimeout(timer);
+      warmingSample = null;
+      if (samplesWanted) warmPokerSamples();
+    });
+  }
+  function pokerSample(id) {
+    if (!allowPokerFX() || sampleContext!==context) return false;
+    const buffer = samples.get(id);
+    if (!buffer) return false;
+    let v;
+    try {
+      const at = context.currentTime+.001, source = context.createBufferSource();
+      v = voice(graph,'fx',at,0,0); v.pokerSample = true;
+      source.buffer = buffer; source.loop = false;
+      v.output.gain.value = .64;
+      source.connect(v.output); v.source(source,at,at+buffer.duration);
+      if (!graph.fx.has(v)) return false;
+      lastSfx = id; eventsTriggered++;
+      return true;
+    } catch (_) { v?.cancel(true); return false; }
+  }
+  function onSamplePageHide() {
+    pageAway = true; quietPokerSamples();
+    if (ADDED_IDS.has(prefs.track)) { pauseMusic(); notifyStatus(); }
+  }
+  function onSamplePageShow() {
+    pageAway = false;
+    if (ADDED_IDS.has(prefs.track)) sync(); else warmPokerSamples();
+  }
 
   function notifyStatus() {
     if (!root.dispatchEvent || typeof root.CustomEvent !== 'function') return;
@@ -1298,6 +1431,8 @@
   }
   function pauseMusic() {
     transportGeneration++;recordingDemand=null;
+    if (activeDecode?.addedRealtime) activeDecode.cancel('asset_cancelled');
+    if (ADDED_IDS.has(assetBufferId)) cutDecodedVoices();
     for(const state of assetStates.values())if(state.status==='queued')state.status='idle';
     if (timer !== null) { root.clearTimeout(timer); timer = null; }
     if (playingMusic && context && activeComposition) musicPosition = Math.max(baseBeat,
@@ -1317,23 +1452,29 @@
       demand.scene!==scene || !recordingScene(scene) || !isRecording(demand.id) || !musicAllowed())return;
     const id=demand.id,state=assetStates.get(id);
     if(bufferFor(id)) {pauseMusic();musicPosition=0;startMusic();notifyStatus();return;}
-    if(activeDecode) {
+    const added = ADDED_IDS.has(id);
+    if(activeDecode || (offlinePreviewActive && (added || addedOfflinePreview))) {
       if(['idle','queued'].includes(state.status)){state.status='queued';state.error=null;}
       return;
     }
     if(!['idle','queued'].includes(state.status))return;
+    if (added || ADDED_IDS.has(assetBufferId)) cutDecodedVoices();
+    const valid = () => recordingDemand===demand && demand.token===transportGeneration &&
+      demand.current===context && demand.id===prefs.track && demand.scene===scene && musicAllowed();
     evictRecording();state.status='loading';state.error=null;notifyStatus();
-    decodeRecording(demand.current,recordingFor(id),{
+    decodeChosenRecording(demand.current,recordingFor(id),{
+      valid,
       decoding(){state.status='decoding';notifyStatus();},
       success(buffer){
-        if(prefs.track===id && context===demand.current) {
+        if(prefs.track===id && context===demand.current && (!added || valid())) {
           evictRecording();assetBuffer=buffer;assetBufferId=id;state.status='ready';state.error=null;
         } else {state.status='idle';state.error=null;}
       },
       failure(error){
+        if (added && !valid()) { state.status='idle';state.error=null;return; }
         state.status='failed';const reason=error && error.message;
         state.error=['asset_size_limit','asset_decode_limit','asset_timeout','asset_read_failed','asset_decode_busy',
-          'asset_fetch_unavailable','file_asset_requires_embedded_data','local_asset_only'].includes(reason)?reason:'asset_decode_failed';
+          'asset_fetch_unavailable','file_asset_requires_embedded_data','local_asset_only','asset_integrity_mismatch'].includes(reason)?reason:'asset_decode_failed';
         notifyStatus();
       }
     }).catch(()=>{});
@@ -1394,6 +1535,7 @@
     if (!context || !graph) return;
     ramp(graph.fxBus.gain, fxEnabled() ? prefs.sfxVolume : 0, context.currentTime, 0.025);
     ramp(graph.musicBus.gain, musicAllowed() ? prefs.musicVolume : 0, context.currentTime, 0.04);
+    if (allowPokerFX()) warmPokerSamples(); else quietPokerSamples(context.state==='closed');
     if (!fxEnabled()) cancelKind(graph, 'fx', false);
     if (musicAllowed()) startMusic(); else pauseMusic();
     notifyStatus();
@@ -1402,6 +1544,7 @@
     if (!context) return;
     lastContextState = context.state;
     if (context.state !== 'running') pauseMusic();
+    if (context.state==='closed' && ADDED_IDS.has(assetBufferId)) evictRecording();
     sync();
   }
   function onVisibility() {
@@ -1414,6 +1557,10 @@
   function listen() {
     if (!listening && root.document && root.document.addEventListener) {
       root.document.addEventListener('visibilitychange', onVisibility); listening = true;
+      if (AUDIO_ADDITIONS) {
+        root.addEventListener?.('pagehide',onSamplePageHide);
+        root.addEventListener?.('pageshow',onSamplePageShow);
+      }
     }
     if (context && context.addEventListener) context.addEventListener('statechange', onStateChange);
   }
@@ -1495,6 +1642,12 @@
       const activation = root.navigator && root.navigator.userActivation;
       if (!unlocked && activation && activation.isActive === false) return Promise.resolve(false);
       if (!context || context.state === 'closed') {
+        if (context && AUDIO_ADDITIONS) {
+          quietPokerSamples(true); pauseMusic();
+          context.removeEventListener?.('statechange',onStateChange);
+          disposeGraph(graph);graph=null;unlocked=false;
+          if (ADDED_IDS.has(assetBufferId)) evictRecording();
+        }
         context = new Constructor({ latencyHint: 'interactive' });
         lastContextState = context.state; listen();
       }
@@ -1530,6 +1683,7 @@
     } catch (_) { return false; }
   }
   function cancelEffects() {
+    quietPokerSamples();
     cancelKind(graph, 'fx', false);
     lastCalls.clear(); xpVoice = null;
   }
@@ -1583,7 +1737,7 @@
   function pokerLevelUp(){return sfx('poker_level_up');}
   function status() {
     const tableTrack = chillTableScene(scene) ? CHILL_TABLE_TRACKS[scene] : null;
-    const effectiveTrack = tableTrack?tableTrack.id:scene==='blackjack'?BLACKJACK_ID:playingMusic ? activeTrackId : effectiveId(prefs.track,!!bufferFor(prefs.track));
+    const effectiveTrack = tableTrack?tableTrack.id:scene==='blackjack'?BLACKJACK_ID:scene==='frenzy'&&ADDED_IDS.has(prefs.track)?'frenzy':playingMusic ? activeTrackId : effectiveId(prefs.track,!!bufferFor(prefs.track));
     const assetState = assetStates.get(prefs.track);
     const recordingPlaying = !!(recordingScene(scene) && playingMusic && isRecording(prefs.track) && assetVoice && graph &&
       graph.music.has(assetVoice) && context && context.currentTime >= assetVoice.at);
@@ -1594,18 +1748,22 @@
       scheduledVoices: graph ? graph.fx.size + graph.music.size : 0,
       lastSfx, eventsTriggered, track: prefs.track,
       bossDrama: prefs.bossDrama, bossDramaActive: prefs.bossDrama === true && bossScene(scene),
-      trackName: TRACKS.find(track => track.id === prefs.track).name,
+      trackName: TRACK_METADATA.find(track => track.id === prefs.track).name,
       scene, effectiveArrangement:scene, arrangementName:tableTrack?tableTrack.name:scene==='blackjack'?BLACKJACK_NAME:scene==='frenzy'?'Emerald Frenzy':scene==='last_chance'?'Last Chance':scene==='final_boss'?'Final Boss':scene==='boss'?'Boss Blind':'Table',
-      effectiveTrack, effectiveTrackName:tableTrack?tableTrack.name:scene==='blackjack'?BLACKJACK_NAME:scene==='frenzy'?'Emerald Frenzy':TRACKS.find(track=>track.id===effectiveTrack).name,
+      effectiveTrack, effectiveTrackName:tableTrack?tableTrack.name:scene==='blackjack'?BLACKJACK_NAME:scene==='frenzy'?'Emerald Frenzy':TRACK_METADATA.find(track=>track.id===effectiveTrack).name,
       assetStatus:assetState?assetState.status:'idle', assetError:assetState?assetState.error:null,
       assetTrackId:assetState?prefs.track:null, assetCacheTrackId:assetBufferId,
       assetCacheBytes:assetBuffer?assetBuffer.length*assetBuffer.numberOfChannels*4:0,
       assetLoadTrackId:activeDecode?activeDecode.id:null,
       assetStates:Object.fromEntries([...assetStates].map(([id,state])=>[id,{...state}])),playerLevel:prefs.playerLevel,
-      licensedPlaying: recordingPlaying && prefs.track !== MUSIC_DATA?.userRecording?.id,
+      uploadedSelection: ADDED_IDS.has(prefs.track),
+      licensedPlaying: recordingPlaying && !ADDED_IDS.has(prefs.track) && prefs.track !== MUSIC_DATA?.userRecording?.id,
       recordingPlaying, modified:recordingPlaying&&scene!=='table'&&recordingScene(scene) };
   }
   function close() {
+    quietPokerSamples(true);pageAway=false;
+    root.removeEventListener?.('pagehide',onSamplePageHide);
+    root.removeEventListener?.('pageshow',onSamplePageShow);
     pauseMusic();evictRecording();
     if (resumeAttempt) settleAttempt(resumeAttempt, false);
     const previous = context;
@@ -1637,10 +1795,12 @@
     // One explicit recording preview at a time; it owns its buffer until rendering
     // finishes and never inserts it into the realtime cache or changes preferences.
     if(wantsRecording) {
-      if(offlinePreviewActive || activeDecode)return Promise.reject(new Error('asset_decode_busy'));
-      offlinePreviewActive=true;
-      return decodeRecording(offlineContext,recordingFor(selected)).then(buffer=>renderOfflineGraph(offlineContext,seconds,overrides,buffer))
-        .finally(()=>{offlinePreviewActive=false;});
+      const added = ADDED_IDS.has(selected);
+      const livePCM = assetBuffer || (graph && [...graph.musicAll].some(v=>v.recordingPCM));
+      if(offlinePreviewActive || activeDecode || (added && livePCM) || ADDED_IDS.has(assetBufferId))return Promise.reject(new Error('asset_decode_busy'));
+      offlinePreviewActive=true;addedOfflinePreview=added;
+      return decodeChosenRecording(offlineContext,recordingFor(selected)).then(buffer=>renderOfflineGraph(offlineContext,seconds,overrides,buffer))
+        .finally(()=>{offlinePreviewActive=false;addedOfflinePreview=false;if(added||ADDED_IDS.has(prefs.track))pumpRecording();});
     }
     return renderOfflineGraph(offlineContext,seconds,overrides,null);
   }
@@ -1704,6 +1864,6 @@
     } catch (error) { disposeGraph(offlineGraph); return Promise.reject(error); }
   }
 
-  root.BOAudio = Object.freeze({ configure, unlock, sfx, gameEffect, moneyGain, batteryCharge, setScene, pokerSelect, pokerUnselect, pokerLevelUp, cancelEffects, status, close, setExternalMusicActive,
+  root.BOAudio = Object.freeze({ configure, unlock, sfx, gameEffect, pokerSample, moneyGain, batteryCharge, setScene, pokerSelect, pokerUnselect, pokerLevelUp, cancelEffects, status, close, setExternalMusicActive,
     tracks: TRACKS, tracksForPlayerLevel, renderOffline });
 })(typeof window !== 'undefined' ? window : globalThis);
